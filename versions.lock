@@ -3,6 +3,7 @@
 
 ollama_version = v0.40.8
 nssm_winget_version = 2.24-101-g897c7ad
+docker_desktop_version = 4.96.1
 
 # D2 candidates for the P1.1 benchmark (tags checked on registry.ollama.ai, 2026-10-21).
 # q4_K_M for the 30B-A3B: the GPU has 12 GB VRAM; q8_0 (30.3 GB) would sit mostly in RAM.
