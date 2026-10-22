@@ -146,3 +146,22 @@ PLAN.md P0.4. The scripted parts are in `installer/steps/02-ollama.ps1` (run ele
 ### NVIDIA driver
 
 Ollama's CUDA libraries need a recent driver. With driver 546.92 (CUDA 12.3), GPU detection crashed (`llama-server --list-devices failed: exit status 0xc0000005`), and Ollama fell back to the CPU (`inference compute id=cpu`, `total_vram="0 B"`). Update the driver from the owner's account through Lenovo Vantage → System Update, the NVIDIA app → Drivers, or nvidia.com/drivers. Driver 621.01 (CUDA 13) works. After a reboot, the Ollama log shows `inference compute ... library=CUDA ... NVIDIA GeForce RTX 4080 Laptop GPU`.
+
+## docker-autostart
+
+PLAN.md P0.5. The scripted parts are in `installer/steps/03-docker.ps1` (run elevated: WSL, Docker Desktop, `hermes` added to `docker-users`; reboot afterwards) and the checks in `verify/checks/p0-5-docker.ps1`.
+
+### The owner's sign-in as hermes
+
+Claude never works in `hermes`, so the owner does this once:
+
+1. Sign in as `hermes`, using the `hermes` password from the password manager. After an auto-logon it sits at the lock screen.
+2. Privacy settings, the same as `operator` (P0.0b):
+   - Settings → Privacy & security → General: advertising ID **off**.
+   - Settings → Privacy & security → Diagnostics & feedback: **Required diagnostic data** only.
+   - Settings → Accounts → Windows backup: everything **off**.
+   - OneDrive: if it's running, quit it and sign nothing in. It was uninstalled machine-wide in P0.0b; if it's present for this account anyway, uninstall it from Settings → Apps.
+3. Docker Desktop: start it, accept the Docker Subscription Service Agreement (free for personal use; see D14), and **skip** the Docker sign-in. Then go to Settings → General, tick **"Start Docker Desktop when you sign in to your computer"**, and click Apply.
+4. Lock the screen (Win+L). Don't sign out: that would stop Docker and Hermes.
+
+There is no option to start Docker Desktop before sign-in (notes #17), so Docker depends on `hermes`'s auto-logon.
