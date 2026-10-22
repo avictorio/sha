@@ -8,3 +8,8 @@ docker_desktop_version = 4.96.1
 # D2 candidates for the P1.1 benchmark (tags checked on registry.ollama.ai, 2026-10-21).
 # q4_K_M for the 30B-A3B: the GPU has 12 GB VRAM; q8_0 (30.3 GB) would sit mostly in RAM.
 model_candidates = qwen3:30b-a3b-instruct-2507-q4_K_M,gpt-oss:20b,qwen3-coder:30b,qwen3:32b
+
+# Hermes Agent installer: the copy read and reviewed on 2026-10-21 (1672 lines). 04-hermes.ps1
+# refuses any other. If upstream changes, review the new copy, then update the hash.
+hermes_install_url = https://hermes-agent.nousresearch.com/install.ps1
+hermes_install_ps1_sha256 = 9B7C951B2455DF32F6C07A43B0AD6ACDAD9A5ADCD86753AA9B195609AEE42BC5
