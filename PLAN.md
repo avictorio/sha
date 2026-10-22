@@ -202,7 +202,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5): C
   - Needs: D1
   - Automate: `docs/SETUP-GUIDE.md#operator-account`
 
-- [ ] **P0.0b Finish `operator`: tools, privacy, repo access** [Claude + you] (you: paste the deploy key's public half into GitHub → the repo's Settings → Deploy keys → Add deploy key, with "Allow write access" ticked. Do it from your phone or your own account, so your GitHub account is never signed in on `operator`. In the same visit, add a rule on `main` requiring a pull request before merging, because the deploy key could otherwise push to `main`) —
+- [x] **P0.0b Finish `operator`: tools, privacy, repo access** [Claude + you] (you: paste the deploy key's public half into GitHub → the repo's Settings → Deploy keys → Add deploy key, with "Allow write access" ticked. Do it from your phone or your own account, so your GitHub account is never signed in on `operator`. In the same visit, add a rule on `main` requiring a pull request before merging, because the deploy key could otherwise push to `main`) —
   1. Install Git for Windows (`winget install --id Git.Git -e` (verify)) and Claude Code (its official Windows install method (verify)).
   2. Set the privacy settings in `operator`, through Settings with computer use, or the registry or PowerShell where that's reliable (verify each):
      - uninstall OneDrive (`winget uninstall Microsoft.OneDrive` (verify));
