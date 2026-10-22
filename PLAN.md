@@ -426,7 +426,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - As built (2026-10-22): `bench/run-bench.ps1` (elevated) stages the fixtures and runs `bench/runner.ps1` as `hermes`, inside `isolate.ps1 -On/-Off`. B2 and B6 were re-run after the fixtures turned out to be CRLF on the Windows checkout (now pinned LF in `.gitattributes`). Tasks passed of 7: qwen3-instruct 2, gpt-oss 3 (and 41 s per reply), qwen3-coder 4; extra, at the owner's request, muse-glimmer:30b 5 (2.6 min per reply, B3 20 min). No GO. D2: the owner chose qwen3-coder for the proof of concept, to revisit with better hardware.
   - Automate: `bench/` (prompts, fixtures, answer keys, `isolate.ps1`, `scores.csv`); `versions.lock` (the chosen tag)
 
-- [ ] **P1.2 Set the chosen model** [Claude] —
+- [x] **P1.2 Set the chosen model** [Claude] —
   ```powershell
   hermes config set model.default <D2 tag>
   hermes gateway restart
@@ -434,6 +434,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: `hermes doctor` is clean (Hermes enforces the 64K floor and refuses to start below it); `hermes chat` answers; and `ollama ps` shows the tag with CONTEXT 65536.
   - Needs: P1.1
   - Automate: `installer/steps/04-hermes.ps1` (model from `instance.yaml`); `verify/checks/p1-2-model.ps1`
+  - As built (2026-10-22): `installer/steps/06-model.ps1`, because `instance.yaml` doesn't exist yet. It reads `model_default` from `versions.lock` and sets it as `hermes`. Instead of `hermes gateway restart`, it does the clean restart of the guarded `Hermes_Gateway` task (docs/LESSONS.md). Then it runs the check, all behind one password prompt. Fold it into `04-hermes.ps1` when `instance.yaml` arrives (P6.1).
 
 - [ ] **P1.3 Private profile** [Claude + you] (you: create the "Hermes Private" bot in @BotFather and type its token into the prompt) — The private profile is local-only: no cloud credentials and no fallback.
   1. Create it without `--clone` or `--clone-all`, so no keys or memory are copied. In setup, choose Custom endpoint `http://localhost:11434/v1` and skip every cloud provider and connector.
