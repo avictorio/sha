@@ -28,6 +28,7 @@ Names NOT confirmed by the verification notes (check them with LOG_ALL_TOOL_CALL
   - the terminal tool's name and the argument key that holds the command
   - make_call's argument names (Spike S12)
   - browser_vault's argument names other than `action`
+  - the exact tool_name Hermes passes for MCP tools (both prefix forms are matched)
 """
 
 import datetime
@@ -98,7 +99,37 @@ BLOCK = [
     # Other ways to send mail from a shell (defence in depth for D6).
     (r"\b(sendmail|msmtp|swaks|mutt)\b|\bsmtplib\b|\bsmtps?://",
      "Sending mail from the sandbox is blocked (D6)."),
+    # D6, AgentMail CLI (docs/verification-notes.md AM9). Both command forms: the Hermes skill
+    # writes `agentmail inboxes:messages send`, the CLI reference `agentmail inboxes messages send`.
+    # "reply" also matches reply-all.
+    (r"\bagentmail\b.*\binboxes(?::|\s+)messages(?::|\s+)(send|reply|reply-all|forward)\b",
+     "The agent mailbox is receive-only (D6): AgentMail send/reply/forward is blocked."),
+    # Drafts: a draft created with send_at sends itself, so create/update/send are all blocked.
+    (r"\bagentmail\b.*\b(inboxes|pods)(?::|\s+)drafts(?::|\s+)(create|update|send)\b",
+     "The agent mailbox is receive-only (D6): AgentMail draft create/update/send is blocked."),
+    # Agent sign-up and attach-human send OTP mail and can create a new AgentMail organization.
+    (r"\bagentmail\b.*\bagent(?::|\s+)(sign-up|attach-human)\b",
+     "AgentMail sign-up and attach-human are blocked (D6)."),
+    # The same through AgentMail's REST API or SMTP from a shell (AM3, AM10).
+    (r"\bapi\.agentmail\.(to|eu)/v0/\S*(/messages/send|/reply|/forward|/drafts)\b",
+     "Sending through the AgentMail API is blocked (D6)."),
+    (r"\bsmtp\.agentmail\.(to|eu)\b",
+     "AgentMail SMTP is blocked (D6)."),
 ]
+
+# --- BLOCK: MCP tools that send or schedule mail (D6) ------------------------
+# Server-native names from AgentMail's MCP manifest (AM8). The relay's --tools filter and the
+# scoped key's permissions already keep these out; this is the third layer (PLAN.md §7).
+# Hermes registers MCP tools as mcp__<server>__<tool> (code: tools/mcp_tool_schema.py), while
+# its feature docs show mcp_<server>_<tool>, so both prefix forms match, for any server name.
+MAIL_SEND_MCP_TOOLS = {
+    "send_message", "reply_to_message", "forward_message",
+    "send_draft", "create_draft", "update_draft",
+    "agent_attach_human",
+}
+# Unprefixed names are blocked too, except these: send_message is Hermes' own built-in
+# messaging tool (tools/send_message_tool.py), which this plugin doesn't gate.
+BARE_NAME_EXCEPTIONS = {"send_message"}
 
 # Terminal commands matching this get an approval prompt (used by P2.1's test).
 SELFTEST_PATTERN = r"\bapproval-selftest\b"
@@ -119,6 +150,10 @@ MAX_MESSAGE_CHARS = 1500
 # ============================================================================
 
 _BLOCK_RES = [(re.compile(p, re.IGNORECASE | re.DOTALL), msg) for p, msg in BLOCK]
+_MAIL_MCP_RE = re.compile(
+    r"^mcp_{1,2}[A-Za-z0-9_]+?_{1,2}(" + "|".join(sorted(map(re.escape, MAIL_SEND_MCP_TOOLS))) + r")$",
+    re.IGNORECASE,
+)
 _SELFTEST_RE = re.compile(SELFTEST_PATTERN)
 _PHONE_RE = re.compile(r"\+?\d[\d\s().-]{7,}\d")
 
@@ -171,6 +206,15 @@ def _command_text(tool_name, args):
     if tool_name in TERMINAL_TOOLS:
         return "\n".join(_strings(args))
     return None
+
+
+def _is_mail_send_tool(tool_name):
+    """True for an MCP (or bare) tool name that sends or schedules mail."""
+    name = str(tool_name or "")
+    if _MAIL_MCP_RE.match(name):
+        return True
+    bare = name.lower()
+    return bare in MAIL_SEND_MCP_TOOLS and bare not in BARE_NAME_EXCEPTIONS
 
 
 def _digits(text):
@@ -285,7 +329,9 @@ def _block(message):
 
 
 def _decide(tool_name, args):
-    # 1. BLOCK beats everything.
+    # 1. BLOCK beats everything: mail-sending MCP tools, then terminal command patterns.
+    if _is_mail_send_tool(tool_name):
+        return _block(f"The agent mailbox is receive-only (D6): {tool_name} is blocked.")
     command = _command_text(tool_name, args)
     if command:
         for regex, message in _BLOCK_RES:

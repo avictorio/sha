@@ -1,58 +1,67 @@
-# Sender allowlist for the agent mailbox (template). See PLAN.md §7 (Email integration) and P2.3.
+# Sender allowlist and designation map for the agent's AgentMail inbox "main" (template).
+# See PLAN.md §7 (Email integration), S8, P2.2 and P2.3.
 #
 # Host path:  C:\agent\private\config\email-allowlist.yaml
 # Sandbox:    /workspace/config/email-allowlist.yaml (mounted read-only into the private profile)
-# Read by:    the private profile's inbox-triage cron (templates/inbox-triage-prompt.md)
+# Read by:    the private profile's inbox-triage cron (templates/inbox-triage-prompt.md), and
+#             scripts/agentmail-setup.ps1, which builds main's receive allowlist from it (P2.2).
 #
-# Trust rule, applied before a message body is read:
-#   1. The TOPMOST Authentication-Results header must start with authserv_id
-#      (the token before its first ';'), i.e. it was added by your own provider.
-#   2. That header must show dmarc=pass for the From: domain.
-#   3. And one of: From: is in my_addresses; or the From: domain, or a parent
-#      domain, is listed under the message's folder; or a trusted_forwarders
-#      entry matches.
-#   Anything else is moved to Quarantine unread (quarantine_everything_else).
-# A domain entry matches itself and its subdomains (example.com matches mail.example.com).
-# Placeholders below use example.com names. Replace them with the real sending domains,
-# which you can read from the From: line of a real confirmation email.
+# Receive allowlist: if Spike S8 confirms that unlisted senders get the `blocked` label, main
+# admits only my_addresses plus every domain listed under categories. AgentMail list entries
+# are exact: a domain matches only itself, so list each sending subdomain separately
+# (mail.example.com is NOT covered by example.com). After editing this file, re-run
+# scripts/agentmail-setup.ps1 so the list on main matches it.
+#
+# Designation, applied by triage before a message body is read:
+#   1. From: is in my_addresses -> your manual forward -> the category from its subject tag,
+#      else default_category_for_my_forwards.
+#   2. From: domain is listed exactly under a category -> that category.
+#   3. Anything else -> handled per unknown_senders (below).
+# Placeholders use example.com names. Replace them with the real sending domains, which you
+# can read from the From: line of a real confirmation email.
 
-authserv_id: "<token before the first ';' of the topmost Authentication-Results header on a message in the agent mailbox>"   # read it off any delivered message (verify)
-
-# Manual forwards from you. These still need dmarc=pass.
+# Your own addresses. Manual forwards from these use a subject tag.
 my_addresses:
   - "<you>@gmail.com"
-  - "<you>@<your-domain>"
+  - "<you>@<your-other-domain>"
 
-# Gmail auto-forwards keep the original sender. Fill this in only after Spike S7
-# shows a forwarding header that can't be faked by a stranger (e.g. one covered by
-# a passing ARC or DKIM check from gmail.com). Leave it empty until then.
+# Sender domains per category (exact domains).
+categories:
+  travel:
+    - airline.example.com          # placeholder: an airline's sending domain
+    - other-airline.example.com    # placeholder
+    - hotel.example.com            # placeholder: a hotel chain
+    - booking-site.example.com     # placeholder: a booking site or travel agency
+  receipts:
+    - retailer.example.com         # placeholder: an online shop
+    - marketplace.example.com      # placeholder
+    - payments.example.com         # placeholder: a payment processor's receipts
+  brief:
+    - newsletter.example.com       # placeholder: a newsletter you want summarized
+  private: []                      # usually only your own [private] forwards
+
+# Subject tags for manual forwards from my_addresses (case-insensitive, anywhere in the subject).
+subject_tags:
+  "[travel]": travel
+  "[receipts]": receipts
+  "[brief]": brief
+  "[private]": private
+default_category_for_my_forwards: brief
+
+# Plus-tags (<name>+travel@agentmail.to) are undocumented. Set true only if Spike S8 shows they
+# deliver to main; triage then also reads the tag after '+' in the To: address.
+plus_tags_enabled: false
+
+# Senders not covered above (Spike S8):
+#   provider_blocked  - main's receive allowlist is on. AgentMail labels them `blocked`, and the
+#                       agent's key can't read them, so triage never sees them.
+#   quarantine_label  - the fallback. Triage labels them `quarantine` and `processed` and never
+#                       reads the body. This rests on the triage prompt alone.
+unknown_senders: provider_blocked
+
+# Only if Spike S7 shows a header check is needed (outcome C). Leave empty until then.
+authserv_id: ""                    # token before the first ';' of the topmost Authentication-Results
 trusted_forwarders: []
 #  - header: "<header name found in S7>"
 #    contains: "<you>@gmail.com"
 #    also_require: "<the authentication result S7 showed, e.g. arc=pass>"
-
-folders:
-  Travel:
-    accept_dmarc_pass_from:
-      - airline.example.com        # placeholder: an airline's sending domain
-      - other-airline.example.com  # placeholder
-      - hotel.example.com          # placeholder: a hotel chain
-      - booking-site.example.com   # placeholder: a booking site or travel agency
-  Receipts:
-    accept_dmarc_pass_from:
-      - retailer.example.com       # placeholder: an online shop
-      - marketplace.example.com    # placeholder
-      - payments.example.com       # placeholder: a payment processor's receipts
-  Brief:
-    accept_dmarc_pass_from:
-      - newsletter.example.com     # placeholder: a newsletter you want summarized
-  Private:
-    accept_dmarc_pass_from: []     # only you (my_addresses)
-
-# Never opened by the agent. OTP is forwarded to you by a server-side rule;
-# Quarantine is only counted for the morning brief.
-never_read_folders:
-  - OTP
-  - Quarantine
-
-quarantine_everything_else: true
