@@ -86,6 +86,11 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **Git on Windows checks text out as CRLF, which corrupted the benchmark fixtures.** `expected.txt` could never match a script's LF output exactly (B2), and models that compared the last CSV column as text read `"25" < "25\r"` as true (B6). The first run's B2/B6 were void. `.gitattributes` now pins `bench/fixtures/**` and `bench/answer_keys/**` to LF. Any byte-exact test data needs the same.
 - **`docker cp` can't write into the Hermes sandbox's `/tmp`** (tmpfs): it failed silently, so every B2 holdout check read FAIL. After the turn, `runner.ps1` copies the holdout into the mounted workspace instead.
 - **The Docker daemon can't read `operator`'s temp folder** (`CreateFile … Access is denied` on `-v`). For a scratch container: `docker create`, then `docker cp` the files in, then `docker start -a`.
+- **The default gateway serves every profile** (Hermes v0.22.4): it ignores `multiplex_profiles: false`. To give a profile its own process and bot, set `gateway.standalone: true` in that profile's `config.yaml`. `hermes config get` calls it unrecognized, but the default gateway's log confirms it ("profile 'private' is standalone"). It rescans profiles every 30 s.
+- **Hermes drops `-p <profile>` when it re-executes.** Every gateway's command line reads `gateway run --quiet`. Find a profile's gateway as a descendant of its `start-gateway.ps1 -Profile X` launcher; `scripts/restart-gateway.ps1` does that.
+- **A `hermes chat` idle-exit gateway holds the profile's gateway lock,** so a fresh gateway start exits 1. `restart-gateway.ps1` stops `--idle-exit` gateways too.
+- **The cron scheduler and kanban dispatcher are machine-wide singletons.** Whichever gateway takes the lock ticks every profile's jobs (open under P1.8).
+- **`H` is PowerShell's alias for Get-History,** so a helper function named `H` is never called ("Cannot bind parameter 'Count'"). Use another name (`Herm`).
 - **P0.5's sandbox image depends on P0.6** (`hermes config get terminal.docker_image`), so P0.5 can't be ticked until after P0.6. **Next:** move that Done-when item into P0.6.
 
 ## Plan and process

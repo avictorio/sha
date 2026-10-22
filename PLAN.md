@@ -436,7 +436,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Automate: `installer/steps/04-hermes.ps1` (model from `instance.yaml`); `verify/checks/p1-2-model.ps1`
   - As built (2026-10-22): `installer/steps/06-model.ps1`, because `instance.yaml` doesn't exist yet. It reads `model_default` from `versions.lock` and sets it as `hermes`. Instead of `hermes gateway restart`, it does the clean restart of the guarded `Hermes_Gateway` task (docs/LESSONS.md). Then it runs the check, all behind one password prompt. Fold it into `04-hermes.ps1` when `instance.yaml` arrives (P6.1).
 
-- [ ] **P1.3 Private profile** [Claude + you] (you: create the "Hermes Private" bot in @BotFather and type its token into the prompt) — The private profile is local-only: no cloud credentials and no fallback.
+- [x] **P1.3 Private profile** [Claude + you] (you: create the "Hermes Private" bot in @BotFather and type its token into the prompt) — The private profile is local-only: no cloud credentials and no fallback.
   1. Create it without `--clone` or `--clone-all`, so no keys or memory are copied. In setup, choose Custom endpoint `http://localhost:11434/v1` and skip every cloud provider and connector.
      ```powershell
      hermes profile create private
@@ -493,7 +493,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: `/model openrouter:<any model>` in the private chat fails, and with `Stop-Service Ollama` the private bot replies with an error instead of an answer. Restart Ollama afterwards.
   - Needs: P1.2, D3, P1.5 (installed in this profile)
   - Automate: `installer/steps/06-private-profile.ps1`; `config/templates/private.config.yaml`; `verify/checks/p1-3-private.ps1`
-  - Progress (2026-10-22): `06-private-profile.ps1 -Phase Create`, then `-Phase Bot`. `p1-3-private.ps1` passes 15/15. The owner's Telegram tests are in `docs/SETUP-GUIDE.md#private-bot` (helper: `verify/checks/p1-3-ollama-stop-test.ps1`).
+  - Done (2026-10-22): `06-private-profile.ps1 -Phase Create`, then `-Phase Bot`. `p1-3-private.ps1` passes 15/15. The owner's Telegram tests (`docs/SETUP-GUIDE.md#private-bot`) all passed: the bot answers, and the call is logged local; `/model openrouter:openai/gpt-4o-mini` fails. With Ollama stopped, the bot replied with an error; `p1-3-ollama-stop-test.ps1` found 6 new usage lines and 0 non-local.
     - As built: Hermes v0.22.4 multiplexes every profile into the default gateway and ignores `multiplex_profiles: false`. `gateway.standalone: true` (a shim Hermes calls temporary) keeps private in its own process, under the guarded task `Hermes_Gateway_private`. `hermes config get` calls it "not a recognized config key", but the default gateway's log confirms it ("profile 'private' is standalone; not served by this gateway").
     - Both tasks now name their profile (`start-gateway.ps1 -Profile`). `scripts/restart-gateway.ps1` restarts one profile's gateway. Hermes drops `-p` when it re-executes, so it finds a profile's processes under that profile's launcher. It also stops the temporary `--idle-exit` gateways that `hermes chat` starts, which hold the profile's gateway lock: the first private start exited 1 because of one.
     - Cloud-facing toolsets are off in private (cli and telegram): web, browser, vision, image_gen, tts. The auxiliary tasks are `auto`, which uses the main (local) model first. With no credentials, the log shows only warnings that the Nous auxiliary client is unavailable.
