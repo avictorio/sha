@@ -41,12 +41,13 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 | 18 | Spend caps and nightly snapshots mentioned in passing | New: a per-key OpenRouter cap, Plivo on prepaid, a budget (§12), encrypted backups (`hermes backup` includes `.env` and `auth.json`) and a kill switch (§10). | notes #13, #18 |
 | 19 | §02 table: "a dashboard nobody opens briefs nobody" | Fixed to: "a dashboard nobody opens delivers briefs nobody reads". | original §02 |
 | 20 | Distribution: a personal build only | Built to be packaged: every task names its package artifact, per-user values live in `instance.yaml`, and Phase 6 ships a v1 that others can install and qualify with the benchmark. | your requirement; §11 |
+| 21 | The host account wasn't addressed (a single machine, implicitly one account) | Three accounts on the Legion: yours, plus two local ones, with Claude isolated in `operator` and the agent in `hermes` (D1, P0.0, §5). | The operator has computer use, so your personal sessions must be out of its reach |
 
 ## 3. Decisions to make before Day 1
 
 | ID | Decision | Recommended default | Needed by | Your choice |
 |---|---|---|---|---|
-| D1 | Host account | A dedicated standard Windows user `hermes` with auto-logon and lock-on-logon. The alternative is your own account with auto-logon. Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.3 | |
+| D1 | Host account | Three Windows accounts (§5): your own Microsoft account (admin), as today; a local admin `operator` where Claude runs, with nothing of yours linked (P0.0); and a local standard `hermes` that runs the agent, with auto-logon and lock-on-logon. The alternative is two accounts, with Claude in your account (not recommended: computer use would put your personal sessions, including Telegram approvals, within its reach). Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.0, P0.3 | |
 | D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | |
 | D3 | Privacy model | Two profiles: `default` (hybrid) and `private` (local-only). The alternative is one profile and discipline. | P1.3 | |
 | D4 | Email provider | Fastmail on a custom domain: plus-addressing on any alias, a wildcard catch-all, and IMAP app passwords. Check current pricing. Alternatives: AgentMail, with an API, webhooks and a hosted MCP server; a custom domain needs a paid tier (notes #20, verify), and plus-addressing isn't documented, so you'd use separate inboxes. Or a dedicated Gmail account, which is free; its app password needs 2-Step Verification and is revoked when the password changes. | P0.2 | |
@@ -63,31 +64,33 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 
 ## 4. Who does what (Claude on the machine)
 
-A Claude agent runs on the Legion: Claude Code in a terminal for shell and PowerShell work, plus computer use, but only for GUI-only steps (Windows Settings, Lenovo Vantage, Docker Desktop, web consoles). Each task's tag says who acts. In `[Claude + you]` tasks, your step is named in parentheses after the tag. Where a Done-when says "the bot" or "the private bot", Claude runs the same check in `hermes chat` or `hermes -p private chat` on the box and reads the logs, because it has no Telegram session (rule below). Checks that need Telegram itself, or your phone, are your step.
+A Claude agent runs on the Legion, in its own `operator` account (P0.0, §5): Claude Code in a terminal for shell and PowerShell work, plus computer use, but only for GUI-only steps (Windows Settings, Lenovo Vantage, Docker Desktop, web consoles). Each task's tag says who acts. In `[Claude + you]` tasks, your step is named in parentheses after the tag. Where a Done-when says "the bot" or "the private bot", Claude runs the same check in `hermes chat` or `hermes -p private chat` on the box and reads the logs, because it has no Telegram session (rule below). Checks that need Telegram itself, or your phone, are your step.
 
 | Phase | `[Claude]` | `[Claude + you]` | `[You]` | Tasks |
 |---|---|---|---|---|
-| 0 Decide & provision | 3 | 4 | 1 | 8 |
+| 0 Decide & provision | 3 | 4 | 2 | 9 |
 | 1 Local model, profiles, cloud | 8 | 3 | 1 | 12 |
 | 2 Policy, email, calendar, brief | 6 | 7 | 0 | 13 |
 | 3 Browser & accounts | 1 | 4 | 0 | 5 |
 | 4 Phone | 3 | 4 | 2 | 9 |
 | 5 Hardening & review | 3 | 1 | 2 | 6 |
 | 6 Package v1 | 4 | 3 | 2 | 9 |
-| **Total** | **28** | **26** | **8** | **62** |
+| **Total** | **28** | **26** | **9** | **63** |
 
-**How much is Claude-only?** 28 of 62 tasks (45%), counted from the tags above, not guessed. Most of the 26 shared tasks need only minutes of you: a sign-in, a typed secret, a tap. But each one waits until you do it, so batch your steps.
+**How much is Claude-only?** 28 of 63 tasks (44%), counted from the tags above, not guessed. Most of the 26 shared tasks need only minutes of you: a sign-in, a typed secret, a tap. But each one waits until you do it, so batch your steps.
 
 **Your steps, batched.** Do each group in one sitting:
-1. **Decisions** (Day 1, about 1 h): D1–D14 (P0.1).
+1. **Decisions and the `operator` account** (Day 1, about 2 h): D1–D14 (P0.1); the `operator` account with Claude installed (P0.0); Device encryption from your own account and the recovery-key check online (P0.3).
 2. **Accounts** (Day 1, about 1–2 h): domain and mailbox (P0.2); two bots in @BotFather and your Telegram user ID (P0.7, P1.3); Tailscale sign-in (P0.3); OpenRouter account, payment and a capped key (P1.4); Plivo account, number and identity check (P4.1, can wait until Phase 4). Later: the CAPTCHAs and phone checks for the agent's own service accounts (P3.2).
 3. **Secrets**, each typed into its destination, never into a chat: the `hermes` password and the once-per-session credential prompt (P0.3); bot tokens (P0.7, P1.3); the OpenRouter key (P1.4); the backup passphrase (P1.7); the mailbox app password (S8, P2.2); vault logins and card (P3.3); secret-manager setup and the rotated key (P3.4); the Plivo auth token (P4.2).
-4. **Sign-ins and consents:** router admin (P0.3); one sign-in to `hermes` for Docker Desktop's autostart (P0.5); mail-provider settings (S8); your personal Gmail (S7, P2.4); calendar OAuth consent (P2.5).
+4. **Sign-ins and consents:** router admin (P0.3); one sign-in to `hermes` for its privacy settings and Docker Desktop's autostart (P0.5); mail-provider settings (S8); your personal Gmail (S7, P2.4); calendar OAuth consent (P2.5).
 5. **Phone in hand:** the second-account Telegram test (P0.7); approval taps (P2.1, P3.3, P3.5, P4.3, P4.5); answering test calls (S5, P4.2, P4.5); relaying OTPs (P3.5); sending test emails and reading the brief (P2.8).
 6. **Judgment and personal:** private facts (P1.6); the disclosure check (P4.6); the escalation decision (P5.3); the kill-switch drill (P5.4); the backlog review (P5.5); and in Phase 6, the guide review (P6.4), the clean machine (P6.6), the tester run (P6.7), the legal review (P6.8) and the release approval (P6.9).
 
 **Operating rules for the on-machine Claude** (also in [CLAUDE.md](CLAUDE.md)):
-- **Accounts.** During installs, Claude works in your admin account, never in the `hermes` account. Steps that must run as `hermes` (from P0.6 on) start from the admin session through a credential prompt you fill in once per working session (`Start-Process -Credential` or `runas` (verify)).
+- **Accounts.** Claude works only in the `operator` account (P0.0), never in your account or in `hermes`. Steps that must run as `hermes` (from P0.6 on) start from the `operator` session through a credential prompt you fill in once per working session (`Start-Process -Credential` or `runas` (verify)).
+- **Nothing personal in `operator`.** If Claude finds any personal sign-in there (Telegram, a personal browser profile, a password manager), it stops and tells you.
+- **GitHub.** Claude reaches GitHub only through the fine-grained token scoped to this repo (P0.0).
 - **Secrets.** You type secrets straight into their destination wherever possible: your password manager, a hidden prompt (`Read-Host -AsSecureString` feeding `hermes config set`), or the web form. Never into the chat.
 - **Stops.** Claude stops at CAPTCHAs, identity checks and payments, and hands over to you.
 - **No unblocking itself.** Claude never edits the approval-policy plugin, or `approvals.deny`, to get past a block it hit itself. Planned edits that a task calls for (P2.1 step 3, S12) are committed with that task's ID.
@@ -161,6 +164,14 @@ A Claude agent runs on the Legion: Claude Code in a terminal for shell and Power
 | Approve-first | Any message to a human other than you; `make_call`, `send_sms`; card fills; 2FA `enter_code`; every purchase or checkout | The policy plugin's `approve` (calls also need a matching brief); `browser_vault`'s own card confirmation; the `PLIVO_VOICE_ALLOWED_DESTINATIONS` allowlist; no saved payment methods on sites; the stop-at-checkout rule in SOUL.md (an instruction only, with no tool-level gate) |
 | Blocked | Sending from the agent mailbox; reading the OTP folder; calls to numbers not on the allowlist; cloud models from the private profile | The policy plugin's `block`; `approvals.deny`; an IMAP-only app password (S8); the empty-means-refuse destination list; no keys in `private` |
 
+**Windows accounts** (D1)
+
+| Account | Type | Purpose | What runs there |
+|---|---|---|---|
+| Yours (existing) | Microsoft account, admin | Daily use, gaming; it holds the Device-encryption recovery key (P0.3) | Everything personal, as today. Claude never works here. |
+| `operator` (P0.0) | Local account, admin | Where Claude runs during setup and maintenance | The Claude desktop app (computer use) and Claude Code; a GitHub token scoped to this repo. Nothing personal. |
+| `hermes` (P0.3) | Local account, standard | Runs the agent; auto-logon, then lock | The Hermes gateway, Docker Desktop, the agent's Chrome profile; only agent-owned accounts |
+
 **Host layout**
 
 | Path | Contents | Who writes / reads |
@@ -182,6 +193,25 @@ A Claude agent runs on the Legion: Claude Code in a terminal for shell and Power
 
 ### Phase 0 — Decide & provision (Days 1–2)
 
+- [ ] **P0.0 Create the `operator` account and install Claude** [You] — Claude can't do this one, because it's the account Claude runs in (D1, §5).
+  1. Create a local admin account `operator`: Settings → Accounts → Other users → Add account → "I don't have this person's sign-in information" → "Add a user without a Microsoft account". Then change its account type to Administrator (verify the exact labels).
+  2. Sign in as `operator`.
+  3. Set its privacy settings (verify each location):
+     - unlink or uninstall OneDrive;
+     - turn off Windows Backup / settings sync;
+     - Diagnostic data: "Required only";
+     - advertising ID off.
+  4. Install Git for Windows, which bundles Git Credential Manager (verify), plus the Claude desktop app and Claude Code. Sign in to Claude.
+  5. Create a GitHub fine-grained personal access token (in your own account, or in a private browser window in `operator` that you close afterwards):
+     - repository access: only `avictorio/sha`;
+     - permissions: Contents read/write, Pull requests read/write, Metadata read;
+     - an expiry, e.g. 90 days.
+  6. Clone the repo. When Git Credential Manager asks, paste the token; don't use its browser sign-in, which would grant access to all your repos (verify). The token lives in Git Credential Manager in `operator`, never in the repo.
+  - Don't sign in to anything personal there: no Microsoft account, OneDrive, personal browser profile, Telegram or password manager.
+  - Done when: `Get-LocalUser operator | Select-Object PrincipalSource` shows Local (verify); `net localgroup Administrators` lists `operator`; `git ls-remote https://github.com/avictorio/sha` works from `operator`; Claude, started in the clone, can read CLAUDE.md; and no personal sign-ins exist in that account: no OneDrive, Telegram or personal browser profile.
+  - Needs: D1
+  - Automate: `docs/SETUP-GUIDE.md#operator-account`
+
 - [ ] **P0.1 Fill in the decision table** [You] — Write your choices in §3's last column. D1, D2, D4 and D5 are needed today; the rest can wait until their "Needed by" task.
   - Done when: D1, D2, D4 and D5 have an entry.
   - Automate: `config/templates/instance.example.yaml` (each decision becomes an instance value); `docs/SETUP-GUIDE.md#decisions`
@@ -198,14 +228,15 @@ A Claude agent runs on the Legion: Claude Code in a terminal for shell and Power
      - `agent+otp@` → forward to your personal address, then file into OTP.
      - Optional: a catch-all alias `*@<your-domain>` → Quarantine (notes #21).
   - Done when: a test message to `agent+travel@` lands in Travel. A message from an address you don't own, sent to the base address, lands in Quarantine. A DMARC checker reports pass for a message sent from the mailbox's webmail (verify which checker).
-  - Needs: D4, D5
+  - Needs: P0.0, D4, D5
   - Automate: `docs/SETUP-GUIDE.md#domain-and-mailbox`; `verify/checks/p0-2-mail-dns.ps1` (MX/SPF/DMARC records via `Resolve-DnsName`)
 
-- [ ] **P0.3 Host prep** [Claude + you] (you: choose the `hermes` password and type it into the prompt, Autologon and your password manager; add the DHCP reservation in the router admin; sign in to Tailscale) — Done from your admin account:
+- [ ] **P0.3 Host prep** [Claude + you] (you: turn on Device encryption from your own Microsoft account and check the recovery key is listed online; choose the `hermes` password and type it into the prompt, Autologon and your password manager; add the DHCP reservation in the router admin; sign in to Tailscale) — Done from the `operator` account, except Device encryption:
   - **Windows Update.** Install updates; set active hours (Settings → Windows Update → Advanced options) (verify).
-  - **Disk encryption.** Turn on Settings → Privacy & security → Device encryption. If that page isn't there, consider Windows 11 Pro for BitLocker.
+  - **Disk encryption** (you, in your own account). Turn on Settings → Privacy & security → Device encryption from your Microsoft account, because Windows 11 Home backs the recovery key up to the Microsoft account that turns encryption on. Then check the key is listed at account.microsoft.com/devices/recoverykey (verify). If the Device encryption page isn't there, consider Windows 11 Pro for BitLocker.
   - **The `hermes` account.**
-    - Create the standard (non-admin) local user `hermes` (D1).
+    - Claude creates `hermes` (D1) as a local standard (non-admin) account with nothing linked, e.g. `New-LocalUser hermes -Password (Read-Host -AsSecureString)` then `Add-LocalGroupMember -Group Users -Member hermes` (verify). You type the password into that hidden prompt.
+    - Give it the same privacy settings as `operator` (P0.0): OneDrive unlinked, settings sync off, diagnostic data "Required only", advertising ID off. They're applied when the account is first signed in, so you do them in the P0.5 sign-in.
     - Set up Sysinternals Autologon for it; the tool stores the password encrypted. Notes #17 calls auto-logon plus a locked screen an inferred workaround (verify).
     - Add a scheduled task for `hermes`: trigger "At log on", action `rundll32.exe user32.dll,LockWorkStation` (verify).
   - **Power.** Never sleep on AC, and make lid close do nothing on AC (verify):
@@ -226,7 +257,7 @@ A Claude agent runs on the Legion: Claude Code in a terminal for shell and Power
     icacls C:\agent /inheritance:r /grant:r "hermes:(OI)(CI)F" "Administrators:(OI)(CI)F" "SYSTEM:(OI)(CI)F"
     ```
   - Done when: after an untouched reboot, `hermes` signs in automatically and the screen is locked, and the machine shows as connected in the Tailscale admin console.
-  - Needs: D1
+  - Needs: P0.0, D1
   - Automate: `installer/steps/01-host.ps1`; `verify/checks/p0-3-host.ps1`; `docs/SETUP-GUIDE.md#router-and-tailscale`
 
 - [ ] **P0.4 Ollama as a Windows service** [Claude] — The standard installer runs Ollama inside a user session. The documented service route is the standalone `ollama-windows-amd64.zip` with `ollama serve` under NSSM (notes #15).
@@ -243,13 +274,13 @@ A Claude agent runs on the Legion: Claude Code in a terminal for shell and Power
   - Keep the server on localhost: don't set `OLLAMA_HOST`; its default is `127.0.0.1:11434`.
   - Add `D:\ollama\bin` to the `hermes` user's PATH.
   - Done when: after a reboot, `Get-Service Ollama` shows Running and Automatic; `ollama list` (verify) shows every candidate; and `netstat -ano | findstr 11434` shows only `127.0.0.1` (verify).
-  - Needs: D2
+  - Needs: P0.0, D2
   - Automate: `installer/steps/02-ollama.ps1` (model tags from `versions.lock`); `verify/checks/p0-4-ollama.ps1`
 
-- [ ] **P0.5 Docker Desktop** [Claude + you] (you: sign in once as `hermes` and turn on Docker Desktop's autostart, because Claude never works in that account) — Install Docker Desktop from the admin account.
+- [ ] **P0.5 Docker Desktop** [Claude + you] (you: sign in once as `hermes`, apply its privacy settings (P0.3) and turn on Docker Desktop's autostart, because Claude never works in that account) — Install Docker Desktop from the `operator` account.
   - On Windows 11 Home, Docker Desktop runs Linux containers through the WSL 2 backend (notes #17).
   - Add `hermes` to the Docker users group: `net localgroup docker-users hermes /add` (verify).
-  - You: sign in as `hermes` and turn on Settings → General → "Start Docker Desktop when you sign in to your computer". There is no pre-login option (notes #17).
+  - You: sign in as `hermes`, apply its privacy settings (P0.3), and turn on Settings → General → "Start Docker Desktop when you sign in to your computer". There is no pre-login option (notes #17).
   - Pre-pull the sandbox image so the offline benchmark works. After P0.6, read the name with `hermes config get terminal.docker_image`; the docs' example is `nousresearch/hermes-sandbox:desktop` (verify the default). Then run `docker pull <that image>`.
   - Done when: after an unattended reboot, `docker ps` works as `hermes`, and `docker images` lists the sandbox image.
   - Needs: P0.3
@@ -1022,6 +1053,7 @@ Pick the fastest passing candidate. That candidate's hardware result also sets t
   python -m hermes_plivo_voice.unwire                # removes the Plivo wiring; which python: S11
   # then by hand: revoke the OpenRouter key in its dashboard; disable or release the Plivo number
   ```
+- **If the machine is lost or stolen** (the script can't be run there): from another device, revoke the OpenRouter key, disable the Plivo number, revoke both bot tokens with @BotFather (`/revoke` (verify)), rotate the mailbox app password and the GitHub token, remove the machine from the tailnet in the Tailscale admin console, and sign out the Claude session on that device or revoke its access from your Claude account settings (verify where).
 - **If the agent did something unexpected:**
   1. Run the kill switch.
   2. Review `usage-*.jsonl`, `policy-*.jsonl`, `%LOCALAPPDATA%\hermes\logs\` (`agent.log`, `errors.log`, `gateway.log`) and the session history.
@@ -1082,6 +1114,8 @@ The benchmark ships in the package, so preflight + bench = qualification.
 
 **Safe defaults that ship on:** the private profile; email receive-only; the phone off until the user opts in and sets an allowed-destinations list; the approval-policy plugin enabled; spend caps required (the installer asks for them); and no gateway without a Telegram allowlist (the installer refuses to start one).
 
+**Windows accounts.** The three-account layout (§5) is the recommended layout for buyers. The installer creates `hermes`. `operator` is needed only for a Claude-assisted install, and `SETUP-GUIDE.md` explains how to create it (P0.0).
+
 **Versioning and updates:** pin Hermes, Ollama, plugin versions and model tags per release in `versions.lock` (S13 says what Hermes allows). The update script is the P5.2 procedure. Every release ships release notes and a rollback path.
 
 **Third-party components.** Don't bundle third-party binaries. Download them from official sources at install time, with checksums where available. This covers Sysinternals Autologon, NSSM, Ollama, Docker Desktop and Himalaya. cloudflared is fetched by the Plivo plugin itself when no public URL is set (notes #14). The Plivo plugin comes from PyPI via the S11 route.
@@ -1123,7 +1157,8 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | Cost runaway | The brief's cost line; `hermes usage`; a 402 | The OpenRouter key cap; Plivo prepaid; a weekly review | P1.4, P4.1 |
 | "Private" chats still transit Telegram | — | Private means never sent to a cloud *model*; bot chats still pass through Telegram's servers (original §02). Keep the most sensitive material off chat. | P1.6 |
 | Both profiles run as one Windows user | — | Separation rests on Docker mounts and missing keys, not OS permissions; never put private on the `local` backend | S1, S2 |
-| The on-machine Claude oversteps (approves its own action, edits the gate, mishandles a secret) | A Hermes approval answered from the Legion; uncommitted plugin edits | The §4 operating rules; approvals only on your phone; no Telegram login on the Legion; every change committed per task | §4, P2.1 |
+| The on-machine Claude oversteps (approves its own action, edits the gate, mishandles a secret) | A Hermes approval answered from the Legion; uncommitted plugin edits | A separate `operator` account with nothing personal linked; the §4 operating rules; approvals only on your phone; no Telegram login on the Legion; every change committed per task | §4, P0.0, P2.1 |
+| Laptop stolen while `hermes` is auto-logged-in | — | Lock-on-logon; minimal data in `hermes`; from another device, revoke the OpenRouter key, disable the Plivo number, revoke both bot tokens via @BotFather (`/revoke` (verify)), rotate the mailbox app password and the GitHub token, remove the machine from the tailnet in the Tailscale admin console, and sign out the Claude session on that device or revoke its access from your Claude account settings (verify where) (§10). The local kill-switch script can't be run on a stolen machine. | P5.4 |
 | Licensing (Hermes, models, Docker Desktop for businesses) | — | The P6.8 review before any release; D13/D14 | P6.8 |
 | Support burden | A rising volume of buyer questions | `verify.ps1`, the diagnostics bundle, the setup skill, a clear SETUP-GUIDE, a narrow v1 scope | P6.3, P6.4, P6.5 |
 | Hardware variance across buyers | Benchmark failures on buyer machines | Preflight plus the benchmark as qualification; published minimum and recommended specs | P6.2, P1.1 |

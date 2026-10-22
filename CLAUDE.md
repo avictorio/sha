@@ -19,7 +19,10 @@ The build plan and the future distributable package for a hybrid local/cloud per
   3. Note how you checked it in the commit message.
 
 ## Operating rules
-1. **Accounts.** During installs, work in the owner's admin account, never in the `hermes` account. Steps that must run as `hermes` go through a credential prompt the owner fills in once per working session.
+1. **Accounts.** Work only in the `operator` account (local admin, with nothing of the owner's linked). Never work in the owner's account or in `hermes`. Steps that must run as `hermes` go through a credential prompt the owner fills in once per working session.
+   - If you find any personal sign-in in `operator` (Telegram, a personal browser profile, a password manager), stop and tell the owner.
+   - GitHub access is only via the scoped token (PLAN.md P0.0).
+   - P0.0 is the owner's job. If `operator` doesn't exist, you aren't running where you should be: stop and tell the owner.
 2. **Secrets.** The owner types secrets straight into their destination: the password manager, a hidden `Read-Host -AsSecureString` prompt feeding `hermes config set`, or the web form. Never ask for a secret in chat, and never echo or log one.
 3. **Stops.** Stop at CAPTCHAs, identity checks and payments. Hand over, and wait.
 4. **The gate.** Never edit the approval-policy plugin or `approvals.deny` to get past a block you hit. Make only the edits a task calls for (P2.1 step 3, S12), and commit them with that task's ID.
