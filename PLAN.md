@@ -304,7 +304,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
   - Needs: P0.0b, D2
   - Automate: `installer/steps/02-ollama.ps1` (model tags from `versions.lock`); `verify/checks/p0-4-ollama.ps1`
 
-- [ ] **P0.5 Docker Desktop** [Claude + you] (you: sign in once as `hermes`, apply its privacy settings (P0.3) and turn on Docker Desktop's autostart, because Claude never works in that account) — Install Docker Desktop from the `operator` account.
+- [x] **P0.5 Docker Desktop** [Claude + you] (you: sign in once as `hermes`, apply its privacy settings (P0.3) and turn on Docker Desktop's autostart, because Claude never works in that account) — Install Docker Desktop from the `operator` account.
   - On Windows 11 Home, Docker Desktop runs Linux containers through the WSL 2 backend (notes #17).
   - Add `hermes` to the Docker users group: `net localgroup docker-users hermes /add` (verify).
   - You: sign in as `hermes`, apply its privacy settings (P0.3), and turn on Settings → General → "Start Docker Desktop when you sign in to your computer". There is no pre-login option (notes #17).
