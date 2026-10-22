@@ -165,3 +165,32 @@ Claude never works in `hermes`, so the owner does this once:
 4. Lock the screen (Win+L). Don't sign out: that would stop Docker and Hermes.
 
 There is no option to start Docker Desktop before sign-in (notes #17), so Docker depends on `hermes`'s auto-logon.
+
+## telegram-bots
+
+PLAN.md P0.7. The scripted parts are in `installer/steps/05-telegram.ps1` (run elevated, in a visible window) and the checks in `verify/checks/p0-7-telegram.ps1` (run elevated, after an unattended reboot).
+
+### The owner's steps, on the phone
+
+1. **Create the bot.** In Telegram, open **@BotFather** (check the blue verified tick) and send `/newbot`. Give it a display name (e.g. "Hermes") and a username ending in `bot`. BotFather replies with the bot token (`123456789:AA…`). Save it in the password manager as "Hermes Telegram bot token". It is a secret: don't paste it into chat.
+2. **Get your numeric ID.** Open **@userinfobot** and send it any message. It replies with your numeric ID. The ID isn't a secret, but it is personal: it goes into `instance.yaml`/`.env`, never into the repo.
+3. **Open a chat with your bot** (the `t.me/<username>` link BotFather gives) and press **Start**, so the bot can message you.
+
+### Running 05-telegram.ps1
+
+The owner types three things into its prompts:
+- the numeric ID (plain prompt);
+- the bot token (hidden prompt; it goes straight into `hermes`'s `.env`, never on a command line or in a log);
+- the `hermes` password (hidden, for `scripts/invoke-as-hermes.ps1`).
+
+It writes `TELEGRAM_ALLOWED_USERS` and `TELEGRAM_HOME_CHANNEL` before the token. Then, as `hermes`, it installs the Telegram extra (`hermes pm install --extra telegram`) and confirms that Hermes reads the allow-list back. Finally it registers the `Hermes_Gateway` logon task and waits for "telegram connected" in `gateway.log`. `-GatewayOnly` repeats the last steps without the prompts.
+
+**Don't use `hermes gateway install`, and don't follow its "Repair: hermes gateway start" hint.**
+- As a standard user, `gateway install` hangs at a UAC y/N prompt.
+- Our `Hermes_Gateway` task instead runs `C:\agent\bin\start-gateway.ps1`. That guard refuses to start the gateway without `TELEGRAM_ALLOWED_USERS` and logs to `start-gateway.log` in `hermes`'s `logs` folder.
+- `hermes gateway status` flags our task as "predating the current template". That warning is expected. Following its repair hint would replace the guarded task with Hermes's own.
+
+### Checks
+
+- **On the phone:** the bot answers you. A message from a second Telegram account gets no reply, and `gateway.log` shows `[Telegram] Blocked unauthorized user <id>`.
+- **After an unattended reboot:** `verify/checks/p0-7-telegram.ps1` passes, and the bot answers again. Messages sent while the gateway was down are dropped, so send a new one.

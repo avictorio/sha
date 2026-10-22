@@ -53,17 +53,24 @@ print("MERGED")
 `$py = Get-ChildItem (Join-Path `$env:LOCALAPPDATA 'hermes\installs') -Recurse -Filter python.exe -ErrorAction SilentlyContinue |
   Where-Object FullName -match '\\venv\\Scripts\\python\.exe$' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 "PYTHON=`$(`$py.FullName)"
-Copy-Item `$cfg "`$cfg.pre-p0.6.bak" -Force
+Copy-Item `$cfg "`$cfg.pre-configure-`$(Get-Date -Format yyyyMMdd-HHmmss).bak" -Force
 & `$py.FullName '$dir\merge.py' `$cfg '$dir\template.yaml' 2>&1
 "##### config check"; & `$h config check 2>&1
-foreach (`$k in 'model','terminal.backend','terminal.docker_volumes','terminal.docker_image','approvals') { "##### get `$k"; & `$h config get `$k 2>&1 }
+foreach (`$k in 'model','terminal.backend','terminal.docker_volumes','terminal.docker_image','terminal.container_cpu','terminal.container_memory','approvals') { "##### get `$k"; & `$h config get `$k 2>&1 }
 "##### docker pull"
 `$img = ((& `$h config get terminal.docker_image 2>&1) -join '').Trim()
 & "`$env:ProgramFiles\Docker\Docker\resources\bin\docker.exe" pull `$img 2>&1 | Select-Object -Last 3
 "PULLRC=`$LASTEXITCODE IMAGE=`$img"
+# Docker fixes a container's limits at creation and Hermes reuses its persistent container, so remove
+# it; the next command recreates it with the new image and limits (/workspace and /root live on the host).
+"##### recreate sandbox"
+`$dk = "`$env:ProgramFiles\Docker\Docker\resources\bin\docker.exe"
+& `$dk ps -a -q --filter name=^hermes- --filter ancestor=`$img | ForEach-Object { & `$dk rm -f `$_ 2>&1 }
 "##### S1 probe"
 & `$h chat -Q -q 'Use your terminal tool to run exactly these two commands and show their raw output: uname -a ; ls -la /workspace/work' 2>&1 | Select-Object -Last 40
 "CHATRC=`$LASTEXITCODE"
+"##### sandbox limits"
+& `$dk ps -q --filter name=^hermes- --filter ancestor=`$img | ForEach-Object { & `$dk inspect -f 'LIMITS {{.Name}} cpus={{.HostConfig.NanoCpus}} mem={{.HostConfig.Memory}}' `$_ 2>&1 }
 "@
     $r = & (Join-Path $repo 'scripts\invoke-as-hermes.ps1') -Command $cmd -TimeoutSeconds 2400
     $r.Output | ForEach-Object { Write-Host "  $_" }

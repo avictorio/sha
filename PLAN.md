@@ -374,7 +374,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
   - Needs: P0.5
   - Automate: `installer/steps/04-hermes.ps1` (backend choice); `verify/checks/s1-docker-backend.ps1`
 
-- [ ] **P0.7 Telegram** [Claude + you] (you: create the "Hermes" bot with @BotFather and get your numeric ID from @userinfobot on your phone; type the token into the prompt; run the second-account test) — Claude enters the values from hidden prompts:
+- [x] **P0.7 Telegram** [Claude + you] (you: create the "Hermes" bot with @BotFather and get your numeric ID from @userinfobot on your phone; type the token into the prompt; run the second-account test) — Claude enters the values from hidden prompts:
   ```powershell
   hermes config set TELEGRAM_BOT_TOKEN <token>                  # UPPER_SNAKE names go to .env
   hermes config set TELEGRAM_ALLOWED_USERS <your numeric id>
@@ -382,6 +382,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
   hermes gateway install      # logon task Hermes_Gateway (schtasks /SC ONLOGON)
   hermes gateway status
   ```
+  - As built (v0.22.4): `hermes gateway install` hangs at a UAC y/N prompt as standard user `hermes`. So `05-telegram.ps1` writes the keys straight into `.env` (the token from a hidden prompt) and registers `Hermes_Gateway` from `operator`, running the allow-list guard `scripts/start-gateway.ps1`. Don't follow `gateway status`'s "Repair: hermes gateway start" hint (docs/LESSONS.md).
   - Done when: the bot answers you on your phone; a second Telegram account gets no reply; and after an unattended reboot `hermes gateway status` shows it running and the bot answers.
   - Needs: P0.6
   - Automate: `installer/steps/05-telegram.ps1` (refuses to install the gateway without `TELEGRAM_ALLOWED_USERS`); `docs/SETUP-GUIDE.md#telegram-bots`; `verify/checks/p0-7-telegram.ps1`
