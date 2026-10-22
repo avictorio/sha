@@ -391,7 +391,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
 
 Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, and in the private profile right after P1.3 step 1; then P1.3, P1.4; then check P1.5's Done when; then P1.6–P1.8.
 
-- [ ] **S6 Spike — Model tag context lengths** [Claude] — Run `ollama show <tag>` for every D2 candidate and record its native context. The notes have search-index snippets only: 40K for `qwen3:32b` and `qwen3:14b`, a conflicting 256K vs 40K for `qwen3:30b-a3b`, and 128K for `gpt-oss:20b`.
+- [x] **S6 Spike — Model tag context lengths** [Claude] — Run `ollama show <tag>` for every D2 candidate and record its native context. The notes have search-index snippets only: 40K for `qwen3:32b` and `qwen3:14b`, a conflicting 256K vs 40K for `qwen3:30b-a3b`, and 128K for `gpt-oss:20b`.
   - At least 64K: keep the candidate.
   - Under 64K: drop it, or keep it only as a flagged comparison with `ollama_num_ctx: 65536` (notes #6 calls this a quality risk).
   - Not shown by `ollama show`: check the tag's page in the Ollama library.
@@ -1320,7 +1320,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | S3 | Cron `--provider` for local Ollama | | |
 | S4 | Does `hermes backup` cover all profiles? | | |
 | S5 | Plivo transcript output | | |
-| S6 | Context length of each candidate tag | | |
+| S6 | Context length of each candidate tag | From `ollama show` on Ollama 0.40.8: `qwen3:30b-a3b-instruct-2507-q4_K_M` **262144** (qwen3moe, 30.5B; this settles the notes' 256K-vs-40K conflict); `gpt-oss:20b` **131072** (20.9B, MXFP4); `qwen3-coder:30b` **262144** (qwen3moe); `qwen3:32b` **40960**, which is **dropped**: it is below 64K, would need `num_ctx` stretched past its training, and is dense (Muse Glimmer, a dense 30B, ran at 4.7 tok/s here vs 27.3 for the MoE; bench/README.md). The three kept candidates are pinned in `versions.lock` (`model_candidates`, `model_native_context`), checked by `verify/checks/s6-model-context.ps1`. `qwen3:32b` stays pulled but unused. Not a candidate: `muse-glimmer:30b` 131072. | 2026-10-22 |
 | S7 | What AgentMail exposes for forwards and spoofs | | |
 | S8 | AgentMail addressing, keys and lists | | |
 | S9 | Calendar connector choice | | |

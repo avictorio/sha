@@ -38,6 +38,10 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **`Tee-Object` logs lose terminating errors.** The error goes to the host, not through the pipeline. Three runs of the P0.5 check showed nothing after a step that had thrown. **Next:** use `Start-Transcript` for every logged run, as `01-host.ps1` and `02-ollama.ps1` do.
 - **Double quotes inside an argument to a native program are mangled.** `hermes chat -q 'echo "hello from hermes" > …'` reached Hermes as broken arguments (`unrecognized arguments: from hermes > …`), so the model was never asked. Keep prompts free of double quotes, or use `--query-file`.
 - **Unicode output arrives as mojibake** unless the as-`hermes` command sets `[Console]::OutputEncoding` to UTF-8 and `PYTHONIOENCODING=utf-8`. Before that, a check looking for `hermes doctor`'s ✗ marks passed only because it couldn't read any marks at all. Checks now also require the ✓ marks to be present.
+- **`Select-String` and `-match` ignore case by default.** P0.4's GPU check looked for Ollama's start line, `Listening on`. It also matched every model runner's `listening on http://…`, so after the first model load it read the wrong part of the log and reported "no GPU" on a working GPU. Use `-CaseSensitive` and anchor to something distinctive (`msg="Listening on`).
+- **Non-ASCII characters in a script file need a BOM.** PS 5.1 reads a BOM-less `.ps1` as ANSI, so an em dash in a regex silently never matched. Use `[char]0x2014`. The Edit tool also turns a literal `—` back into the dash.
+- **`$Matches` is overwritten by every successful `-match`,** including one nested inside an expression that reads `$Matches`. Copy it first (`$m = $Matches.Clone()`).
+- **Repo files have CRLF line endings,** so a `sed`/`perl` pattern that spans `\n` silently matches nothing. Use the Edit tool.
 - `Get-AppxPackage -Name` and `Get-WindowsOptionalFeature -FeatureName` take one name, not an array.
 - There's no Python on the machine. Don't plan on it for helper scripts.
 
