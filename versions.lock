@@ -11,6 +11,8 @@ model_candidates = qwen3:30b-a3b-instruct-2507-q4_K_M,gpt-oss:20b,qwen3-coder:30
 # S6 (2026-10-22): native context from `ollama show`, as tag@tokens. P1.1 needs at least 65536.
 # Dropped: qwen3:32b@40960 (below 64K; dense, so about half of it would sit in RAM on 12 GB of VRAM).
 model_native_context = qwen3:30b-a3b-instruct-2507-q4_K_M@262144,gpt-oss:20b@131072,qwen3-coder:30b@262144
+# D2 (P1.1, 2026-10-22): no candidate passed the go rule; the owner kept this one for the proof of concept.
+model_default = qwen3:30b-a3b-instruct-2507-q4_K_M
 
 # Hermes Agent installer: the copy read and reviewed on 2026-10-21 (1672 lines). 04-hermes.ps1
 # refuses any other. If upstream changes, review the new copy, then update the hash.

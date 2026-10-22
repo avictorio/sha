@@ -1,0 +1,4 @@
+# Benchmark fixtures and answer keys are byte-exact test data: keep them LF on Windows checkouts too.
+# With CRLF, P1.1 B2 (exact-match expected.txt) and B6 (numeric compare on the last CSV column) break.
+bench/fixtures/** text eol=lf
+bench/answer_keys/** text eol=lf

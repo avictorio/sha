@@ -49,7 +49,7 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 | ID | Decision | Recommended default | Needed by | Your choice |
 |---|---|---|---|---|
 | D1 | Host account | Three Windows accounts (§5): your own Microsoft account (admin), as today; a local admin `operator` where Claude runs, with nothing of yours linked (P0.0a); and a local standard `hermes` that runs the agent, with auto-logon and lock-on-logon. The alternative is two accounts, with Claude in your account (not recommended: computer use would put your personal sessions, including Telegram approvals, within its reach). Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.0a, P0.3 | Default: three accounts (you, `operator`, `hermes`). |
-| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | Default: picked by the P1.1 benchmark; try the qwen3 30B-A3B instruct variant first. |
+| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | **`qwen3:30b-a3b-instruct-2507-q4_K_M`** for the proof of concept (owner, 2026-10-22). No candidate passed P1.1's go rule (best: qwen3-coder 4/7; extra run muse-glimmer:30b 5/7 but 2.6 min per reply); the owner kept the current model rather than switch, to revisit with better hardware. Scores: `bench/scores.csv`. |
 | D3 | Privacy model | Two profiles: `default` (hybrid) and `private` (local-only). The alternative is one profile and discipline. | P1.3 | |
 | D4 | Email provider | AgentMail Free: an API-first mailbox with inbox-scoped, permission-limited keys, allow/block lists and an MCP server; up to 3 inboxes on `@agentmail.to` (verify), no custom domain (§7; AM1, AM2, AM11). Alternatives: an IMAP provider such as Fastmail on a custom domain (plus-addressing, catch-all, IMAP app passwords); or a dedicated Gmail account, whose app password needs 2-Step Verification. | P0.2 | AgentMail, Free plan, on `@agentmail.to`, no custom domain (notes #20). |
 | D5 | Initial email designations | Two inboxes: main (`travel`, `receipts`, `brief`, `private`, designated by sender domain or a subject tag) and otp (yours only; Hermes has no key for it). The Free plan's third inbox stays reserved (§7). | P2.2 | Main + otp, third reserved; designation by sender domain and subject tags. Approved 2026-10-22, replacing "a single address for everything". |
@@ -415,7 +415,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P0.6
   - Automate: `bench/isolate.ps1` (`-On` / `-Off`)
 
-- [ ] **P1.1 Run the benchmark** [Claude] — Follow [bench/README.md](bench/README.md):
+- [x] **P1.1 Run the benchmark** [Claude] — Follow [bench/README.md](bench/README.md):
   - Isolate Hermes per S14.
   - Drive `hermes chat` from the local Claude Code session. Telegram is cut off too. Computer use can't type into terminals (§4), so if Hermes has no non-interactive mode (none is in the notes (verify)), pipe each prompt in from the shell (verify).
   - Seven tasks, three runs each, timed from timestamps, recorded in `bench/scores.csv`.
@@ -423,6 +423,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - If a Hermes approval prompt appears, answer no (§4).
   - Done when: `bench/scores.csv` has 21 rows per candidate; D2 is filled in, or revised per §9; and the isolation is removed (`bench/isolate.ps1 -Off`).
   - Needs: P0.6, S6, S14
+  - As built (2026-10-22): `bench/run-bench.ps1` (elevated) stages the fixtures and runs `bench/runner.ps1` as `hermes`, inside `isolate.ps1 -On/-Off`. B2 and B6 were re-run after the fixtures turned out to be CRLF on the Windows checkout (now pinned LF in `.gitattributes`). Tasks passed of 7: qwen3-instruct 2, gpt-oss 3 (and 41 s per reply), qwen3-coder 4; extra, at the owner's request, muse-glimmer:30b 5 (2.6 min per reply, B3 20 min). No GO. D2: the owner kept qwen3-instruct for the proof of concept, to revisit with better hardware.
   - Automate: `bench/` (prompts, fixtures, answer keys, `isolate.ps1`, `scores.csv`); `versions.lock` (the chosen tag)
 
 - [ ] **P1.2 Set the chosen model** [Claude] —
