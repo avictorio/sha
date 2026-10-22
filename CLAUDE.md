@@ -22,7 +22,7 @@ The build plan and the future distributable package for a hybrid local/cloud per
   3. Note how you checked it in the commit message.
 
 ## Operating rules
-1. **Accounts.** Work only in the `operator` account (local admin, with nothing of the owner's linked). Never work in the owner's account or in `hermes`. Steps that must run as `hermes` go through a credential prompt the owner fills in once per working session.
+1. **Accounts.** Work only in the `operator` account (local admin, with nothing of the owner's linked). Never work in the owner's account or in `hermes`. Steps that must run as `hermes` go through `scripts/invoke-as-hermes.ps1` (elevated): the owner types the `hermes` password at its hidden prompt, and it runs the step as a one-shot scheduled task that is deleted afterwards. `Start-Process -Credential` and `runas` don't work on this machine (docs/LESSONS.md).
    - Allowed in `operator`: admin sign-ins for the agent's own infrastructure accounts (registrar, mail provider, OpenRouter, Plivo, the Tailscale device login), in `operator`'s browser profile. The owner types the password or 2FA; ask the owner to sign out when the task is done.
    - Never in `operator` (personal): the owner's everyday accounts, such as personal email, banking, social media, the owner's GitHub and Telegram, or a personal browser profile or password manager. If you find one signed in there, stop and tell the owner.
    - GitHub access is only via this repo's deploy key (PLAN.md P0.0b).
