@@ -12,6 +12,8 @@ terminal:
   container_persistent: true          # default: /root and /workspace persist on the host
   docker_mount_cwd_to_workspace: false
   docker_volumes: ["C:/agent/workspace:/workspace/work"]
+  container_cpu: 8                    # Hermes default 1; the Legion has 32 threads (Ollama runs outside)
+  container_memory: 16384             # MB; Hermes default 5120. Docker's WSL VM gets 31 GB
 approvals:
   mode: manual          # smart would ask an auxiliary LLM to decide
   timeout: 300          # fails closed on timeout
