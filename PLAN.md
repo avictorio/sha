@@ -562,7 +562,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P1.3
   - Automate: `scripts/backup.ps1` (per-profile logic)
 
-- [ ] **P1.7 Nightly encrypted backup** [Claude + you] (you: choose the passphrase, type it into its file, and store a copy in your password manager) — `hermes backup` is safe while Hermes runs and exits 1 if the archive is incomplete. It contains `.env` and `auth.json` (so encrypt it), excludes browser profiles and models, and doesn't cover `C:\agent`. The 7-Zip flags below are general knowledge (verify):
+- [x] **P1.7 Nightly encrypted backup** [Claude + you] (you: choose the passphrase, type it into its file, and store a copy in your password manager) — `hermes backup` is safe while Hermes runs and exits 1 if the archive is incomplete. It contains `.env` and `auth.json` (so encrypt it), excludes browser profiles and models, and doesn't cover `C:\agent`. The 7-Zip flags below are general knowledge (verify):
   ```powershell
   # C:\agent\bin\backup.ps1
   $ts = Get-Date -Format yyyyMMdd-HHmm
@@ -583,6 +583,17 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: an encrypted `.7z` exists in `D:\backups`; it won't list or extract without the passphrase; and with it, it shows `config.yaml`, `state.db` and the private profile's files.
   - Needs: S4, D10
   - Automate: `scripts/backup.ps1`; `installer/steps/09-backup.ps1` (scheduled task); `verify/checks/p1-7-backup.ps1`
+  - Done (2026-10-22). `09-backup.ps1`:
+    - installs 7-Zip 26.05 (winget, hash verified);
+    - restricts `D:\backups` to SYSTEM, Administrators and hermes;
+    - sets the passphrase file's ACL (hermes R) before writing the passphrase the owner typed;
+    - registers `Agent_Backup` (daily 03:30, as hermes, `StartWhenAvailable`) and runs it once.
+  - The first run wrote `hermes-20261022-1448.7z` (7.2 MB) in about 3 s. `p1-7-backup.ps1` passes 14/14:
+    - a wrong passphrase can neither list nor extract it (7z exit 2);
+    - with the passphrase it lists the inner `hermes backup` zip plus `workspace`, `private` and `shared`;
+    - the inner zip has `config.yaml`, `state.db`, `profiles/private/config.yaml`, `profiles/private/state.db` and `memories/USER.md`.
+  - As built: 7-Zip archives `C:\agent` directly with `-ssw` instead of `Compress-Archive`, which fails on files held open, such as the usage logs.
+  - Still open: the weekly offsite copy. D10's target is the owner's choice, pending.
 
 - [ ] **S3 Spike — Can cron `--provider` name the local Ollama provider?** [Claude] — There's no `--base-url` flag, and whether a `providers:` entry works with `--provider` is untested (F6).
   1. Try a test job with `--provider custom`.

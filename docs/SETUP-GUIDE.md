@@ -252,3 +252,14 @@ PLAN.md P1.6. The rule: **if you wouldn't send it to a cloud provider, tell it t
 1. **Default bot.** Send the cloud-OK facts from `config/templates/USER.default.md`, with your values filled in: "Please remember these facts about me in your user profile: …". Hermes writes them to `%LOCALAPPDATA%\hermes\memories\USER.md` in its own format. That's safer than editing the file by hand.
 2. **Private bot.** Tell it anything personal (health, finances) directly, and only there.
 3. **Check (Done when).** Ask each bot "what do you know about me?". The default bot lists only the cloud-OK facts, and the private bot knows only what you told it.
+
+## backup
+
+PLAN.md P1.7. `installer/steps/09-backup.ps1` (elevated) sets up the nightly encrypted backup: `Agent_Backup` runs `C:\agent\bin\backup.ps1` as hermes at 03:30 and writes `D:\backups\hermes-<time>.7z`, keeping 14 days. The log is `C:\agent\shared\logs\backup.log`.
+
+- **The passphrase.** You choose it at a hidden prompt; 12 or more characters, no double quotes. Keep a copy in the password manager. It's stored on the machine in `C:\agent\bin\backup-passphrase.txt`, readable by hermes and admins only, because the unattended task needs it. Losing it means the backups can't be opened. `-NewPassphrase` replaces it, and older archives keep the old one.
+- **Restore.**
+  1. Open the `.7z` with 7-Zip and the passphrase.
+  2. `hermes import hermes-<time>.zip` (as hermes) restores Hermes, both profiles included.
+  3. Copy `workspace`, `private` and `shared` back to `C:\agent`.
+- **Check.** `verify/checks/p1-7-backup.ps1` (elevated) proves the newest archive is locked without the passphrase and complete with it.

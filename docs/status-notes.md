@@ -8,4 +8,5 @@
 - Known issue: scheduled jobs for both profiles currently run in the private bot's process (to settle before P1.8).
 - Cost: about 5–9 cents per simple message to the default bot (13,000–22,000 tokens of context each). Spend shows at openrouter.ai/activity.
 - Email (Phase 2): one inbox per bot, plus one for login codes.
+- Backups (P1.7, done): nightly at 03:30, encrypted with the owner's passphrase, to the laptop's second drive, 14 days kept. Offsite copy not yet chosen.
 - Not set up yet: email (Phase 2), calendar (P2.5), browser (Phase 3), phone (Phase 4).
