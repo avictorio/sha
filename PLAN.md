@@ -313,7 +313,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
   - Needs: P0.3
   - Automate: `installer/steps/03-docker.ps1`; `docs/SETUP-GUIDE.md#docker-autostart`; `verify/checks/p0-5-docker.ps1`
 
-- [ ] **P0.6 Install Hermes (as `hermes`)** [Claude] — No admin rights are needed (notes #1). Run this as `hermes` through the session credential (§4). Use the stable channel:
+- [x] **P0.6 Install Hermes (as `hermes`)** [Claude] — No admin rights are needed (notes #1). Run this as `hermes` through the session credential (§4). Use the stable channel:
   ```powershell
   & ([scriptblock]::Create((irm https://hermes-agent.nousresearch.com/install.ps1))) -NonInteractive -Channel stable
   hermes setup          # model section: choose "Custom endpoint"

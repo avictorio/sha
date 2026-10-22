@@ -1,0 +1,40 @@
+# config/templates/default.config.yaml -- PLAN.md P0.6: the default (hybrid) profile's settings.
+# installer/steps/04-hermes.ps1 -Configure deep-merges this into %LOCALAPPDATA%\hermes\config.yaml
+# (as hermes), keeping every other key and comment; lists here replace the lists there.
+model:
+  default: qwen3:30b-a3b-instruct-2507-q4_K_M   # first D2 candidate (versions.lock); final choice in P1.2
+  provider: custom
+  base_url: http://localhost:11434/v1
+  context_length: 65536               # must be >= 64000 or Hermes refuses to start
+  ollama_num_ctx: 65536               # the window the local server actually serves
+terminal:
+  backend: docker
+  container_persistent: true          # default: /root and /workspace persist on the host
+  docker_mount_cwd_to_workspace: false
+  docker_volumes: ["C:/agent/workspace:/workspace/work"]
+approvals:
+  mode: manual          # smart would ask an auxiliary LLM to decide
+  timeout: 300          # fails closed on timeout
+  cron_mode: deny
+  unattended_mode: deny
+  deny:                 # globs, enforced on ALL backends, even under /yolo
+    - "git push --force*"
+    - "rm -rf /"
+    - "rm -rf /*"
+    - "rm -rf ~*"
+    - "mkfs*"
+    - "dd if=*"
+    - "*himalaya message send*"
+    - "*himalaya message reply*"
+    - "*himalaya message forward*"
+    - "*himalaya message write*"
+    - "*himalaya template send*"
+    - "*agentmail inboxes messages send*"       # AgentMail CLI send paths (AM9)
+    - "*agentmail inboxes messages reply*"      # also matches reply-all
+    - "*agentmail inboxes messages forward*"
+    - "*agentmail inboxes drafts*"
+    - "*agentmail inboxes:messages send*"       # the colon form the Hermes skill writes (verify which the CLI accepts)
+    - "*agentmail inboxes:messages reply*"
+    - "*agentmail inboxes:messages forward*"
+    - "*agentmail inboxes:drafts*"
+    - "*agentmail agent *"                      # sign-up / attach-human send OTP mail
