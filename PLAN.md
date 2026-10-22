@@ -545,13 +545,14 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Progress (2026-10-22): installed in the **default** profile by `08-plugins.ps1 -Profile default`, with `p1-5-usage-log.ps1` 8/8 PASS. A test chat logged one line: profile `default`, model `qwen3-coder:30b`, `base_url` `http://localhost:11434/v1`, `local: true`, tokens and duration in seconds. `hermes plugins enable` also reloads plugins into the running gateway. Still to do: `-Profile private` right after P1.3 step 1, and the per-bot checks in P1.3/P1.4. Input tokens read 1 on a cached prompt (check this on a real turn).
 - Done (2026-10-22): installed in the private profile too (`08-plugins.ps1 -Profile private`, 8/8). Telegram calls were logged per bot, with `profile` matching the bot. Default: `meta/muse-wonder`, openrouter, `"local": false`. Private: 5 calls, `qwen3-coder:30b`, `"local": true`. `usage-private.jsonl` has no `"local": false` line, including during the P1.3 Ollama-stop test. Each profile has its own gateway (`gateway.standalone`), so no per-copy `PROFILE` was needed.
 
-- [ ] **P1.6 Seed memory** [You] — The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
+- [x] **P1.6 Seed memory** [You] — The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
   - Default profile: facts that are fine to send to a cloud provider (name, time zone, preferences, home airport). Claude can format these into `%LOCALAPPDATA%\hermes\memories\USER.md` from your list.
   - Private profile: health, finances and anything personal. Only you tell these, directly to the private bot.
   - Option: if the default profile should carry no memory at all, set `memory.memory_enabled: false` and `memory.user_profile_enabled: false` there (F2).
   - Done when: asked "what do you know about me?", the default bot lists only the cloud-OK facts, and the private bot knows the private facts.
   - Needs: P1.3
   - Automate: `config/templates/USER.default.md` (placeholders only); `docs/SETUP-GUIDE.md#seed-memory`
+- Done (2026-10-22). The owner asked the default bot to remember the facts. Muse Wonder replied as if it had, but wrote no `USER.md`: the folder held only the Phase 0 `MEMORY.md`. So Claude wrote the owner's cloud-OK facts (name and time zone) with `scripts/seed-user-memory.ps1`, as hermes, from a filled-in copy kept outside the repo. After `/new`, the default bot named them and the private bot didn't know the time zone. The private bot does know the owner's name, but from Telegram's sender metadata: its `memories` folder is empty.
 
 - [ ] **S4 Spike — Does `hermes backup` cover all profiles?** [Claude] — Notes #13 lists `profiles/<name>/` under "what to back up", but doesn't say the command includes it. Run `hermes backup -o C:\agent\backup-stage\test.zip` and look for `profiles\private\` in the zip.
   - It's there: one command is enough.

@@ -244,3 +244,11 @@ PLAN.md P1.4, D9. The default profile runs **cloud-first**, which is §9's rule 
 ### Costs to watch
 
 Hermes sends about 13,000 tokens of context with even a one-word message, which costs Muse Wonder about 5¢. Auxiliary tasks also run on the main model (`auxiliary.*.provider: auto`): titles, compression and vision. So do subagents (`delegation.model` is empty, so they inherit the main model). Check spend at openrouter.ai/activity in the first week. Moving the auxiliary tasks to the local model is a later tuning step.
+
+## seed-memory
+
+PLAN.md P1.6. The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.** The default bot is cloud-first, so its memory goes to OpenRouter with every message.
+
+1. **Default bot.** Send the cloud-OK facts from `config/templates/USER.default.md`, with your values filled in: "Please remember these facts about me in your user profile: …". Hermes writes them to `%LOCALAPPDATA%\hermes\memories\USER.md` in its own format. That's safer than editing the file by hand.
+2. **Private bot.** Tell it anything personal (health, finances) directly, and only there.
+3. **Check (Done when).** Ask each bot "what do you know about me?". The default bot lists only the cloud-OK facts, and the private bot knows only what you told it.

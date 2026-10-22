@@ -96,6 +96,7 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **An unknown OpenRouter model returns 400 "not a valid model ID"**, not 404. Hermes still falls back to the local model at once.
 - **Pasting into a hidden `Read-Host -AsSecureString` prompt:** Ctrl+V can fail without any sign. Right-click to paste.
 - **A `-NoExit` window that stopped on an error keeps its transcript file open.** Use a new `-LogPath` for each run.
+- **A cloud model can say "I'll remember that" and save nothing.** Muse Wonder confirmed it had saved the owner's facts, but no `USER.md` was written. Check the memories folder, not the reply. Also, Telegram passes the sender's display name to every bot, so "it knows my name" doesn't mean it has memory.- **PowerShell variable names ignore case.** `$force = '…'` reassigns the `[switch]$Force` parameter ("Cannot convert value System.String to … SwitchParameter").
 - **P0.5's sandbox image depends on P0.6** (`hermes config get terminal.docker_image`), so P0.5 can't be ticked until after P0.6. **Next:** move that Done-when item into P0.6.
 
 ## Plan and process
