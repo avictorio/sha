@@ -1053,7 +1053,7 @@ Pick the fastest passing candidate. That candidate's hardware result also sets t
   python -m hermes_plivo_voice.unwire                # removes the Plivo wiring; which python: S11
   # then by hand: revoke the OpenRouter key in its dashboard; disable or release the Plivo number
   ```
-- **If the machine is lost or stolen** (the script can't be run there): from another device, revoke the OpenRouter key, disable the Plivo number, revoke both bot tokens with @BotFather (`/revoke` (verify)), and rotate the mailbox app password and the GitHub token.
+- **If the machine is lost or stolen** (the script can't be run there): from another device, revoke the OpenRouter key, disable the Plivo number, revoke both bot tokens with @BotFather (`/revoke` (verify)), rotate the mailbox app password and the GitHub token, remove the machine from the tailnet in the Tailscale admin console, and sign out the Claude session on that device or revoke its access from your Claude account settings (verify where).
 - **If the agent did something unexpected:**
   1. Run the kill switch.
   2. Review `usage-*.jsonl`, `policy-*.jsonl`, `%LOCALAPPDATA%\hermes\logs\` (`agent.log`, `errors.log`, `gateway.log`) and the session history.
@@ -1158,7 +1158,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | "Private" chats still transit Telegram | — | Private means never sent to a cloud *model*; bot chats still pass through Telegram's servers (original §02). Keep the most sensitive material off chat. | P1.6 |
 | Both profiles run as one Windows user | — | Separation rests on Docker mounts and missing keys, not OS permissions; never put private on the `local` backend | S1, S2 |
 | The on-machine Claude oversteps (approves its own action, edits the gate, mishandles a secret) | A Hermes approval answered from the Legion; uncommitted plugin edits | A separate `operator` account with nothing personal linked; the §4 operating rules; approvals only on your phone; no Telegram login on the Legion; every change committed per task | §4, P0.0, P2.1 |
-| Laptop stolen while `hermes` is auto-logged-in | — | Lock-on-logon; minimal data in `hermes`; from another device, revoke the OpenRouter key, disable the Plivo number, revoke both bot tokens via @BotFather (`/revoke` (verify)), and rotate the mailbox app password and the GitHub token (§10). The local kill-switch script can't be run on a stolen machine. | P5.4 |
+| Laptop stolen while `hermes` is auto-logged-in | — | Lock-on-logon; minimal data in `hermes`; from another device, revoke the OpenRouter key, disable the Plivo number, revoke both bot tokens via @BotFather (`/revoke` (verify)), rotate the mailbox app password and the GitHub token, remove the machine from the tailnet in the Tailscale admin console, and sign out the Claude session on that device or revoke its access from your Claude account settings (verify where) (§10). The local kill-switch script can't be run on a stolen machine. | P5.4 |
 | Licensing (Hermes, models, Docker Desktop for businesses) | — | The P6.8 review before any release; D13/D14 | P6.8 |
 | Support burden | A rising volume of buyer questions | `verify.ps1`, the diagnostics bundle, the setup skill, a clear SETUP-GUIDE, a narrow v1 scope | P6.3, P6.4, P6.5 |
 | Hardware variance across buyers | Benchmark failures on buyer machines | Preflight plus the benchmark as qualification; published minimum and recommended specs | P6.2, P1.1 |
