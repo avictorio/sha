@@ -1,6 +1,7 @@
-# installer/steps/00-operator.ps1 -- PLAN.md P0.0b, steps 1-3 (tools + deploy key)
+# installer/steps/00-operator.ps1 -- PLAN.md P0.0b, steps 1-3 (tool check + deploy key)
 # Run in the `operator` account, in Windows PowerShell (not as another user).
-# It installs Git for Windows and Claude Code, then creates the repo deploy key
+# It checks that Git for Windows and Claude Code are on PATH (the owner installs
+# both in P0.0a; this script installs nothing), then creates the repo deploy key
 # and the github-sha SSH alias, and prints the PUBLIC key. Idempotent: safe to re-run.
 # The privacy settings (step 2) were applied through Windows Settings; see
 # docs/SETUP-GUIDE.md#operator-account.
@@ -25,25 +26,21 @@ function Refresh-Path {
               "$HOME\.local\bin"
 }
 
-# --- 1a. Git for Windows ------------------------------------------------------
+# --- 1a. Git for Windows (installed in P0.0a; check only) ---------------------
 Step "Git for Windows"
 Refresh-Path
 if (Get-Command git -ErrorAction SilentlyContinue) {
-  Write-Host "already installed: $(git --version)"
+  Write-Host "found: $(git --version)"
 } else {
-  winget install --id Git.Git -e --source winget
-  Refresh-Path
-  git --version
+  throw "git not found on PATH. The owner installs Git for Windows in P0.0a (PLAN.md; docs/SETUP-GUIDE.md#git-for-windows). Stop and hand back to the owner."
 }
 
-# --- 1b. Claude Code (native installer) ---------------------------------------
+# --- 1b. Claude Code (installed in P0.0a; check only) -------------------------
 Step "Claude Code"
 if (Get-Command claude -ErrorAction SilentlyContinue) {
-  Write-Host "already installed: $(claude --version)"
+  Write-Host "found: $(claude --version)"
 } else {
-  irm https://claude.ai/install.ps1 | iex     # official native Windows install (verify)
-  Refresh-Path
-  claude --version
+  throw "claude not found on PATH. The owner installs Claude Code in P0.0a (PLAN.md; docs/SETUP-GUIDE.md#claude-code). Stop and hand back to the owner."
 }
 
 # --- 3. Deploy key + SSH config -----------------------------------------------
