@@ -57,7 +57,7 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 | D7 | Secret store for API keys | `.env` for the MVP; in Phase 3, whichever of Bitwarden or 1Password you already use. | P3.4 | |
 | D8 | Telephony | The Plivo plugin. The alternative is the official Twilio + Vapi `telephony` skill (outbound only). | P4.1 | |
 | D9 | Cloud escalation model + monthly OpenRouter key cap | Your choice. Start small, e.g. $20–30/month with a monthly reset. | P1.4 | **`meta/muse-wonder`** as the default profile's `model.default` (cloud-first, §9), falling back to the local D2 model when the cloud fails or the key is exhausted; **$50/month** key limit with a monthly reset (owner, 2026-10-22). Escalation for hard tasks: `/model` to any OpenRouter model, under the same key. OpenRouter privacy: training off; "Zero Data Retention only" off, because it excludes Muse Wonder (owner, 2026-10-22). |
-| D10 | Backup targets | Nightly, encrypted, to the second SSD (`D:\backups`), plus a weekly offsite copy. | P1.7 | |
+| D10 | Backup targets | Nightly, encrypted, to the second SSD (`D:\backups`), plus a weekly offsite copy. | P1.7 | **Nightly to `D:backups` only, for the MVP** (owner, 2026-10-22). The weekly offsite copy moves to the Later backlog (§14) and is to be closed after the MVP. |
 | D11 | Purchases | All approve-first, with no saved payment methods on sites. Store a card in the vault: yes / no. | P3.3 | |
 | D12 | v1 platform scope | Windows 11 + an NVIDIA GPU at or above the benchmarked minimum (§11). | P6.2 | |
 | D13 | How it's offered | A free/open repo, a paid package, or a set-up service. This affects licensing and support. | P6.8 | |
@@ -593,7 +593,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
     - with the passphrase it lists the inner `hermes backup` zip plus `workspace`, `private` and `shared`;
     - the inner zip has `config.yaml`, `state.db`, `profiles/private/config.yaml`, `profiles/private/state.db` and `memories/USER.md`.
   - As built: 7-Zip archives `C:\agent` directly with `-ssw` instead of `Compress-Archive`, which fails on files held open, such as the usage logs.
-  - Still open: the weekly offsite copy. D10's target is the owner's choice, pending.
+  - The weekly offsite copy is deferred past the MVP (owner, D10). It is in the §14 Later backlog.
 
 - [ ] **S3 Spike — Can cron `--provider` name the local Ollama provider?** [Claude] — There's no `--base-url` flag, and whether a `providers:` entry works with `--provider` is untested (F6).
   1. Try a test job with `--provider custom`.
@@ -1335,6 +1335,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | A custom domain (AgentMail Developer tier), so you own the address | You want the address to outlive AgentMail, or the Free limits pinch |
 | Agent Armor hold mode: mail flagged `review` is held until you release it (AM6, verify) | Agent Armor is out of Labs, or a flagged email gets past triage |
 | Automated email-OTP retrieval | Relaying codes is a daily chore, and those sites lack TOTP |
+| **Post-MVP, to close:** a weekly offsite copy of the newest `D:backups*.7z` (D10). Pick the target (a USB drive or a cloud folder; the archives are already encrypted), then add it to `scripts/backup.ps1` or a weekly task | Right after the MVP (Phase 2) is in daily use; at the latest before P5.5's backlog review |
 | Spend-cap auto-approval for purchases | A month of approve-first purchases with no rejections |
 | Cloud browser backend for parallel or throwaway sessions | Research needs several browsers at once |
 | Chat-by-email via the email gateway (`EMAIL_ALLOWED_USERS`) | You want to reach the agent from a device without Telegram |
