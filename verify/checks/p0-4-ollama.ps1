@@ -49,7 +49,8 @@ Record 'models-on-D' ($blobs.Sum -gt 1GB) ("{0:N1} GB in D:\ollama\models" -f ($
 
 # --- GPU (not in PLAN.md's Done-when, but the benchmark is meaningless without it) ---
 Step "GPU"
-$since = Get-Content $log | Select-String 'Listening on' | Select-Object -Last 1
+# Case-sensitive, Ollama's own line: each loaded model's runner also logs "listening on http://...".
+$since = Get-Content $log | Select-String -CaseSensitive 'msg="Listening on' | Select-Object -Last 1
 $tail  = Get-Content $log | Select-Object -Skip ($since.LineNumber - 1)
 $gpuFail = $tail | Select-String 'failure during llama-server GPU discovery'
 $gpuOk   = $tail | Select-String 'inference compute' | Where-Object { $_ -match 'cuda|CUDA' }

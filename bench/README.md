@@ -26,14 +26,12 @@ This benchmark decides **D2**, the single local model both profiles use. It runs
    foreach ($k in $times.Keys) { (Get-Item (Join-Path $d $k)).LastWriteTime = [datetime]$times[$k] }
    ```
    Check once that `ls -lt /workspace/work/bench/fixtures/newest` in the sandbox shows `draft-letter.txt` first. Times should carry through the bind mount (verify). If they don't, set them inside the container with `touch -d`.
-4. **Isolate Hermes from the network** (PLAN.md S14). The on-machine Claude can't run this with Wi-Fi off, because that would cut its own connection. So block only Hermes. The rule's shape, the loopback behaviour and the Hermes executable path are all (verify):
+4. **Isolate Hermes from the network** (PLAN.md S14, verified 2026-10-22). The on-machine Claude can't turn Wi-Fi off, because that would cut its own connection, so it blocks only Hermes. In an elevated PowerShell:
    ```powershell
-   New-NetFirewallRule -DisplayName "bench-block-hermes" -Direction Outbound -Action Block -Program "<Hermes exe path>"
-   hermes config set terminal.docker_network false      # sandbox gets --network=none (notes F4)
-   # when done:
-   Remove-NetFirewallRule -DisplayName "bench-block-hermes"; hermes config set terminal.docker_network true
+   bench\isolate.ps1 -On     # before the first run
+   bench\isolate.ps1 -Off    # after the last run (also restarts the Telegram gateway)
    ```
-   Check that `hermes chat` still answers from Ollama on `127.0.0.1`, and that asking the agent to fetch a web page fails. S14 turns this into `bench/isolate.ps1 -On / -Off`. **Fallback, if S14 finds no reliable isolation:** you turn Wi-Fi off, unplug Ethernet, and run the suite yourself at the Legion's keyboard. Telegram and Tailscale are cut off either way, so every task runs in `hermes chat` on the box.
+   `-On` adds outbound firewall block rules (group `hermes-bench`) on every program Hermes runs as. The real worker is `%LOCALAPPDATA%\hermes\tools\python-<ver>\python.exe`; `hermes.exe` is only a launcher. `-On` also sets `TERMINAL_DOCKER_NETWORK=false` in `hermes`'s `.env` and removes the sandbox, so it comes back with `--network=none`. Loopback is unaffected, so Hermes still reaches Ollama on `127.0.0.1`. `hermes chat` runs through the gateway process, which can't reach Telegram while isolated, so Telegram is down for the whole run. `verify/checks/s14-isolation.ps1` proves all of this end to end and ends with `-Off`. **Fallback, if the check ever fails:** you turn Wi-Fi off, unplug Ethernet, and run the suite yourself at the Legion's keyboard.
 5. **Select the candidate.** Run `hermes config set model.default <tag>`, then open `hermes chat`. In a second window, run `ollama ps`: CONTEXT should be 65536. Note the PROCESSOR split (CPU/GPU %) in `notes`.
 6. **Each run:**
    - Start a fresh session (`/new`, or exit and reopen `hermes chat`) and paste the prompt exactly.
@@ -147,6 +145,21 @@ A candidate is **GO** if all three hold:
 - The default profile runs **cloud-first**: `model.default` is the D9 cloud model, still under the OpenRouter key cap.
 - Re-run the benchmark when a new local model you want to try appears.
 
+## Results: P1.1 on the Legion (2026-10-22)
+
+Full rows in `scores.csv`. B2 and B6 come from a re-run with LF fixtures (see `.gitattributes`); the rest from the first run.
+
+| Model | Tasks passed (2 of 3 runs) | B1+B5 median | B3 median | Verdict |
+|---|---|---|---|---|
+| `qwen3:30b-a3b-instruct-2507-q4_K_M` | 2/7: B1, B4 | 8 s | 47 s | No GO |
+| `gpt-oss:20b` | 3/7: B1, B3, B7 | 41.5 s | 137 s | No GO |
+| `qwen3-coder:30b` | 4/7: B1, B4, B6, B7 | 9 s | 25 s | No GO |
+| `muse-glimmer:30b` (extra run at the owner's request) | 5/7: B1, B2, B3, B6, B7 | 154.5 s | 1199 s | No GO (speed) |
+
+- What failed: B5 (calendar) for all four, with the recurring standup and the UTC-stored call most often missed. B3's first line or file set for the qwen models. B2 for all but Glimmer. B6's "say which file you used" for most.
+- B4: the three fast models read only the start of the document (their summaries cover the opening pages). Glimmer summarized the whole story but half-answered two-part questions.
+- D2: the owner chose `qwen3-coder:30b` for the proof of concept and will revisit with better hardware. Glimmer's quality is close to the bar; on a GPU that holds it entirely in VRAM it may pass.
+
 ## Screening a new model first: `speed-probe.ps1`
 
 Before giving a newly released model a full run, screen it with `bench/speed-probe.ps1 -Models <tag>[,<tag>]`. It asks Ollama directly (not through Hermes) for:
@@ -161,7 +174,7 @@ Results on the Legion (RTX 4080 Laptop GPU, 12 GB; 64 GB RAM; Ollama 0.40.8; 64K
 
 | Model | Native ctx | CPU/GPU | Writing, tok/s | Prompt reading, tok/s | Tool calls | Verdict |
 |---|---|---|---|---|---|---|
-| `qwen3:30b-a3b-instruct-2507-q4_K_M` (MoE, ~3B active) | 262144 | 53%/47% | 27.3 | 458 | 3/3 | Current default; full run in P1.1 |
-| `muse-glimmer:30b` (Meta, dense, Q4_K_M, 18 GB) | 131072 | 48%/52% | 4.7 | 131 | 3/3 | **Screened out.** About 6x slower: a 300-word reply takes about 1.5 min, so it can't meet the 30 s go rule on 12 GB of VRAM. Worth re-testing on a 24 GB+ GPU, where it fits entirely in VRAM. |
+| `qwen3:30b-a3b-instruct-2507-q4_K_M` (MoE, ~3B active) | 262144 | 53%/47% | 27.3 | 458 | 3/3 | Full run in P1.1: 2/7 |
+| `muse-glimmer:30b` (Meta, dense, Q4_K_M, 18 GB) | 131072 | 48%/52% | 4.7 | 131 | 3/3 | **Screened out**, then given a full run anyway (see Results: 5/7, too slow). About 6x slower: a 300-word reply takes about 1.5 min, so it can't meet the 30 s go rule on 12 GB of VRAM. Worth re-testing on a 24 GB+ GPU, where it fits entirely in VRAM. |
 
 `muse-glimmer:30b` stays pulled (18 GB on D:). The owner may use it later in a hybrid setup: qwen3 by default, Glimmer for a few tasks where its quality is worth the wait. The two models don't fit in VRAM together, so switching evicts the other model (about 10 s to reload). That makes Glimmer a better fit for slow, non-interactive work, such as cron jobs or overnight runs, than for chat replies. Benchmark it on those tasks first.

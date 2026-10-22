@@ -49,14 +49,14 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 | ID | Decision | Recommended default | Needed by | Your choice |
 |---|---|---|---|---|
 | D1 | Host account | Three Windows accounts (§5): your own Microsoft account (admin), as today; a local admin `operator` where Claude runs, with nothing of yours linked (P0.0a); and a local standard `hermes` that runs the agent, with auto-logon and lock-on-logon. The alternative is two accounts, with Claude in your account (not recommended: computer use would put your personal sessions, including Telegram approvals, within its reach). Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.0a, P0.3 | Default: three accounts (you, `operator`, `hermes`). |
-| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | Default: picked by the P1.1 benchmark; try the qwen3 30B-A3B instruct variant first. |
-| D3 | Privacy model | Two profiles: `default` (hybrid) and `private` (local-only). The alternative is one profile and discipline. | P1.3 | |
+| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | **`qwen3-coder:30b`** for the proof of concept (owner, 2026-10-22). No candidate passed P1.1's go rule; qwen3-coder scored best among those within the speed rule (4/7, 9 s per reply). The extra run of muse-glimmer:30b scored 5/7 but took 2.6 min per reply. Revisit with better hardware. Scores: `bench/scores.csv`. Revised per §9 (owner, 2026-10-22): the default profile runs cloud-first on the D9 model, falling back to this local model; the private profile keeps it. |
+| D3 | Privacy model | Two profiles: `default` (hybrid) and `private` (local-only). The alternative is one profile and discipline. | P1.3 | **Two profiles** (owner, 2026-10-22). |
 | D4 | Email provider | AgentMail Free: an API-first mailbox with inbox-scoped, permission-limited keys, allow/block lists and an MCP server; up to 3 inboxes on `@agentmail.to` (verify), no custom domain (§7; AM1, AM2, AM11). Alternatives: an IMAP provider such as Fastmail on a custom domain (plus-addressing, catch-all, IMAP app passwords); or a dedicated Gmail account, whose app password needs 2-Step Verification. | P0.2 | AgentMail, Free plan, on `@agentmail.to`, no custom domain (notes #20). |
-| D5 | Initial email designations | Two inboxes: main (`travel`, `receipts`, `brief`, `private`, designated by sender domain or a subject tag) and otp (yours only; Hermes has no key for it). The Free plan's third inbox stays reserved (§7). | P2.2 | Main + otp, third reserved; designation by sender domain and subject tags. Approved 2026-10-22, replacing "a single address for everything". |
+| D5 | Initial email designations | Two inboxes: main (`travel`, `receipts`, `brief`, `private`, designated by sender domain or a subject tag) and otp (yours only; Hermes has no key for it). The Free plan's third inbox stays reserved (§7). | P2.2 | Main + otp, third reserved; designation by sender domain and subject tags. Approved 2026-10-22, replacing "a single address for everything". Revised 2026-10-22 (owner): one inbox per profile, default and private (each read only by its own profile), plus otp; that uses all three Free-plan inboxes. Settle the designations in P2.2. |
 | D6 | Agent sends email? | No: receive-only in the MVP, with four layers: an inbox-scoped key with no send permissions, main's send allowlist holding only your address, the policy plugin's blocks and `approvals.deny` (§7). Later: approve-first sending (§14). | P2.2 | |
 | D7 | Secret store for API keys | `.env` for the MVP; in Phase 3, whichever of Bitwarden or 1Password you already use. | P3.4 | |
 | D8 | Telephony | The Plivo plugin. The alternative is the official Twilio + Vapi `telephony` skill (outbound only). | P4.1 | |
-| D9 | Cloud escalation model + monthly OpenRouter key cap | Your choice. Start small, e.g. $20–30/month with a monthly reset. | P1.4 | |
+| D9 | Cloud escalation model + monthly OpenRouter key cap | Your choice. Start small, e.g. $20–30/month with a monthly reset. | P1.4 | **`meta/muse-wonder`** as the default profile's `model.default` (cloud-first, §9), falling back to the local D2 model when the cloud fails or the key is exhausted; **$50/month** key limit with a monthly reset (owner, 2026-10-22). Escalation for hard tasks: `/model` to any OpenRouter model, under the same key. |
 | D10 | Backup targets | Nightly, encrypted, to the second SSD (`D:\backups`), plus a weekly offsite copy. | P1.7 | |
 | D11 | Purchases | All approve-first, with no saved payment methods on sites. Store a card in the vault: yes / no. | P3.3 | |
 | D12 | v1 platform scope | Windows 11 + an NVIDIA GPU at or above the benchmarked minimum (§11). | P6.2 | |
@@ -391,7 +391,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
 
 Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, and in the private profile right after P1.3 step 1; then P1.3, P1.4; then check P1.5's Done when; then P1.6–P1.8.
 
-- [ ] **S6 Spike — Model tag context lengths** [Claude] — Run `ollama show <tag>` for every D2 candidate and record its native context. The notes have search-index snippets only: 40K for `qwen3:32b` and `qwen3:14b`, a conflicting 256K vs 40K for `qwen3:30b-a3b`, and 128K for `gpt-oss:20b`.
+- [x] **S6 Spike — Model tag context lengths** [Claude] — Run `ollama show <tag>` for every D2 candidate and record its native context. The notes have search-index snippets only: 40K for `qwen3:32b` and `qwen3:14b`, a conflicting 256K vs 40K for `qwen3:30b-a3b`, and 128K for `gpt-oss:20b`.
   - At least 64K: keep the candidate.
   - Under 64K: drop it, or keep it only as a flagged comparison with `ollama_num_ctx: 65536` (notes #6 calls this a quality risk).
   - Not shown by `ollama show`: check the tag's page in the Ollama library.
@@ -399,7 +399,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P0.4
   - Automate: `versions.lock` (model tags and native context); `verify/checks/s6-model-context.ps1`
 
-- [ ] **S14 Spike — Offline isolation without turning Wi-Fi off** [Claude] — Turning Wi-Fi off would cut Claude's own connection, so isolate Hermes instead of the machine. Find out three things:
+- [x] **S14 Spike — Offline isolation without turning Wi-Fi off** [Claude] — Turning Wi-Fi off would cut Claude's own connection, so isolate Hermes instead of the machine. Find out three things:
   1. Which executable(s) Hermes runs as on Windows. Watch `Get-NetTCPConnection -OwningProcess <pid>` during a `hermes chat` turn (verify).
   2. Whether an outbound block rule on them still lets Hermes reach Ollama on `127.0.0.1`. Windows Firewall rules aren't applied to loopback traffic by default (verify).
   3. Whether the sandbox can be cut off with `terminal.docker_network: false`, which means `--network=none` (F4). Container traffic doesn't pass through the Hermes process.
@@ -415,7 +415,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P0.6
   - Automate: `bench/isolate.ps1` (`-On` / `-Off`)
 
-- [ ] **P1.1 Run the benchmark** [Claude] — Follow [bench/README.md](bench/README.md):
+- [x] **P1.1 Run the benchmark** [Claude] — Follow [bench/README.md](bench/README.md):
   - Isolate Hermes per S14.
   - Drive `hermes chat` from the local Claude Code session. Telegram is cut off too. Computer use can't type into terminals (§4), so if Hermes has no non-interactive mode (none is in the notes (verify)), pipe each prompt in from the shell (verify).
   - Seven tasks, three runs each, timed from timestamps, recorded in `bench/scores.csv`.
@@ -423,9 +423,10 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - If a Hermes approval prompt appears, answer no (§4).
   - Done when: `bench/scores.csv` has 21 rows per candidate; D2 is filled in, or revised per §9; and the isolation is removed (`bench/isolate.ps1 -Off`).
   - Needs: P0.6, S6, S14
+  - As built (2026-10-22): `bench/run-bench.ps1` (elevated) stages the fixtures and runs `bench/runner.ps1` as `hermes`, inside `isolate.ps1 -On/-Off`. B2 and B6 were re-run after the fixtures turned out to be CRLF on the Windows checkout (now pinned LF in `.gitattributes`). Tasks passed of 7: qwen3-instruct 2, gpt-oss 3 (and 41 s per reply), qwen3-coder 4; extra, at the owner's request, muse-glimmer:30b 5 (2.6 min per reply, B3 20 min). No GO. D2: the owner chose qwen3-coder for the proof of concept, to revisit with better hardware.
   - Automate: `bench/` (prompts, fixtures, answer keys, `isolate.ps1`, `scores.csv`); `versions.lock` (the chosen tag)
 
-- [ ] **P1.2 Set the chosen model** [Claude] —
+- [x] **P1.2 Set the chosen model** [Claude] —
   ```powershell
   hermes config set model.default <D2 tag>
   hermes gateway restart
@@ -433,8 +434,9 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: `hermes doctor` is clean (Hermes enforces the 64K floor and refuses to start below it); `hermes chat` answers; and `ollama ps` shows the tag with CONTEXT 65536.
   - Needs: P1.1
   - Automate: `installer/steps/04-hermes.ps1` (model from `instance.yaml`); `verify/checks/p1-2-model.ps1`
+  - As built (2026-10-22): `installer/steps/06-model.ps1`, because `instance.yaml` doesn't exist yet. It reads `model_default` from `versions.lock` and sets it as `hermes`. Instead of `hermes gateway restart`, it does the clean restart of the guarded `Hermes_Gateway` task (docs/LESSONS.md). Then it runs the check, all behind one password prompt. Fold it into `04-hermes.ps1` when `instance.yaml` arrives (P6.1).
 
-- [ ] **P1.3 Private profile** [Claude + you] (you: create the "Hermes Private" bot in @BotFather and type its token into the prompt) — The private profile is local-only: no cloud credentials and no fallback.
+- [x] **P1.3 Private profile** [Claude + you] (you: create the "Hermes Private" bot in @BotFather and type its token into the prompt) — The private profile is local-only: no cloud credentials and no fallback.
   1. Create it without `--clone` or `--clone-all`, so no keys or memory are copied. In setup, choose Custom endpoint `http://localhost:11434/v1` and skip every cloud provider and connector.
      ```powershell
      hermes profile create private
@@ -491,6 +493,10 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: `/model openrouter:<any model>` in the private chat fails, and with `Stop-Service Ollama` the private bot replies with an error instead of an answer. Restart Ollama afterwards.
   - Needs: P1.2, D3, P1.5 (installed in this profile)
   - Automate: `installer/steps/06-private-profile.ps1`; `config/templates/private.config.yaml`; `verify/checks/p1-3-private.ps1`
+  - Done (2026-10-22): `06-private-profile.ps1 -Phase Create`, then `-Phase Bot`. `p1-3-private.ps1` passes 15/15. The owner's Telegram tests (`docs/SETUP-GUIDE.md#private-bot`) all passed: the bot answers, and the call is logged local; `/model openrouter:openai/gpt-4o-mini` fails. With Ollama stopped, the bot replied with an error; `p1-3-ollama-stop-test.ps1` found 6 new usage lines and 0 non-local.
+    - As built: Hermes v0.22.4 multiplexes every profile into the default gateway and ignores `multiplex_profiles: false`. `gateway.standalone: true` (a shim Hermes calls temporary) keeps private in its own process, under the guarded task `Hermes_Gateway_private`. `hermes config get` calls it "not a recognized config key", but the default gateway's log confirms it ("profile 'private' is standalone; not served by this gateway").
+    - Both tasks now name their profile (`start-gateway.ps1 -Profile`). `scripts/restart-gateway.ps1` restarts one profile's gateway. Hermes drops `-p` when it re-executes, so it finds a profile's processes under that profile's launcher. It also stops the temporary `--idle-exit` gateways that `hermes chat` starts, which hold the profile's gateway lock: the first private start exited 1 because of one.
+    - Cloud-facing toolsets are off in private (cli and telegram): web, browser, vision, image_gen, tts. The auxiliary tasks are `auto`, which uses the main (local) model first. With no credentials, the log shows only warnings that the Nous auxiliary client is unavailable.
 
 - [ ] **P1.4 OpenRouter for the default profile only** [Claude + you] (you: create the OpenRouter account, pay, create a key with a credit `limit` and `limit_reset: monthly` (D9), and type the key into the prompt) — An exhausted key returns 402 (notes #18).
   ```powershell
@@ -525,6 +531,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: every test call in P1.3 and P1.4 has a line with its `base_url`. Each line's `profile` matches the bot you used. If not (e.g. in a multiplexed gateway; check `hermes_home`), set `PROFILE` per copy or use `gateway.standalone: true`. `Select-String -Path C:\agent\shared\logs\usage-private.jsonl -Pattern '"local": false'` finds nothing.
   - Needs: P0.6
   - Automate: `plugins/usage-log/`; `installer/steps/08-plugins.ps1`; `verify/checks/p1-5-usage-log.ps1`
+  - Progress (2026-10-22): installed in the **default** profile by `08-plugins.ps1 -Profile default`, with `p1-5-usage-log.ps1` 8/8 PASS. A test chat logged one line: profile `default`, model `qwen3-coder:30b`, `base_url` `http://localhost:11434/v1`, `local: true`, tokens and duration in seconds. `hermes plugins enable` also reloads plugins into the running gateway. Still to do: `-Profile private` right after P1.3 step 1, and the per-bot checks in P1.3/P1.4. Input tokens read 1 on a cached prompt (check this on a real turn).
 
 - [ ] **P1.6 Seed memory** [You] — The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
   - Default profile: facts that are fine to send to a cloud provider (name, time zone, preferences, home airport). Claude can format these into `%LOCALAPPDATA%\hermes\memories\USER.md` from your list.
@@ -583,6 +590,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: `hermes cron runs` shows a delivered run in each profile; both calls are logged with `"local": true`; and the next day's pings arrive after an unattended reboot.
   - Needs: S3, P0.7, P1.3
   - Automate: `cron/ping.yaml`; `installer/steps/10-cron.ps1`; `verify/checks/p1-8-ping.ps1`
+  - Open issue (found in P1.3, 2026-10-22): the cron scheduler and kanban dispatcher are singletons per machine. The standalone private gateway logs "Cron scheduler will tick 2 profile(s): ['default','private']" and holds the kanban dispatcher lock, so the default profile's jobs also run in the private process. Before scheduling jobs: confirm which process runs each profile's jobs, and whether each job keeps its own profile's model, provider and keys. Settle it with S3.
 
 **Phase 1 exit state:** two bots on your hardware, the private one provably local-only; cloud use is explicit and logged; backups are running.
 
@@ -1320,7 +1328,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | S3 | Cron `--provider` for local Ollama | | |
 | S4 | Does `hermes backup` cover all profiles? | | |
 | S5 | Plivo transcript output | | |
-| S6 | Context length of each candidate tag | | |
+| S6 | Context length of each candidate tag | From `ollama show` on Ollama 0.40.8: `qwen3:30b-a3b-instruct-2507-q4_K_M` **262144** (qwen3moe, 30.5B; this settles the notes' 256K-vs-40K conflict); `gpt-oss:20b` **131072** (20.9B, MXFP4); `qwen3-coder:30b` **262144** (qwen3moe); `qwen3:32b` **40960**, which is **dropped**: it is below 64K, would need `num_ctx` stretched past its training, and is dense (Muse Glimmer, a dense 30B, ran at 4.7 tok/s here vs 27.3 for the MoE; bench/README.md). The three kept candidates are pinned in `versions.lock` (`model_candidates`, `model_native_context`), checked by `verify/checks/s6-model-context.ps1`. `qwen3:32b` stays pulled but unused. Not a candidate: `muse-glimmer:30b` 131072. | 2026-10-22 |
 | S7 | What AgentMail exposes for forwards and spoofs | | |
 | S8 | AgentMail addressing, keys and lists | | |
 | S9 | Calendar connector choice | | |
@@ -1328,7 +1336,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | S11 | Plivo plugin install path on native Windows | | |
 | S12 | `make_call` arguments and the live-call model | | |
 | S13 | Hermes version pinning and rollback | | |
-| S14 | Offline isolation for the benchmark without Wi-Fi off | | |
+| S14 | Offline isolation for the benchmark without Wi-Fi off | **(a): works; Claude runs P1.1.**<br>1. Hermes runs as `…\hermes\bin\hermes.exe`, a launcher with no connections, plus the real worker `…\hermes\tools\python-3.14.7+20260901-win32-x64\python.exe`, which holds Telegram (`149.154.166.110:443`) and loopback. `hermes chat` runs through that gateway process (`platform=local`). Venv `python.exe` files are launchers, so `bench/isolate.ps1 -On` blocks every `hermes.exe`/`python*.exe`/`uv.exe`/`node.exe` under `hermes`'s AppData plus the live ones: 30 programs.<br>2. Loopback is unaffected. With the rules on, Hermes's Python got `WinError 10013` for `https://example.com` but 200 from Ollama on `127.0.0.1:11434`, and `hermes chat` answered `PONG`.<br>3. `TERMINAL_DOCKER_NETWORK=false` in `.env` works like `terminal.docker_network: false`: the recreated sandbox had `NetworkMode=none`, and `curl` failed with "Could not resolve host".<br>`-Off` removes the rules and the key, recreates the sandbox and restarts the gateway; Telegram reconnected in 22 s. Checked by `verify/checks/s14-isolation.ps1`. | 2026-10-22 |
 
 ## Appendix B: Sources
 

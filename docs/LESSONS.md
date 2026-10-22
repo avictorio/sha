@@ -38,6 +38,15 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **`Tee-Object` logs lose terminating errors.** The error goes to the host, not through the pipeline. Three runs of the P0.5 check showed nothing after a step that had thrown. **Next:** use `Start-Transcript` for every logged run, as `01-host.ps1` and `02-ollama.ps1` do.
 - **Double quotes inside an argument to a native program are mangled.** `hermes chat -q 'echo "hello from hermes" > …'` reached Hermes as broken arguments (`unrecognized arguments: from hermes > …`), so the model was never asked. Keep prompts free of double quotes, or use `--query-file`.
 - **Unicode output arrives as mojibake** unless the as-`hermes` command sets `[Console]::OutputEncoding` to UTF-8 and `PYTHONIOENCODING=utf-8`. Before that, a check looking for `hermes doctor`'s ✗ marks passed only because it couldn't read any marks at all. Checks now also require the ✓ marks to be present.
+- **`Select-String` and `-match` ignore case by default.** P0.4's GPU check looked for Ollama's start line, `Listening on`. It also matched every model runner's `listening on http://…`, so after the first model load it read the wrong part of the log and reported "no GPU" on a working GPU. Use `-CaseSensitive` and anchor to something distinctive (`msg="Listening on`).
+- **Non-ASCII characters in a script file need a BOM.** PS 5.1 reads a BOM-less `.ps1` as ANSI, so an em dash in a regex silently never matched. Use `[char]0x2014`. The Edit tool also turns a literal `—` back into the dash.
+- **`$Matches` is overwritten by every successful `-match`,** including one nested inside an expression that reads `$Matches`. Copy it first (`$m = $Matches.Clone()`).
+- **Repo files have CRLF line endings,** so a `sed`/`perl` pattern that spans `\n` silently matches nothing. Use the Edit tool.
+- **`$null` passed to a `[string]` parameter arrives as `""`.** `isolate.ps1 -Off` meant to remove `TERMINAL_DOCKER_NETWORK` but wrote `TERMINAL_DOCKER_NETWORK=` instead. Use a `-Remove` switch.
+- **`GetOwner` throws "Not found" for a process that exited after the listing.** Under `-ErrorAction Stop` that killed `isolate.ps1 -On` mid-run. Filter by path first, and wrap `GetOwner` in try/catch.
+- **`powershell -File script.ps1 -Tasks B2,B6` passes `"B2,B6"` as one string,** not an array, and `-Flag --value` fails with "Missing an argument". Split comma lists inside the script, and default dash-leading values.
+- **`ConvertFrom-Json` returns a JSON array as one object,** so `@(... | ConvertFrom-Json)` has one element. Pipe through `ForEach-Object { $_ }` to unroll it. Read UTF-8 files with `-Encoding UTF8`, or non-breaking spaces turn into `Â`.
+- **Clicking in a console window freezes the script** (QuickEdit "Select" mode) at its next write. Twice in P1.1 the benchmark itself, running as `hermes`, finished, but the elevated launcher sat frozen with isolation still on. `run-bench.ps1` now turns QuickEdit off. A frozen window resumes with Esc. If it doesn't, run `isolate.ps1 -Off` by hand and remove the leftover `hermes-oneshot-*` task.
 - `Get-AppxPackage -Name` and `Get-WindowsOptionalFeature -FeatureName` take one name, not an array.
 - There's no Python on the machine. Don't plan on it for helper scripts.
 
@@ -74,6 +83,14 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **The gateway runs as `hermes.exe gateway run`**, not `python -m hermes_cli.main …`, so match `gateway run` in process checks.
 - **Watching an elevated run:** an unelevated process can't read an elevated process's command line. My "is the window still open?" check returned false while it was open, and I unregistered a task the helper was still waiting on. Rely on the background-task notification instead.
 - **Inline `-Command` text for elevated runs mangles double quotes** (PS 5.1 again). Write the script to a file and run it with `-File`.
+- **Git on Windows checks text out as CRLF, which corrupted the benchmark fixtures.** `expected.txt` could never match a script's LF output exactly (B2), and models that compared the last CSV column as text read `"25" < "25\r"` as true (B6). The first run's B2/B6 were void. `.gitattributes` now pins `bench/fixtures/**` and `bench/answer_keys/**` to LF. Any byte-exact test data needs the same.
+- **`docker cp` can't write into the Hermes sandbox's `/tmp`** (tmpfs): it failed silently, so every B2 holdout check read FAIL. After the turn, `runner.ps1` copies the holdout into the mounted workspace instead.
+- **The Docker daemon can't read `operator`'s temp folder** (`CreateFile … Access is denied` on `-v`). For a scratch container: `docker create`, then `docker cp` the files in, then `docker start -a`.
+- **The default gateway serves every profile** (Hermes v0.22.4): it ignores `multiplex_profiles: false`. To give a profile its own process and bot, set `gateway.standalone: true` in that profile's `config.yaml`. `hermes config get` calls it unrecognized, but the default gateway's log confirms it ("profile 'private' is standalone"). It rescans profiles every 30 s.
+- **Hermes drops `-p <profile>` when it re-executes.** Every gateway's command line reads `gateway run --quiet`. Find a profile's gateway as a descendant of its `start-gateway.ps1 -Profile X` launcher; `scripts/restart-gateway.ps1` does that.
+- **A `hermes chat` idle-exit gateway holds the profile's gateway lock,** so a fresh gateway start exits 1. `restart-gateway.ps1` stops `--idle-exit` gateways too.
+- **The cron scheduler and kanban dispatcher are machine-wide singletons.** Whichever gateway takes the lock ticks every profile's jobs (open under P1.8).
+- **`H` is PowerShell's alias for Get-History,** so a helper function named `H` is never called ("Cannot bind parameter 'Count'"). Use another name (`Herm`).
 - **P0.5's sandbox image depends on P0.6** (`hermes config get terminal.docker_image`), so P0.5 can't be ticked until after P0.6. **Next:** move that Done-when item into P0.6.
 
 ## Plan and process

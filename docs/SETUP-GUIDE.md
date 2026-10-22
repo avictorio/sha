@@ -194,3 +194,25 @@ It writes `TELEGRAM_ALLOWED_USERS` and `TELEGRAM_HOME_CHANNEL` before the token.
 
 - **On the phone:** the bot answers you. A message from a second Telegram account gets no reply, and `gateway.log` shows `[Telegram] Blocked unauthorized user <id>`.
 - **After an unattended reboot:** `verify/checks/p0-7-telegram.ps1` passes, and the bot answers again. Messages sent while the gateway was down are dropped, so send a new one.
+
+## private-bot
+
+PLAN.md P1.3. The private profile only uses the laptop's model. It has its own bot, "Hermes Private", which runs in its own process under its own guarded task, `Hermes_Gateway_private`. The scripted parts are in `installer/steps/06-private-profile.ps1` (run elevated, in a visible window), and the checks are in `verify/checks/p1-3-private.ps1`.
+
+The rule for you: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
+
+### The owner's steps
+
+1. **Create the bot.** As in [telegram-bots](#telegram-bots): **@BotFather**, `/newbot`, then a display name such as "Hermes Private" and a username ending in `bot`. Save the token in the password manager as "Hermes Private Telegram bot token". Open a chat with the bot and press **Start**.
+2. **Run `06-private-profile.ps1 -Phase Create`.** It needs no token. Type the `hermes` password.
+3. **Run `06-private-profile.ps1 -Phase Bot`.** Type the `hermes` password, then paste the token at the hidden "private bot token" prompt. Your Telegram ID is copied from the default profile. The script won't write the token while the default gateway still serves the private profile.
+
+### Why `gateway.standalone: true`
+
+Hermes v0.22.4 serves every profile from the default profile's gateway ("multiplexing"), and it ignores `multiplex_profiles: false`. `gateway.standalone: true` in the private config keeps the private profile out of that gateway. Hermes calls it a temporary shim, so check it after every `hermes update` (P5.2). Without it, the default gateway would also poll the private bot. `start-gateway.ps1 -Profile private` refuses to start if the setting is missing.
+
+### Tests in Telegram (P1.3 Done when)
+
+1. **It answers.** Send the private bot "hello". It replies, and `C:\agent\shared\logs\usage-private.jsonl` gets a line with `"platform": "telegram"` and `"local": true`.
+2. **It can't switch to a cloud model.** Send `/model openrouter:openai/gpt-4o-mini` (any cloud model will do). It must fail or refuse, and the next reply must still come from the local model.
+3. **It doesn't fall back to the cloud.** Run `verify/checks/p1-3-ollama-stop-test.ps1` elevated. It stops Ollama and waits. Send the private bot a question: it must reply with an error, not an answer. Press Enter in the window to restart Ollama. If you forget, it restarts Ollama by itself after 10 minutes.

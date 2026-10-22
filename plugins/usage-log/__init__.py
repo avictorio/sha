@@ -1,6 +1,7 @@
-r"""usage-log: per-call model/provider log for Hermes Agent (template).
+r"""usage-log: per-call model/provider log for Hermes Agent.
 
-Skeleton built from the documented hook contract — verify against your installed Hermes version.
+Built from the documented hook contract; both hook names exist in Hermes v0.22.4.
+installer/steps/08-plugins.ps1 installs it; verify/checks/p1-5-usage-log.ps1 checks a real line.
 
 Hook used (docs/verification-notes.md F10): the observer hook post_api_request,
 which receives session_id, platform, model, provider, base_url, api_call_count,

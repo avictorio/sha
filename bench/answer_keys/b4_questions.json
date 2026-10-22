@@ -1,0 +1,38 @@
+{
+  "document": {
+    "title": "Metamorphosis, by Franz Kafka, translated by David Wyllie (public domain)",
+    "source": "https://www.gutenberg.org/cache/epub/5200/pg5200.txt",
+    "prepare": "Keep the text between the '*** START OF' and '*** END OF' lines (exclusive), and strip CR characters.",
+    "words": 21935,
+    "chars": 119765,
+    "sha256": "50ceda4b9b2b734e35bd411ca6008706b68f3e6f991eb87ab6e4a9c6ce3c764a"
+  },
+  "questions": [
+    {
+      "q": "What was Gregor Samsa's job?",
+      "answer": "travelling salesman",
+      "quote": "Samsa was a travelling salesman"
+    },
+    {
+      "q": "What did Gregor's father throw at him, and where did he get them?",
+      "answer": "apples, from the fruit bowl on the sideboard",
+      "quote": "He had filled his pockets with fruit from the bowl on the sideboard and now, without even taking the time for careful aim, threw one apple after another."
+    },
+    {
+      "q": "Where had Gregor secretly planned to send his sister the next year, and why?",
+      "answer": "the conservatory, because she was a gifted violinist / fond of music",
+      "quote": "she was very fond of music and a gifted and expressive violinist, it was his secret plan to send her to the conservatory next year"
+    },
+    {
+      "q": "How many gentlemen rented a room in the Samsas' flat, and what did they all have?",
+      "answer": "three; full beards",
+      "quote": "one of the rooms in the flat had been rented out to three gentlemen. These earnest gentlemen—all three of them had full beards"
+    },
+    {
+      "q": "At the end of the story, how did the family travel out of town, and where to?",
+      "answer": "by tram, to the open country outside the town",
+      "quote": "took the tram out to the open country outside the town"
+    }
+  ],
+  "pass": "exactly 10 bullets in the summary, no invented facts in them, and at least 4 of the 5 answers correct"
+}

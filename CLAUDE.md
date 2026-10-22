@@ -20,6 +20,7 @@ The build plan and the future distributable package for a hybrid local/cloud per
   1. Run its **Done when** check.
   2. Tick its checkbox in PLAN.md only when the check passes.
   3. Note how you checked it in the commit message.
+  4. After the commit, run `scripts/publish-status.ps1` (unelevated). It regenerates the read-only `STATUS.md` that Hermes reads when the owner asks about its progress. Keep `docs/status-notes.md` current when a build fact changes (model, sandbox, what's connected); never put secrets or personal data in it.
 
 ## Operating rules
 1. **Accounts.** Work only in the `operator` account (local admin, with nothing of the owner's linked). Never work in the owner's account or in `hermes`. Steps that must run as `hermes` go through `scripts/invoke-as-hermes.ps1` (elevated): the owner types the `hermes` password at its hidden prompt, and it runs the step as a one-shot scheduled task that is deleted afterwards. `Start-Process -Credential` and `runas` don't work on this machine (docs/LESSONS.md).

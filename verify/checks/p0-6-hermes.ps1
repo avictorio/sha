@@ -92,7 +92,8 @@ if ($r) {
   Record 'no-mnt-c' ($mntc -match '(?i)No such file or directory|does not exist|cannot access') ($mntc.Substring(0, [Math]::Min(120, $mntc.Length)))
   Record 'no-windows-folders-under-mnt' ($mnt -notmatch '(?i)\b(c|d|wsl|wslg|Users|Windows)\b/?\s' -and $mnt.Length -gt 0) ($mnt.Substring(0, [Math]::Min(160, $mnt.Length)))
 
-  # live container mounts. Allowed bind sources: C:\agent\workspace (the one user folder), and
+  # live container mounts. Allowed bind sources: C:\agent\workspace (the one user folder),
+  # C:\ProgramData\hermes-status read-only (the build status), and
   # Hermes's own working subfolders under %LOCALAPPDATA%\hermes, which Hermes mounts itself
   # (sandboxes, attachments, images, skills, caches...). Never: secrets, config, memories,
   # sessions, the state DB, or anything else in the profile or on the disk.
@@ -102,7 +103,8 @@ if ($r) {
   $sensitive  = '(?i)\\(\.env|auth\.json|config\.yaml|memories|sessions|state\.db|pairing|hooks|logs)(\\|$)|\\hermes\\?$'
   $badBinds = @($binds | Where-Object {
     $src = ($_ -split '\|')[1]
-    -not ($src -match '(?i)^C:[\\/]agent[\\/]workspace$' -or ($src -match $hermesHome -and $src -notmatch $sensitive)) })
+    $statusRo = $src -match '(?i)^C:[\\/]ProgramData[\\/]hermes-status$' -and $_ -like '*|rw=false'   # STATUS.md, read-only only
+    -not ($src -match '(?i)^C:[\\/]agent[\\/]workspace$' -or $statusRo -or ($src -match $hermesHome -and $src -notmatch $sensitive)) })
   $seen = $mounts -and ($mounts -notcontains 'none-seen')
   Record 'container-mounts-restricted' ($seen -and $badBinds.Count -eq 0) $(if (-not $seen) { 'no running sandbox container seen' } elseif ($badBinds) { 'NOT ALLOWED: ' + ($badBinds -join '; ') } else { "$($binds.Count) binds: C:\agent\workspace + Hermes's own subfolders" })
   $binds | ForEach-Object { $f = $_ -split '\|'; Write-Host ("    {0} -> {1}  {2}" -f $f[1], $f[2], $f[3]) }

@@ -7,7 +7,13 @@ docker_desktop_version = 4.96.1
 
 # D2 candidates for the P1.1 benchmark (tags checked on registry.ollama.ai, 2026-10-21).
 # q4_K_M for the 30B-A3B: the GPU has 12 GB VRAM; q8_0 (30.3 GB) would sit mostly in RAM.
-model_candidates = qwen3:30b-a3b-instruct-2507-q4_K_M,gpt-oss:20b,qwen3-coder:30b,qwen3:32b
+model_candidates = qwen3:30b-a3b-instruct-2507-q4_K_M,gpt-oss:20b,qwen3-coder:30b
+# S6 (2026-10-22): native context from `ollama show`, as tag@tokens. P1.1 needs at least 65536.
+# Dropped: qwen3:32b@40960 (below 64K; dense, so about half of it would sit in RAM on 12 GB of VRAM).
+model_native_context = qwen3:30b-a3b-instruct-2507-q4_K_M@262144,gpt-oss:20b@131072,qwen3-coder:30b@262144
+# D2 (P1.1, 2026-10-22): no candidate passed the go rule; for the proof of concept the owner chose the
+# best scorer that meets the speed rule (4/7). Read by installer/steps/06-model.ps1 (P1.2).
+model_default = qwen3-coder:30b
 
 # Hermes Agent installer: the copy read and reviewed on 2026-10-21 (1672 lines). 04-hermes.ps1
 # refuses any other. If upstream changes, review the new copy, then update the hash.
