@@ -2,7 +2,7 @@
 # installer/steps/04-hermes.ps1 -Configure deep-merges this into %LOCALAPPDATA%\hermes\config.yaml
 # (as hermes), keeping every other key and comment; lists here replace the lists there.
 model:
-  default: qwen3:30b-a3b-instruct-2507-q4_K_M   # first D2 candidate (versions.lock); final choice in P1.2
+  default: qwen3-coder:30b            # D2 (versions.lock model_default); installer/steps/06-model.ps1 sets it (P1.2)
   provider: custom
   base_url: http://localhost:11434/v1
   context_length: 65536               # must be >= 64000 or Hermes refuses to start
