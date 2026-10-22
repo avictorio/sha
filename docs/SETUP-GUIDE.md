@@ -131,7 +131,7 @@ Get-NetIPConfiguration | Where-Object IPv4DefaultGateway
 
 ### Tailscale
 
-`01-host.ps1` installs it with winget. Don't sign in from a browser in `operator`, because that would leave the owner's account signed in there. Instead, run:
+`01-host.ps1` installs it with winget. Either sign-in route is fine: CLAUDE.md allows the Tailscale device login in `operator`'s browser profile (the owner types the credentials, and signs out afterwards), or the owner approves the device from a phone link. The Legion used the phone link, which leaves nothing signed in on the machine:
 
 ```powershell
 & "$env:ProgramFiles\Tailscale\tailscale.exe" up --unattended

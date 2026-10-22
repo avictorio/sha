@@ -200,8 +200,8 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
   1. Create a local admin account `operator`: Settings → Accounts → Other users → Add account → "I don't have this person's sign-in information" → "Add a user without a Microsoft account". Then change its account type to Administrator (verify the exact labels).
   2. Sign in as `operator`.
   3. Install the Claude desktop app and sign in. Turn on computer use: Claude desktop app → Settings → This computer → Computer use (off by default).
-  4. Install Git for Windows first (`winget install --id Git.Git -e` (verify)); Claude Code on native Windows is believed to need it (verify).
-  5. Install Claude Code by its official Windows install method (verify). If the desktop app's Code mode runs commands locally, it can stand in for the CLI (verify).
+  4. Install Git for Windows first: `winget install --id Git.Git -e --source winget`. Run from `operator`, it installs per-user under `%LOCALAPPDATA%\Programs\Git` ([SETUP-GUIDE](docs/SETUP-GUIDE.md#git-for-windows)). Claude Code on native Windows is believed to need it (verify).
+  5. Install Claude Code with the official native Windows installer: `irm https://claude.ai/install.ps1 | iex` ([SETUP-GUIDE](docs/SETUP-GUIDE.md#claude-code)). If the desktop app's Code mode runs commands locally, it can stand in for the CLI (verify).
   6. Set up a browser tool for websites (verify the exact install steps): install Chrome plus the Claude in Chrome extension and sign in to it, or enable the desktop app's built-in browser. This is `operator`'s own admin browser, NOT the agent's Chrome profile (`C:\agent\chrome`, which runs in `hermes`).
   7. Start the setup on the Legion, in `operator`, from the Claude desktop app or Claude Code, with the [starter prompt](README.md#starter-prompt). A cloud session (Slack, or claude.ai on the web) can't reach the machine unless it's linked from the claude.ai composer's + menu → Devices; even then terminals are click-only, so commands still need a local session.
   - Don't sign in to anything personal there: no Microsoft account, OneDrive, personal browser profile, Telegram or password manager.
@@ -212,11 +212,11 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
 - [x] **P0.0b Finish `operator`: tools, privacy, repo access** [Claude + you] (you: paste the deploy key's public half into GitHub → the repo's Settings → Deploy keys → Add deploy key, with "Allow write access" ticked. Do it from your phone or your own account, so your GitHub account is never signed in on `operator`. In the same visit, add a rule on `main` requiring a pull request before merging, because the deploy key could otherwise push to `main`. Branch rules are free on a public repo; a private one needs GitHub Pro or higher (verify the current plan terms)) —
   1. Confirm the tools from P0.0a work: `git --version`, `claude --version`, and that this session can run PowerShell commands.
   2. Set the privacy settings in `operator`, through Settings with computer use, or the registry or PowerShell where that's reliable (verify each):
-     - uninstall OneDrive (`winget uninstall Microsoft.OneDrive` (verify));
+     - uninstall OneDrive through Settings → Apps → Installed apps → Microsoft OneDrive → Uninstall, as done on the Legion. `winget uninstall Microsoft.OneDrive` is an untested alternative (verify);
      - turn off Windows Backup / settings sync;
      - Diagnostic data: "Required only";
      - advertising ID off.
-  3. Create the deploy key. Check that the built-in Windows OpenSSH client is present (verify), then:
+  3. Create the deploy key. `ssh-keygen` from either Windows' built-in OpenSSH or Git for Windows' OpenSSH works. For connecting to GitHub, the repo uses Git's OpenSSH (10.5p1), pinned with `core.sshCommand`, because the built-in client (9.5p2) once failed key exchange with GitHub ([SETUP-GUIDE](docs/SETUP-GUIDE.md#ssh-client-for-github)). Then:
      ```powershell
      New-Item -ItemType Directory -Force $HOME\.ssh | Out-Null
      ssh-keygen -t ed25519 -f $HOME\.ssh\sha_deploy -C "legion-operator sha deploy key" -N '""'   # empty passphrase; PowerShell 7 quotes this differently (verify)
@@ -235,7 +235,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
   6. Set the commit identity in the clone: `git config user.name "<name for Claude's commits>"` and `git config user.email "<commit email>"`. Your GitHub noreply address is a good choice, because it keeps a personal email out of the history.
   7. Run the Done-when checks.
   - Done when:
-    - `ssh -T git@github-sha` greets with the repo name (verify the wording for deploy keys);
+    - `ssh -T git@github-sha` greets with the repo name: `Hi avictorio/sha! You've successfully authenticated, but GitHub does not provide shell access.`;
     - the clone exists, and Claude started in it reads CLAUDE.md;
     - a test push of a throwaway branch succeeds and is then deleted: `git push origin HEAD:refs/heads/legion/test`, then `git push origin --delete legion/test`;
     - a direct push to `main` is rejected, which proves the branch rule. Push an empty commit from a scratch branch (`git commit --allow-empty -m "branch-rule test"`, then `git push origin HEAD:main`); pushing an unchanged `main` proves nothing;
