@@ -47,11 +47,11 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 
 | ID | Decision | Recommended default | Needed by | Your choice |
 |---|---|---|---|---|
-| D1 | Host account | Three Windows accounts (§5): your own Microsoft account (admin), as today; a local admin `operator` where Claude runs, with nothing of yours linked (P0.0a); and a local standard `hermes` that runs the agent, with auto-logon and lock-on-logon. The alternative is two accounts, with Claude in your account (not recommended: computer use would put your personal sessions, including Telegram approvals, within its reach). Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.0a, P0.3 | |
-| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | |
+| D1 | Host account | Three Windows accounts (§5): your own Microsoft account (admin), as today; a local admin `operator` where Claude runs, with nothing of yours linked (P0.0a); and a local standard `hermes` that runs the agent, with auto-logon and lock-on-logon. The alternative is two accounts, with Claude in your account (not recommended: computer use would put your personal sessions, including Telegram approvals, within its reach). Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.0a, P0.3 | Default: three accounts (you, `operator`, `hermes`). |
+| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | Default: picked by the P1.1 benchmark; try the qwen3 30B-A3B instruct variant first. |
 | D3 | Privacy model | Two profiles: `default` (hybrid) and `private` (local-only). The alternative is one profile and discipline. | P1.3 | |
-| D4 | Email provider | Fastmail on a custom domain: plus-addressing on any alias, a wildcard catch-all, and IMAP app passwords. Check current pricing. Alternatives: AgentMail, with an API, webhooks and a hosted MCP server; a custom domain needs a paid tier (notes #20, verify), and plus-addressing isn't documented, so you'd use separate inboxes. Or a dedicated Gmail account, which is free; its app password needs 2-Step Verification and is revoked when the password changes. | P0.2 | |
-| D5 | Initial email designations | All five: `travel`, `receipts`, `brief`, `private`, `otp`. | P0.2 | |
+| D4 | Email provider | Fastmail on a custom domain: plus-addressing on any alias, a wildcard catch-all, and IMAP app passwords. Check current pricing. Alternatives: AgentMail, with an API, webhooks and a hosted MCP server; a custom domain needs a paid tier (notes #20, verify), and plus-addressing isn't documented, so you'd use separate inboxes. Or a dedicated Gmail account, which is free; its app password needs 2-Step Verification and is revoked when the password changes. | P0.2 | AgentMail. |
+| D5 | Initial email designations | All five: `travel`, `receipts`, `brief`, `private`, `otp`. | P0.2 | A single address for everything to start; no per-designation addresses yet. |
 | D6 | Agent sends email? | No: receive-only in the MVP. Sending would go through terminal commands, which are brittle to gate. Later: approve-first sending. | P2.2 | |
 | D7 | Secret store for API keys | `.env` for the MVP; in Phase 3, whichever of Bitwarden or 1Password you already use. | P3.4 | |
 | D8 | Telephony | The Plivo plugin. The alternative is the official Twilio + Vapi `telephony` skill (outbound only). | P4.1 | |
@@ -237,7 +237,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5): C
   - Needs: P0.0a
   - Automate: `installer/steps/00-operator.ps1`; `docs/SETUP-GUIDE.md#operator-account`
 
-- [ ] **P0.1 Fill in the decision table** [Claude + you] (you: make the decisions; saying "use the defaults except …" is enough) — Claude writes your choices in §3's last column and commits them. D1, D2, D4 and D5 are needed today; the rest can wait until their "Needed by" task.
+- [x] **P0.1 Fill in the decision table** [Claude + you] (you: make the decisions; saying "use the defaults except …" is enough) — Claude writes your choices in §3's last column and commits them. D1, D2, D4 and D5 are needed today; the rest can wait until their "Needed by" task.
   - Done when: D1, D2, D4 and D5 have an entry.
   - Needs: P0.0b
   - Automate: `config/templates/instance.example.yaml` (each decision becomes an instance value); `docs/SETUP-GUIDE.md#decisions`
