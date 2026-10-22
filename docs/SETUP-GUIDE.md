@@ -35,3 +35,14 @@ git config core.sshCommand '"C:/Users/operator/AppData/Local/Programs/Git/usr/bi
 ```
 
 The `github-sha` alias in `~\.ssh\config` (no BOM) is shared by both clients. `ssh -T git@github-sha` greets with `Hi avictorio/sha! You've successfully authenticated, but GitHub does not provide shell access.`
+
+## domain-and-mailbox
+
+PLAN.md P0.2, per D4 and D5: the AgentMail Free plan, with one inbox and no custom domain. Everything is done in the AgentMail web console by the owner; there is nothing to script.
+
+1. Sign up at agentmail.to on the Free plan.
+2. Create one inbox, `<name>@agentmail.to`. It receives everything; there are no per-designation addresses.
+3. Create an API key and store it in your password manager. It goes into Hermes's `.env` later (P2.2), typed into a hidden prompt.
+4. From your personal address, send a test message to the inbox and check that it appears in the console.
+
+There is no DNS to set up: MX, SPF, DKIM and DMARC are AgentMail's on `agentmail.to`.

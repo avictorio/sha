@@ -242,20 +242,14 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5): C
   - Needs: P0.0b
   - Automate: `config/templates/instance.example.yaml` (each decision becomes an instance value); `docs/SETUP-GUIDE.md#decisions`
 
-- [ ] **P0.2 Domain and mailbox** [Claude + you] (you: create and pay for the domain and mailbox accounts, then sign in so Claude can work in the web consoles) — Start this on Day 1, because DNS takes time.
-  1. Register the domain and create the agent mailbox per D4, e.g. `agent@<your-domain>`.
-  2. Set the MX, SPF, DKIM and DMARC records with the provider's setup wizard.
-  3. Create the folders. The IMAP hierarchy separator varies by provider (verify).
-     - `Travel`, `Receipts`, `Brief`, `Private`, `OTP`, `Quarantine` and `Processed`
-     - inside `Processed`: `Processed/Travel`, `Processed/Receipts`, `Processed/Brief` and `Processed/Private`
-  4. Add server-side rules (Fastmail: Settings → Filters & Rules (verify)):
-     - Plus-tag → folder: `agent+travel@` → Travel, and so on. Fastmail can file plus-addressed mail into a folder with the same name automatically (verify).
-     - The base address `agent@<your-domain>` from anyone but you → Quarantine.
-     - `agent+otp@` → forward to your personal address, then file into OTP.
-     - Optional: a catch-all alias `*@<your-domain>` → Quarantine (notes #21).
-  - Done when: a test message to `agent+travel@` lands in Travel. A message from an address you don't own, sent to the base address, lands in Quarantine. A DMARC checker reports pass for a message sent from the mailbox's webmail (verify which checker).
+- [x] **P0.2 Mailbox** [Claude + you] (you: sign up for AgentMail and create the inbox; create an API key and keep it in your password manager; send the test message) — Per D4 and D5: the AgentMail Free plan, one inbox on `@agentmail.to`, no custom domain, so there is no DNS, folder or filter setup.
+  1. Sign up at agentmail.to on the Free plan and create one inbox, `<name>@agentmail.to`.
+  2. Create an API key in the console and store it in your password manager. It is typed into its destination later (P2.2), never into a chat.
+  3. Send a test message from your personal address to the inbox.
+  - Not covered by this setup (compared with a custom domain): no Quarantine for mail from strangers, so the private profile reads everything that arrives; no separate OTP address forwarded to you; no SPF, DKIM or DMARC of your own.
+  - Done when: the test message appears in the inbox in the AgentMail console.
   - Needs: P0.0b, D4, D5
-  - Automate: `docs/SETUP-GUIDE.md#domain-and-mailbox`; `verify/checks/p0-2-mail-dns.ps1` (MX/SPF/DMARC records via `Resolve-DnsName`)
+  - Automate: `docs/SETUP-GUIDE.md#domain-and-mailbox` (console steps only; nothing to script)
 
 - [ ] **P0.3 Host prep** [Claude + you] (you: turn on Device encryption from your own Microsoft account and check the recovery key is listed online; choose the `hermes` password and type it into the prompt, Autologon and your password manager; add the DHCP reservation in the router admin; sign in to Tailscale) — Done from the `operator` account, except Device encryption:
   - **Windows Update.** Install updates; set active hours (Settings → Windows Update → Advanced options) (verify).
