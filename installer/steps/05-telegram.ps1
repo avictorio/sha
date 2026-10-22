@@ -45,7 +45,7 @@ try {
 
   # --- 1. Stop any running gateway -----------------------------------------------------
   Step "Stop running hermes gateways"
-  $gw = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'hermes_cli\.main .*gateway run' }
+  $gw = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'gateway run' -and $_.Name -match 'python|hermes' }
   foreach ($g in $gw) {
     if ((Invoke-CimMethod -InputObject $g -MethodName GetOwner).User -ne 'hermes') { throw "A gateway runs as someone other than hermes (PID $($g.ProcessId)). Stop: tell the owner." }
     Stop-Process -Id $g.ProcessId -Force; Write-Host "stopped PID $($g.ProcessId)"
