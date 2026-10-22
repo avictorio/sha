@@ -4,6 +4,8 @@
 - muse-glimmer:30b is installed but not in use. It is the most capable model tested but too slow on this laptop; a candidate for faster hardware or slow background jobs.
 - Terminal sandbox: Docker, nousresearch/hermes-sandbox:desktop, 8 CPUs and 16 GB.
 - Usage log (P1.5): every model call in both profiles is logged on the laptop (model, local or cloud, tokens, time).
-- Telegram: two bots, both allow-listed to the owner. The default bot is hybrid (cloud models come with P1.4). The private bot (P1.3, done) is local-only: no cloud keys, no fallback, web, browser and image tools off. Tested: it refuses a cloud model, and with the local model stopped it replies with an error rather than going to the cloud.
+- Telegram: two bots, both allow-listed to the owner. The default bot is cloud-first (P1.4, done): Meta Muse Wonder through OpenRouter, under a $50/month key cap, falling back to the local model if the cloud fails. The private bot (P1.3, done) is local-only: no cloud keys, no fallback, web, browser and image tools off. Tested: it refuses a cloud model, and with the local model stopped it replies with an error rather than going to the cloud.
 - Known issue: scheduled jobs for both profiles currently run in the private bot's process (to settle before P1.8).
-- Not set up yet: cloud models (P1.4), email (Phase 2), calendar (P2.5), browser (Phase 3), phone (Phase 4).
+- Cost: about 5–9 cents per simple message to the default bot (13,000–22,000 tokens of context each). Spend shows at openrouter.ai/activity.
+- Email (Phase 2): one inbox per bot, plus one for login codes.
+- Not set up yet: email (Phase 2), calendar (P2.5), browser (Phase 3), phone (Phase 4).

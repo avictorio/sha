@@ -91,6 +91,11 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **A `hermes chat` idle-exit gateway holds the profile's gateway lock,** so a fresh gateway start exits 1. `restart-gateway.ps1` stops `--idle-exit` gateways too.
 - **The cron scheduler and kanban dispatcher are machine-wide singletons.** Whichever gateway takes the lock ticks every profile's jobs (open under P1.8).
 - **`H` is PowerShell's alias for Get-History,** so a helper function named `H` is never called ("Cannot bind parameter 'Count'"). Use another name (`Herm`).
+- **OpenRouter's "Zero Data Retention only" setting silently takes models out of reach.** Muse Wonder failed with 404 "ZDR violation (account settings)" (in `logs\errors.log`), and every reply came from the local fallback, so the chat still answered. Check `logged-cloud-call`, not just "it answered". `GET /api/v1/endpoints/zdr` lists the models still available with ZDR on.
+- **OpenRouter's `GET /api/v1/key` returns `limit` but not `limit_reset`.** `hermes usage --provider openrouter` does show "resets monthly".
+- **An unknown OpenRouter model returns 400 "not a valid model ID"**, not 404. Hermes still falls back to the local model at once.
+- **Pasting into a hidden `Read-Host -AsSecureString` prompt:** Ctrl+V can fail without any sign. Right-click to paste.
+- **A `-NoExit` window that stopped on an error keeps its transcript file open.** Use a new `-LogPath` for each run.
 - **P0.5's sandbox image depends on P0.6** (`hermes config get terminal.docker_image`), so P0.5 can't be ticked until after P0.6. **Next:** move that Done-when item into P0.6.
 
 ## Plan and process

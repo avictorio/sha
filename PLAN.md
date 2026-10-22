@@ -56,7 +56,7 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 | D6 | Agent sends email? | No: receive-only in the MVP, with four layers: an inbox-scoped key with no send permissions, main's send allowlist holding only your address, the policy plugin's blocks and `approvals.deny` (§7). Later: approve-first sending (§14). | P2.2 | |
 | D7 | Secret store for API keys | `.env` for the MVP; in Phase 3, whichever of Bitwarden or 1Password you already use. | P3.4 | |
 | D8 | Telephony | The Plivo plugin. The alternative is the official Twilio + Vapi `telephony` skill (outbound only). | P4.1 | |
-| D9 | Cloud escalation model + monthly OpenRouter key cap | Your choice. Start small, e.g. $20–30/month with a monthly reset. | P1.4 | **`meta/muse-wonder`** as the default profile's `model.default` (cloud-first, §9), falling back to the local D2 model when the cloud fails or the key is exhausted; **$50/month** key limit with a monthly reset (owner, 2026-10-22). Escalation for hard tasks: `/model` to any OpenRouter model, under the same key. |
+| D9 | Cloud escalation model + monthly OpenRouter key cap | Your choice. Start small, e.g. $20–30/month with a monthly reset. | P1.4 | **`meta/muse-wonder`** as the default profile's `model.default` (cloud-first, §9), falling back to the local D2 model when the cloud fails or the key is exhausted; **$50/month** key limit with a monthly reset (owner, 2026-10-22). Escalation for hard tasks: `/model` to any OpenRouter model, under the same key. OpenRouter privacy: training off; "Zero Data Retention only" off, because it excludes Muse Wonder (owner, 2026-10-22). |
 | D10 | Backup targets | Nightly, encrypted, to the second SSD (`D:\backups`), plus a weekly offsite copy. | P1.7 | |
 | D11 | Purchases | All approve-first, with no saved payment methods on sites. Store a card in the vault: yes / no. | P3.3 | |
 | D12 | v1 platform scope | Windows 11 + an NVIDIA GPU at or above the benchmarked minimum (§11). | P6.2 | |
@@ -498,7 +498,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
     - Both tasks now name their profile (`start-gateway.ps1 -Profile`). `scripts/restart-gateway.ps1` restarts one profile's gateway. Hermes drops `-p` when it re-executes, so it finds a profile's processes under that profile's launcher. It also stops the temporary `--idle-exit` gateways that `hermes chat` starts, which hold the profile's gateway lock: the first private start exited 1 because of one.
     - Cloud-facing toolsets are off in private (cli and telegram): web, browser, vision, image_gen, tts. The auxiliary tasks are `auto`, which uses the main (local) model first. With no credentials, the log shows only warnings that the Nous auxiliary client is unavailable.
 
-- [ ] **P1.4 OpenRouter for the default profile only** [Claude + you] (you: create the OpenRouter account, pay, create a key with a credit `limit` and `limit_reset: monthly` (D9), and type the key into the prompt) — An exhausted key returns 402 (notes #18).
+- [x] **P1.4 OpenRouter for the default profile only** [Claude + you] (you: create the OpenRouter account, pay, create a key with a credit `limit` and `limit_reset: monthly` (D9), and type the key into the prompt) — An exhausted key returns 402 (notes #18).
   ```powershell
   hermes config set OPENROUTER_API_KEY <key>     # default profile .env only
   ```
@@ -518,8 +518,19 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: a `--once` reply is logged with a non-local `base_url`, and the next reply is local. With Ollama stopped, the default bot answers through the fallback, and that call is logged. Connection-refused isn't a documented trigger (notes #4) (verify). If fallback doesn't fire, test with a `model.default` that doesn't exist, which should return 404 (verify), and record in §13 that a dead Ollama means a dead default bot. `hermes usage --provider openrouter` shows the key's limit.
   - Needs: P1.2, P1.5, D9
   - Automate: `installer/steps/07-cloud.ps1`; `docs/SETUP-GUIDE.md#openrouter`; `verify/checks/p1-4-cloud.ps1`
+  - Done (2026-10-22), with the Done-when adapted to D2's §9 revision (cloud-first: the cloud model is primary, local is the fallback). `07-cloud.ps1` merges `config/templates/default.cloud.yaml`, and `p1-4-cloud.ps1` passes 9/9:
+    - a chat is logged `meta/muse-wonder`, openrouter, `"local": false`;
+    - with `model.default` set to a model that doesn't exist, OpenRouter returns 400 (not the 404 the plan expected), Hermes falls back to `qwen3-coder:30b` at once, and the reply is logged `"local": true`;
+    - `hermes usage --provider openrouter` shows "$50.00 … resets monthly";
+    - the private profile has no OpenRouter entry and no non-local lines.
+    - In Telegram, the owner's message to the default bot was logged `meta/muse-wonder`, `"local": false` (22,195 input tokens).
+    - As built:
+      - OpenRouter's `GET /api/v1/key` returns `limit` but no `limit_reset`, so the script asks the owner to confirm the monthly reset.
+      - OpenRouter's "Zero Data Retention only" setting excludes Muse Wonder (404 "ZDR violation"). The owner turned ZDR off and kept training off (D9).
+      - Not tested: an exhausted key's 402. Hermes's source maps it to a billing failover. (verify) when the cap is first hit.
+      - Subagents and auxiliary tasks inherit the cloud model (`delegation.model` empty, `auxiliary.*: auto`). Moving them local is a cost-tuning follow-up.
 
-- [ ] **P1.5 Usage-log plugin (both profiles)** [Claude] — Copy, enable and restart:
+- [x] **P1.5 Usage-log plugin (both profiles)** [Claude] — Copy, enable and restart:
   ```powershell
   Copy-Item -Recurse <repo>\templates\plugins\usage-log "$env:LOCALAPPDATA\hermes\plugins\usage-log"
   Copy-Item -Recurse <repo>\templates\plugins\usage-log "$env:LOCALAPPDATA\hermes\profiles\private\plugins\usage-log"   # path (verify)
@@ -532,6 +543,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P0.6
   - Automate: `plugins/usage-log/`; `installer/steps/08-plugins.ps1`; `verify/checks/p1-5-usage-log.ps1`
   - Progress (2026-10-22): installed in the **default** profile by `08-plugins.ps1 -Profile default`, with `p1-5-usage-log.ps1` 8/8 PASS. A test chat logged one line: profile `default`, model `qwen3-coder:30b`, `base_url` `http://localhost:11434/v1`, `local: true`, tokens and duration in seconds. `hermes plugins enable` also reloads plugins into the running gateway. Still to do: `-Profile private` right after P1.3 step 1, and the per-bot checks in P1.3/P1.4. Input tokens read 1 on a cached prompt (check this on a real turn).
+- Done (2026-10-22): installed in the private profile too (`08-plugins.ps1 -Profile private`, 8/8). Telegram calls were logged per bot, with `profile` matching the bot. Default: `meta/muse-wonder`, openrouter, `"local": false`. Private: 5 calls, `qwen3-coder:30b`, `"local": true`. `usage-private.jsonl` has no `"local": false` line, including during the P1.3 Ollama-stop test. Each profile has its own gateway (`gateway.standalone`), so no per-copy `PROFILE` was needed.
 
 - [ ] **P1.6 Seed memory** [You] — The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
   - Default profile: facts that are fine to send to a cloud provider (name, time zone, preferences, home airport). Claude can format these into `%LOCALAPPDATA%\hermes\memories\USER.md` from your list.
