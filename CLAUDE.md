@@ -21,8 +21,8 @@ The build plan and the future distributable package for a hybrid local/cloud per
 ## Operating rules
 1. **Accounts.** Work only in the `operator` account (local admin, with nothing of the owner's linked). Never work in the owner's account or in `hermes`. Steps that must run as `hermes` go through a credential prompt the owner fills in once per working session.
    - If you find any personal sign-in in `operator` (Telegram, a personal browser profile, a password manager), stop and tell the owner.
-   - GitHub access is only via the scoped token (PLAN.md P0.0).
-   - P0.0 is the owner's job. If `operator` doesn't exist, you aren't running where you should be: stop and tell the owner.
+   - GitHub access is only via this repo's deploy key (PLAN.md P0.0b).
+   - P0.0a is the owner's job. If `operator` doesn't exist, you aren't running where you should be: stop and tell the owner.
 2. **Secrets.** The owner types secrets straight into their destination: the password manager, a hidden `Read-Host -AsSecureString` prompt feeding `hermes config set`, or the web form. Never ask for a secret in chat, and never echo or log one.
 3. **Stops.** Stop at CAPTCHAs, identity checks and payments. Hand over, and wait.
 4. **The gate.** Never edit the approval-policy plugin or `approvals.deny` to get past a block you hit. Make only the edits a task calls for (P2.1 step 3, S12), and commit them with that task's ID.
@@ -34,6 +34,7 @@ The build plan and the future distributable package for a hybrid local/cloud per
    - Every script and config you create goes into this repo, in the package layout of PLAN.md §11: `installer/steps/`, `config/templates/`, `plugins/`, `cron/`, `verify/checks/`, `scripts/`, and `docs/SETUP-GUIDE.md` for steps that can't be scripted.
    - Use the path the task's **Automate:** line names.
    - Make one commit per task, with the task ID in the subject, e.g. `P0.4: Ollama service via NSSM`.
+   - Push only to `legion/<phase>` branches (e.g. `legion/phase-0`), never to `main`. The owner opens and merges the PRs.
    - If you scripted it, the script is the artifact. If you clicked through it, write the steps down in `docs/SETUP-GUIDE.md`.
 
 ## Never commit
