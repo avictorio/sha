@@ -527,6 +527,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: every test call in P1.3 and P1.4 has a line with its `base_url`. Each line's `profile` matches the bot you used. If not (e.g. in a multiplexed gateway; check `hermes_home`), set `PROFILE` per copy or use `gateway.standalone: true`. `Select-String -Path C:\agent\shared\logs\usage-private.jsonl -Pattern '"local": false'` finds nothing.
   - Needs: P0.6
   - Automate: `plugins/usage-log/`; `installer/steps/08-plugins.ps1`; `verify/checks/p1-5-usage-log.ps1`
+  - Progress (2026-10-22): installed in the **default** profile by `08-plugins.ps1 -Profile default`, with `p1-5-usage-log.ps1` 8/8 PASS. A test chat logged one line: profile `default`, model `qwen3-coder:30b`, `base_url` `http://localhost:11434/v1`, `local: true`, tokens and duration in seconds. `hermes plugins enable` also reloads plugins into the running gateway. Still to do: `-Profile private` right after P1.3 step 1, and the per-bot checks in P1.3/P1.4. Input tokens read 1 on a cached prompt (check this on a real turn).
 
 - [ ] **P1.6 Seed memory** [You] — The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
   - Default profile: facts that are fine to send to a cloud provider (name, time zone, preferences, home airport). Claude can format these into `%LOCALAPPDATA%\hermes\memories\USER.md` from your list.
