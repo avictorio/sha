@@ -47,11 +47,11 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 
 | ID | Decision | Recommended default | Needed by | Your choice |
 |---|---|---|---|---|
-| D1 | Host account | Three Windows accounts (§5): your own Microsoft account (admin), as today; a local admin `operator` where Claude runs, with nothing of yours linked (P0.0a); and a local standard `hermes` that runs the agent, with auto-logon and lock-on-logon. The alternative is two accounts, with Claude in your account (not recommended: computer use would put your personal sessions, including Telegram approvals, within its reach). Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.0a, P0.3 | |
-| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | |
+| D1 | Host account | Three Windows accounts (§5): your own Microsoft account (admin), as today; a local admin `operator` where Claude runs, with nothing of yours linked (P0.0a); and a local standard `hermes` that runs the agent, with auto-logon and lock-on-logon. The alternative is two accounts, with Claude in your account (not recommended: computer use would put your personal sessions, including Telegram approvals, within its reach). Auto-logon weakens what disk encryption protects on a stolen laptop; lock-on-logon narrows the gap but doesn't close it. | P0.0a, P0.3 | Default: three accounts (you, `operator`, `hermes`). |
+| D2 | Local model | Picked by the P1.1 benchmark. Try first: a qwen3 30B-A3B instruct variant with at least 64K native context, e.g. `qwen3:30b-a3b-instruct-2507-<quant>`. Others: `gpt-oss:20b`, `qwen3-coder:30b`, and `qwen3:32b` as a dense baseline. All tags (verify). | P0.4 (pull), P1.2 (choose) | Default: picked by the P1.1 benchmark; try the qwen3 30B-A3B instruct variant first. |
 | D3 | Privacy model | Two profiles: `default` (hybrid) and `private` (local-only). The alternative is one profile and discipline. | P1.3 | |
-| D4 | Email provider | Fastmail on a custom domain: plus-addressing on any alias, a wildcard catch-all, and IMAP app passwords. Check current pricing. Alternatives: AgentMail, with an API, webhooks and a hosted MCP server; a custom domain needs a paid tier (notes #20, verify), and plus-addressing isn't documented, so you'd use separate inboxes. Or a dedicated Gmail account, which is free; its app password needs 2-Step Verification and is revoked when the password changes. | P0.2 | |
-| D5 | Initial email designations | All five: `travel`, `receipts`, `brief`, `private`, `otp`. | P0.2 | |
+| D4 | Email provider | Fastmail on a custom domain: plus-addressing on any alias, a wildcard catch-all, and IMAP app passwords. Check current pricing. Alternatives: AgentMail, with an API, webhooks and a hosted MCP server; a custom domain needs a paid tier (notes #20, verify), and plus-addressing isn't documented, so you'd use separate inboxes. Or a dedicated Gmail account, which is free; its app password needs 2-Step Verification and is revoked when the password changes. | P0.2 | AgentMail, Free plan: one inbox on `@agentmail.to`, no custom domain (notes #20). |
+| D5 | Initial email designations | All five: `travel`, `receipts`, `brief`, `private`, `otp`. | P0.2 | A single address for everything to start; no per-designation addresses yet. |
 | D6 | Agent sends email? | No: receive-only in the MVP. Sending would go through terminal commands, which are brittle to gate. Later: approve-first sending. | P2.2 | |
 | D7 | Secret store for API keys | `.env` for the MVP; in Phase 3, whichever of Bitwarden or 1Password you already use. | P3.4 | |
 | D8 | Telephony | The Plivo plugin. The alternative is the official Twilio + Vapi `telephony` skill (outbound only). | P4.1 | |
@@ -237,27 +237,21 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5): C
   - Needs: P0.0a
   - Automate: `installer/steps/00-operator.ps1`; `docs/SETUP-GUIDE.md#operator-account`
 
-- [ ] **P0.1 Fill in the decision table** [Claude + you] (you: make the decisions; saying "use the defaults except …" is enough) — Claude writes your choices in §3's last column and commits them. D1, D2, D4 and D5 are needed today; the rest can wait until their "Needed by" task.
+- [x] **P0.1 Fill in the decision table** [Claude + you] (you: make the decisions; saying "use the defaults except …" is enough) — Claude writes your choices in §3's last column and commits them. D1, D2, D4 and D5 are needed today; the rest can wait until their "Needed by" task.
   - Done when: D1, D2, D4 and D5 have an entry.
   - Needs: P0.0b
   - Automate: `config/templates/instance.example.yaml` (each decision becomes an instance value); `docs/SETUP-GUIDE.md#decisions`
 
-- [ ] **P0.2 Domain and mailbox** [Claude + you] (you: create and pay for the domain and mailbox accounts, then sign in so Claude can work in the web consoles) — Start this on Day 1, because DNS takes time.
-  1. Register the domain and create the agent mailbox per D4, e.g. `agent@<your-domain>`.
-  2. Set the MX, SPF, DKIM and DMARC records with the provider's setup wizard.
-  3. Create the folders. The IMAP hierarchy separator varies by provider (verify).
-     - `Travel`, `Receipts`, `Brief`, `Private`, `OTP`, `Quarantine` and `Processed`
-     - inside `Processed`: `Processed/Travel`, `Processed/Receipts`, `Processed/Brief` and `Processed/Private`
-  4. Add server-side rules (Fastmail: Settings → Filters & Rules (verify)):
-     - Plus-tag → folder: `agent+travel@` → Travel, and so on. Fastmail can file plus-addressed mail into a folder with the same name automatically (verify).
-     - The base address `agent@<your-domain>` from anyone but you → Quarantine.
-     - `agent+otp@` → forward to your personal address, then file into OTP.
-     - Optional: a catch-all alias `*@<your-domain>` → Quarantine (notes #21).
-  - Done when: a test message to `agent+travel@` lands in Travel. A message from an address you don't own, sent to the base address, lands in Quarantine. A DMARC checker reports pass for a message sent from the mailbox's webmail (verify which checker).
+- [x] **P0.2 Mailbox** [Claude + you] (you: sign up for AgentMail and create the inbox; create an API key and keep it in your password manager; send the test message) — Per D4 and D5: the AgentMail Free plan, one inbox on `@agentmail.to`, no custom domain, so there is no DNS, folder or filter setup.
+  1. Sign up at agentmail.to on the Free plan and create one inbox, `<name>@agentmail.to`.
+  2. Create an API key in the console and store it in your password manager. It is typed into its destination later (P2.2), never into a chat.
+  3. Send a test message from your personal address to the inbox.
+  - Not covered by this setup (compared with a custom domain): no Quarantine for mail from strangers, so the private profile reads everything that arrives; no separate OTP address forwarded to you; no SPF, DKIM or DMARC of your own.
+  - Done when: the test message appears in the inbox in the AgentMail console.
   - Needs: P0.0b, D4, D5
-  - Automate: `docs/SETUP-GUIDE.md#domain-and-mailbox`; `verify/checks/p0-2-mail-dns.ps1` (MX/SPF/DMARC records via `Resolve-DnsName`)
+  - Automate: `docs/SETUP-GUIDE.md#domain-and-mailbox` (console steps only; nothing to script)
 
-- [ ] **P0.3 Host prep** [Claude + you] (you: turn on Device encryption from your own Microsoft account and check the recovery key is listed online; choose the `hermes` password and type it into the prompt, Autologon and your password manager; add the DHCP reservation in the router admin; sign in to Tailscale) — Done from the `operator` account, except Device encryption:
+- [x] **P0.3 Host prep** [Claude + you] (you: turn on Device encryption from your own Microsoft account and check the recovery key is listed online; choose the `hermes` password and type it into the prompt, Autologon and your password manager; add the DHCP reservation in the router admin; sign in to Tailscale) — Done from the `operator` account, except Device encryption:
   - **Windows Update.** Install updates; set active hours (Settings → Windows Update → Advanced options) (verify).
   - **Disk encryption** (you, in your own account). Turn on Settings → Privacy & security → Device encryption from your Microsoft account, because Windows 11 Home backs the recovery key up to the Microsoft account that turns encryption on. Then check the key is listed at account.microsoft.com/devices/recoverykey (verify). If the Device encryption page isn't there, consider Windows 11 Pro for BitLocker.
   - **The `hermes` account.**

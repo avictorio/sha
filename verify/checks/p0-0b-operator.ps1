@@ -129,6 +129,8 @@ Write-Host "  DataCollection\AllowTelemetry=$tel (1 = Required only; blank = not
 Step "Personal sign-ins"
 $msa = Get-ItemProperty 'HKCU:\Software\Microsoft\IdentityCRL\UserExtendedProperties\*' -ErrorAction SilentlyContinue
 Record 'no-microsoft-account' (-not $msa) ''
+$opAdmin = [bool](Get-LocalGroupMember -SID 'S-1-5-32-544' | Where-Object Name -like '*\operator')
+Record 'operator-admin' $opAdmin 'operator is a local admin (P0.0a)'
 Write-Host "  Manual: Chrome signed out of GitHub/Google; no Telegram, no password manager."
 
 # --- Tools ---
