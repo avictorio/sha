@@ -58,11 +58,22 @@ try {
   $plain = $null
 
   Start-ScheduledTask -TaskName $task
-  $deadline = (Get-Date).AddSeconds($TimeoutSeconds + 15)
+  $started  = Get-Date
+  $deadline = $started.AddSeconds($TimeoutSeconds + 15)
+  $neverRan = [datetime]'2000-01-01'
+  Write-Host "running as hermes " -NoNewline
   do {
     Start-Sleep -Milliseconds 500
+    Write-Host '.' -NoNewline
     $done = Test-Path "$dir\rc.txt"
+    $info = Get-ScheduledTaskInfo -TaskName $task
+    # Fail fast if Task Scheduler couldn't start it (e.g. no SeBatchLogonRight: result stays 0x41303).
+    if (-not $done -and $info.LastRunTime -lt $neverRan -and ((Get-Date) - $started).TotalSeconds -gt 20) {
+      Write-Host ''
+      throw ("the task did not start within 20 s (LastTaskResult=0x{0:X8}). Is hermes granted 'Log on as a batch job' (installer/steps/01-host.ps1)?" -f $info.LastTaskResult)
+    }
   } until ($done -or (Get-Date) -gt $deadline)
+  Write-Host ''
 
   $info = Get-ScheduledTaskInfo -TaskName $task
   [pscustomobject]@{

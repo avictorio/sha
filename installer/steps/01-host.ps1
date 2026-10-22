@@ -39,6 +39,29 @@ if (Get-LocalGroupMember -SID 'S-1-5-32-544' | Where-Object Name -like '*\hermes
 }
 Write-Host "hermes: member of Users, not Administrators"
 
+# --- hermes: "Log on as a batch job" --------------------------------------------
+# scripts/invoke-as-hermes.ps1 runs steps as hermes through a one-shot task with the password
+# the owner types; that is a batch logon. Windows 11 grants SeBatchLogonRight only to
+# Administrators, Backup Operators and Performance Log Users, so add hermes alone.
+Step "hermes: Log on as a batch job"
+$sid = (Get-LocalUser hermes).SID.Value
+$inf = Join-Path $env:TEMP "secpol-$([guid]::NewGuid()).inf"
+$db  = Join-Path $env:TEMP "secpol-$([guid]::NewGuid()).sdb"
+secedit /export /cfg $inf /areas USER_RIGHTS | Out-Null
+$lines = Get-Content $inf
+$cur = $lines | Where-Object { $_ -match '^SeBatchLogonRight\s*=' }
+if ($cur -match [regex]::Escape("*$sid")) {
+  Write-Host "already granted"
+} else {
+  $newLine = if ($cur) { "$cur,*$sid" } else { "SeBatchLogonRight = *$sid" }
+  $body = @('[Unicode]', 'Unicode=yes', '[Version]', 'signature="$CHICAGO$"', 'Revision=1', '[Privilege Rights]', $newLine)
+  Set-Content -Path $inf -Value $body -Encoding Unicode
+  secedit /configure /db $db /cfg $inf /areas USER_RIGHTS /quiet
+  if ($LASTEXITCODE -ne 0) { throw "secedit /configure failed ($LASTEXITCODE)" }
+  Write-Host "granted SeBatchLogonRight to hermes ($sid)"
+}
+Remove-Item $inf, $db, "$db.jfm" -Force -ErrorAction SilentlyContinue
+
 # --- Lock on logon (pairs with Autologon) --------------------------------------
 Step "Lock-on-logon task for hermes"
 $task = 'Hermes lock on logon'
