@@ -45,8 +45,12 @@ try {
 [Console]::OutputEncoding = [Text.Encoding]::UTF8; $env:NO_COLOR = '1'; $env:PYTHONIOENCODING = 'utf-8'
 & (Join-Path $env:LOCALAPPDATA 'hermes\bin\hermes.exe') gateway status 2>&1
 '@
-  $st = $r.Output -join ' '
-  Record 'gateway-status-running' ($st -match '(?i)gateway is running') ($st.Substring(0, [Math]::Min(120, $st.Length)))
+  # v0.22.4 prints "✓ Gateway process running (PID: n)". It also flags our task as predating its template
+  # and suggests `hermes gateway start|install` as a repair: don't. That would replace the guarded task.
+  $line = $r.Output | Where-Object { $_ -match 'Gateway process running' } | Select-Object -First 1
+  Record 'gateway-status-running' ([bool]$line) $(if ($line) { "$line".Trim() } else { ($r.Output -join ' | ') })
+  $act = (Get-ScheduledTask -TaskName 'Hermes_Gateway' -ErrorAction SilentlyContinue).Actions | Select-Object -First 1
+  Record 'task-runs-guard' ("$($act.Arguments)" -match 'start-gateway\.ps1') "action: $($act.Execute) $($act.Arguments)"
 } catch { Record 'gateway-status-running' $false $_.Exception.Message }
 
 Step "Summary"
