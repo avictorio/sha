@@ -93,3 +93,11 @@ Get-NetIPConfiguration | Where-Object IPv4DefaultGateway
 ```
 
 It prints a `https://login.tailscale.com/a/...` link. The owner opens the link on their phone, signs in and approves the device. `--unattended` keeps Tailscale running when nobody is signed in; `tailscale debug prefs` then shows `"ForceDaemon": true`. The installer's "connect this device" window can be closed.
+
+## ollama
+
+PLAN.md P0.4. The scripted parts are in `installer/steps/02-ollama.ps1` (run elevated; then `-PullOnly`, unelevated, for the models) and the checks in `verify/checks/p0-4-ollama.ps1`. Versions and model tags are pinned in `versions.lock`.
+
+### NVIDIA driver
+
+Ollama's CUDA libraries need a recent driver. With driver 546.92 (CUDA 12.3), GPU detection crashed (`llama-server --list-devices failed: exit status 0xc0000005`), and Ollama fell back to the CPU (`inference compute id=cpu`, `total_vram="0 B"`). Update the driver from the owner's account through Lenovo Vantage → System Update, the NVIDIA app → Drivers, or nvidia.com/drivers. Driver 621.01 (CUDA 13) works. After a reboot, the Ollama log shows `inference compute ... library=CUDA ... NVIDIA GeForce RTX 4080 Laptop GPU`.

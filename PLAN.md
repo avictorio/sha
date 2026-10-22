@@ -280,7 +280,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5): C
   - Needs: P0.0b, D1
   - Automate: `installer/steps/01-host.ps1`; `verify/checks/p0-3-host.ps1`; `docs/SETUP-GUIDE.md#router-and-tailscale`
 
-- [ ] **P0.4 Ollama as a Windows service** [Claude] — The standard installer runs Ollama inside a user session. The documented service route is the standalone `ollama-windows-amd64.zip` with `ollama serve` under NSSM (notes #15).
+- [x] **P0.4 Ollama as a Windows service** [Claude] — The standard installer runs Ollama inside a user session. The documented service route is the standalone `ollama-windows-amd64.zip` with `ollama serve` under NSSM (notes #15).
   - Don't also run the tray app, or two servers will compete for port 11434 (verify).
   - Extract the zip to `D:\ollama\bin`, then run, from an admin PowerShell (the NSSM syntax and `OLLAMA_MODELS` aren't in the notes (verify)):
     ```powershell
