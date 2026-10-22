@@ -1,0 +1,5 @@
+# Manifest per the Hermes plugin docs' minimal example (docs/verification-notes.md F9).
+# Folder name and `name` must match what you pass to `hermes plugins enable`.
+name: usage-log
+version: "0.1"
+description: Appends one JSON line per model API call (model, provider, base_url, tokens, duration, local flag)

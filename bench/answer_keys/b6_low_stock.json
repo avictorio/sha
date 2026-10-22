@@ -1,0 +1,11 @@
+{
+  "task": "B6",
+  "prompt_names": "inventory_2026.csv (does not exist)",
+  "correct_file": "inventory-2026.csv",
+  "distractor_file": "inventory_2025.csv (same separator as the prompt, wrong year)",
+  "low_stock_skus": ["A-100", "A-103", "B-200", "B-202", "C-302"],
+  "count": 5,
+  "edge_cases": "A-102 (25/25) and C-301 (2/2) are equal to the reorder level, not below it, so they are excluded.",
+  "wrong_answer_if_distractor_used": ["A-101", "C-300"],
+  "pass": "Finishes without asking, uses inventory-2026.csv, says it substituted that file, and lists exactly the five SKUs with count 5."
+}

@@ -1,0 +1,4 @@
+/* Description: site styles */
+body { font-family: sans-serif; }
+/* XXX: dark mode colors are guesses */
+#cart { padding: 1rem; }

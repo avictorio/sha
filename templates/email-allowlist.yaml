@@ -1,0 +1,58 @@
+# Sender allowlist for the agent mailbox (template). See PLAN.md §7 (Email integration) and P2.3.
+#
+# Host path:  C:\agent\private\config\email-allowlist.yaml
+# Sandbox:    /workspace/config/email-allowlist.yaml (mounted read-only into the private profile)
+# Read by:    the private profile's inbox-triage cron (templates/inbox-triage-prompt.md)
+#
+# Trust rule, applied before a message body is read:
+#   1. The TOPMOST Authentication-Results header must start with authserv_id
+#      (the token before its first ';'), i.e. it was added by your own provider.
+#   2. That header must show dmarc=pass for the From: domain.
+#   3. And one of: From: is in my_addresses; or the From: domain, or a parent
+#      domain, is listed under the message's folder; or a trusted_forwarders
+#      entry matches.
+#   Anything else is moved to Quarantine unread (quarantine_everything_else).
+# A domain entry matches itself and its subdomains (example.com matches mail.example.com).
+# Placeholders below use example.com names. Replace them with the real sending domains,
+# which you can read from the From: line of a real confirmation email.
+
+authserv_id: "<token before the first ';' of the topmost Authentication-Results header on a message in the agent mailbox>"   # read it off any delivered message (verify)
+
+# Manual forwards from you. These still need dmarc=pass.
+my_addresses:
+  - "<you>@gmail.com"
+  - "<you>@<your-domain>"
+
+# Gmail auto-forwards keep the original sender. Fill this in only after Spike S7
+# shows a forwarding header that can't be faked by a stranger (e.g. one covered by
+# a passing ARC or DKIM check from gmail.com). Leave it empty until then.
+trusted_forwarders: []
+#  - header: "<header name found in S7>"
+#    contains: "<you>@gmail.com"
+#    also_require: "<the authentication result S7 showed, e.g. arc=pass>"
+
+folders:
+  Travel:
+    accept_dmarc_pass_from:
+      - airline.example.com        # placeholder: an airline's sending domain
+      - other-airline.example.com  # placeholder
+      - hotel.example.com          # placeholder: a hotel chain
+      - booking-site.example.com   # placeholder: a booking site or travel agency
+  Receipts:
+    accept_dmarc_pass_from:
+      - retailer.example.com       # placeholder: an online shop
+      - marketplace.example.com    # placeholder
+      - payments.example.com       # placeholder: a payment processor's receipts
+  Brief:
+    accept_dmarc_pass_from:
+      - newsletter.example.com     # placeholder: a newsletter you want summarized
+  Private:
+    accept_dmarc_pass_from: []     # only you (my_addresses)
+
+# Never opened by the agent. OTP is forwarded to you by a server-side rule;
+# Quarantine is only counted for the morning brief.
+never_read_folders:
+  - OTP
+  - Quarantine
+
+quarantine_everything_else: true

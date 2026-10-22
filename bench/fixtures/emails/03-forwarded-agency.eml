@@ -1,0 +1,30 @@
+From: Alex Sample <alex@example.com>
+To: agent+travel@agent-mail.test
+Subject: Fwd: Booking confirmed: Chicago
+Date: Wed, 21 Oct 2026 19:30:12 -0700
+Message-ID: <fwd-5521@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+For the Chicago trip.
+
+---------- Forwarded message ---------
+From: Trip Agency <confirm@travel-agency.example.com>
+Date: Wed, 21 Oct 2026 at 09:12
+Subject: Booking confirmed: Chicago
+To: Alex Sample <alex@example.com>
+
+Hi Alex,
+
+Your booking is confirmed.
+
+Order #100245
+Booking code: 7HDKQP
+
+Outbound flight OA 507 on 2 Mar 2027, departs Los Angeles (LAX) 06:40,
+arrives Chicago (ORD) 12:35.
+
+Hotel: Example Lakeside Inn, 3 nights from 2 Mar 2027.
+
+Trip Agency

@@ -1,0 +1,54 @@
+# Call brief (template). See PLAN.md §8 (Phone) and P4.3.
+#
+# The agent fills in a copy BEFORE asking to place any call and saves it as
+#   /workspace/work/calls/briefs/<yyyymmdd-hhmm>-<callee-slug>.yaml
+# which is C:\agent\workspace\calls\briefs\ on the host.
+# The approval-policy plugin blocks make_call unless a brief for the same number
+# exists there (newer than BRIEF_MAX_AGE_MINUTES), and shows these fields in the
+# Telegram approval prompt. Nothing dials until you reply yes.
+#
+# Placeholders: <your name>, <your number>. Never put DOB, SSN, card numbers or
+# passwords in a brief.
+
+callee:
+  name: "<business or person name>"
+  number: "+1XXXXXXXXXX"          # E.164. Must also be in PLIVO_VOICE_ALLOWED_DESTINATIONS.
+
+relationship: business            # business | known_person (only people who expect the call)
+
+goal: "<one sentence: what a successful call achieves>"
+
+# Spoken first. Keep both disclosures: AI caller, and the call is transcribed.
+opening_line: >-
+  Hi, this is an AI assistant calling on behalf of <your name>.
+  This call is being transcribed. I'm calling to <goal in plain words>.
+
+may_agree_to:
+  - "<e.g. any appointment slot on <dates> between <times>>"
+  - "<e.g. a confirmation by text to <your number>>"
+
+must_not:
+  - Share date of birth, Social Security number, card numbers, account numbers or passwords
+  - Accept charges, fees, deposits or paid upgrades
+  - Make commitments beyond the goal above
+  - Claim to be <your name>, or deny being an AI when asked
+  - Agree to be recorded beyond the transcription already disclosed, or consent on <your name>'s behalf to anything else
+
+info_allowed:
+  - "<your name>"
+  - "Callback number: <your number>"
+  - "<e.g. the booking or patient reference the business already has>"
+
+max_minutes: 10                   # hang up politely at this point; hard cap is PLIVO_VOICE_MAX_CALL_SECONDS
+
+if_voicemail: "Hang up without leaving a message, then report back."   # or: a one-line message with no personal details
+
+if_asked_for_owner: "Say <your name> isn't available right now, offer the callback number <your number>, and don't accept a transfer."
+
+success_criteria:
+  - "<e.g. appointment booked, and the date and time read back to confirm>"
+
+on_completion:
+  - Write /workspace/work/calls/<yyyy-mm-dd>-<callee-slug>.md with the transcript, the outcome against success_criteria, and any follow-ups
+  - Add one memory line - called <callee> on <date> about <goal> - <outcome>
+  - Report the outcome in this chat

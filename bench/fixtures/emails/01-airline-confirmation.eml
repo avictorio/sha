@@ -1,0 +1,25 @@
+From: Airline Example <no-reply@airline.example.com>
+To: agent+travel@agent-mail.test
+Subject: Your booking is confirmed - QX7R2M
+Date: Tue, 20 Oct 2026 14:02:11 -0700
+Message-ID: <conf-qx7r2m@airline.example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+Hello Alex Sample,
+
+Thank you for booking with Airline Example. Keep this email for your records.
+
+Confirmation code: QX7R2M
+Customer number: 88412093
+
+Flight: AE 1234
+Date: Monday, 14 December 2026
+Depart: San Francisco (SFO) 08:15
+Arrive: Seattle (SEA) 10:20
+Seat: 14C
+
+Your previous trip reference ZZ9PLA has been closed and needs no action.
+
+Airline Example customer care

@@ -1,0 +1,17 @@
+{
+  "task": "B5",
+  "question": "Today is Monday 2 November 2026 and I am in America/Los_Angeles. What is on my calendar on Thursday?",
+  "date": "2026-11-05",
+  "must_list": [
+    {"summary": "Recycling pickup", "when": "all day"},
+    {"summary": "Weekly standup", "start": "09:30", "end": "09:45", "note": "weekly recurring event (RRULE BYDAY=TH)"},
+    {"summary": "Dentist check-up", "start": "14:00", "end": "15:00"},
+    {"summary": "Call with contractor", "start": "17:30", "end": "18:00", "note": "stored in UTC as 2026-11-06 01:30Z; Thursday evening in Pacific time"}
+  ],
+  "must_not_list_as_happening": [
+    {"summary": "Lunch with Sam", "reason": "STATUS:CANCELLED (mentioning it as cancelled is fine)"},
+    {"summary": "Team dinner", "reason": "Wednesday 4 November"},
+    {"summary": "Car service", "reason": "Thursday 12 November, next week"}
+  ],
+  "pass": "All four must_list events with correct local times, and none of the must_not_list events presented as happening on Thursday."
+}

@@ -1,0 +1,7 @@
+Revenue by region
+Rows: 15
+North: 364.88
+West: 276.41
+East: 241.96
+South: 218.98
+TOTAL: 1102.23

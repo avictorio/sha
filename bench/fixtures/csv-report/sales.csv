@@ -1,0 +1,16 @@
+date,region,product,units,unit_price
+2026-09-01,West,Widget,3,19.99
+2026-09-01,East,Gadget,2,45.50
+2026-09-02,North,Widget,5,19.99
+2026-09-02,South,Sprocket,10,4.25
+2026-09-03,West,Gadget,1,45.50
+2026-09-03,East,Widget,4,19.99
+2026-09-04,North,Sprocket,8,4.25
+2026-09-04,South,Gadget,3,45.50
+2026-09-05,West,Sprocket,12,4.25
+2026-09-05,East,Sprocket,6,4.25
+2026-09-06,North,Gadget,2,45.50
+2026-09-06,South,Widget,2,19.99
+2026-09-07,West,Widget,6,19.99
+2026-09-07,East,Gadget,1,45.50
+2026-09-08,North,Widget,7,19.99

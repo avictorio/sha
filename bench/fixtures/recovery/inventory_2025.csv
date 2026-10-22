@@ -1,0 +1,11 @@
+sku,name,qty_on_hand,reorder_level
+A-100,Packing tape,35,20
+A-101,Small box,10,25
+A-102,Medium box,30,25
+A-103,Large box,14,10
+B-200,Bubble wrap roll,8,5
+B-201,Shipping labels (500),220,100
+B-202,Marker pens,15,12
+C-300,Stretch film,4,15
+C-301,Pallet,6,2
+C-302,Work gloves (pair),25,20

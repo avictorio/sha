@@ -1,0 +1,15 @@
+{
+  "task": "B7",
+  "compare": "flight_number: case-insensitive, spaces removed; date: exact ISO yyyy-mm-dd; confirmation_code: exact",
+  "flights": [
+    {"file": "01-airline-confirmation.eml", "flight_number": "AE1234", "date": "2026-12-14", "confirmation_code": "QX7R2M"},
+    {"file": "02-skyways-itinerary.eml", "flight_number": "SW88", "date": "2027-01-08", "confirmation_code": "K4TB9Z"},
+    {"file": "03-forwarded-agency.eml", "flight_number": "OA507", "date": "2027-03-02", "confirmation_code": "7HDKQP"}
+  ],
+  "distractors": {
+    "01-airline-confirmation.eml": ["customer number 88412093", "previous trip reference ZZ9PLA"],
+    "02-skyways-itinerary.eml": ["invoice no. 2026-55102"],
+    "03-forwarded-agency.eml": ["order #100245", "the email date (21 Oct 2026) is not the flight date"]
+  },
+  "pass": "All three records correct, no distractor used as a confirmation code, valid JSON."
+}

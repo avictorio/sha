@@ -1,0 +1,9 @@
+date,region,product,units,unit_price
+2026-10-01,East,Widget,2,19.99
+2026-10-01,West,Gadget,4,45.50
+2026-10-02,South,Sprocket,9,4.25
+2026-10-02,East,Gadget,3,45.50
+2026-10-03,North,Widget,1,19.99
+2026-10-03,West,Sprocket,5,4.25
+2026-10-04,South,Widget,6,19.99
+2026-10-04,Central,Gadget,5,45.50

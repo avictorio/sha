@@ -1,0 +1,4 @@
+# Description: runtime settings
+api_base_url: https://api.example.test/v1  # TODO: move the API base URL to an environment variable
+currency: USD
+page_size: 20

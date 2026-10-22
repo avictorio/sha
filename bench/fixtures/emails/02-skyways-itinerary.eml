@@ -1,0 +1,38 @@
+From: SkyWays Bookings <bookings@skyways.test>
+To: agent+travel@agent-mail.test
+Subject: Itinerary for your trip to Denver
+Date: Wed, 21 Oct 2026 08:45:00 -0700
+Message-ID: <itin-77120@skyways.test>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="sky-boundary-01"
+
+--sky-boundary-01
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+Your SkyWays itinerary
+
+Passenger: ALEX SAMPLE
+Record locator: K4TB9Z
+Invoice no. 2026-55102
+
+SW 88  Friday, 8 January 2027
+Oakland (OAK) 13:05 -> Denver (DEN) 16:40
+
+--sky-boundary-01
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+<html><body>
+<h1>Your SkyWays itinerary</h1>
+<p>Passenger: ALEX SAMPLE</p>
+<table>
+<tr><td>Record locator</td><td><b>K4TB9Z</b></td></tr>
+<tr><td>Invoice no.</td><td>2026-55102</td></tr>
+<tr><td>Flight</td><td>SW 88</td></tr>
+<tr><td>Date</td><td>Friday, 8 January 2027</td></tr>
+<tr><td>Route</td><td>Oakland (OAK) 13:05 &rarr; Denver (DEN) 16:40</td></tr>
+</table>
+</body></html>
+
+--sky-boundary-01--

@@ -1,0 +1,156 @@
+{
+  "task": "B3",
+  "rule": "lines containing the uppercase whole word TODO",
+  "total_todos": 16,
+  "files_with_todos": 12,
+  "files": [
+    {
+      "path": "README.md",
+      "description": "project overview and setup",
+      "count": 1,
+      "todos": [
+        {
+          "line": 8,
+          "text": "TODO: document the release process"
+        }
+      ]
+    },
+    {
+      "path": "config/settings.yaml",
+      "description": "runtime settings",
+      "count": 1,
+      "todos": [
+        {
+          "line": 2,
+          "text": "TODO: move the API base URL to an environment variable"
+        }
+      ]
+    },
+    {
+      "path": "docs/architecture.md",
+      "description": "architecture notes",
+      "count": 2,
+      "todos": [
+        {
+          "line": 6,
+          "text": "TODO: draw the request flow diagram"
+        },
+        {
+          "line": 11,
+          "text": "TODO: describe refund handling"
+        }
+      ]
+    },
+    {
+      "path": "scripts/deploy.sh",
+      "description": "deploy script for the staging server",
+      "count": 1,
+      "todos": [
+        {
+          "line": 4,
+          "text": "TODO: fail if the build directory is missing"
+        }
+      ]
+    },
+    {
+      "path": "src/cart.py",
+      "description": "cart totals and discounts",
+      "count": 3,
+      "todos": [
+        {
+          "line": 10,
+          "text": "TODO: apply coupon stacking rules"
+        },
+        {
+          "line": 12,
+          "text": "TODO: clamp at zero"
+        },
+        {
+          "line": 17,
+          "text": "TODO: round per line item, not per cart"
+        }
+      ]
+    },
+    {
+      "path": "src/checkout.py",
+      "description": "checkout flow and payment hand-off",
+      "count": 1,
+      "todos": [
+        {
+          "line": 7,
+          "text": "TODO: handle declined cards with a retry message"
+        }
+      ]
+    },
+    {
+      "path": "src/inventory.py",
+      "description": "stock levels and reorder alerts",
+      "count": 1,
+      "todos": [
+        {
+          "line": 6,
+          "text": "TODO: make the reorder level configurable per SKU"
+        }
+      ]
+    },
+    {
+      "path": "src/utils/dates.py",
+      "description": "date parsing helpers",
+      "count": 1,
+      "todos": [
+        {
+          "line": 6,
+          "text": "TODO: support ISO week dates"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_cart.py",
+      "description": "cart unit tests",
+      "count": 1,
+      "todos": [
+        {
+          "line": 6,
+          "text": "TODO: add a test for empty carts"
+        }
+      ]
+    },
+    {
+      "path": "web/app.js",
+      "description": "front-end bootstrap",
+      "count": 2,
+      "todos": [
+        {
+          "line": 8,
+          "text": "TODO: lazy-load the catalog page"
+        },
+        {
+          "line": 10,
+          "text": "TODO: remove debug logging before launch"
+        }
+      ]
+    },
+    {
+      "path": "web/cart-view.js",
+      "description": "cart page rendering",
+      "count": 1,
+      "todos": [
+        {
+          "line": 3,
+          "text": "TODO: show an empty-cart illustration"
+        }
+      ]
+    },
+    {
+      "path": "web/index.html",
+      "description": "landing page markup",
+      "count": 1,
+      "todos": [
+        {
+          "line": 6,
+          "text": "TODO: add the cookie banner"
+        }
+      ]
+    }
+  ]
+}

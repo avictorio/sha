@@ -1,0 +1,5 @@
+# Manifest per the Hermes plugin docs' minimal example (docs/verification-notes.md F9).
+# Folder name and `name` must match what you pass to `hermes plugins enable`.
+name: approval-policy
+version: "0.1"
+description: Draft-first approval gate for outbound side effects (calls, SMS, 2FA codes, card fills) and blocks for mail sending

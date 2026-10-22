@@ -1,0 +1,44 @@
+# Instance data: per-user values, never committed (PLAN.md §11)
+instance.yaml
+**/instance.yaml
+
+# Secrets
+.env
+*.env
+.env.*
+!*.env.example
+auth.json
+**/vault/
+*passphrase*
+*.key
+*.pem
+
+# Backups and archives
+backups/
+backup-stage/
+restore-stage/
+restore-test/
+*.7z
+*.bak
+
+# Logs and runtime state
+logs/
+*.log
+*.jsonl
+state.db
+*.db-journal
+
+# Agent outputs that may hold personal data
+calls/
+receipts.csv
+brief-queue.md
+
+# Benchmark run outputs (fixtures and answer keys stay tracked)
+bench/out/
+bench/b4/
+
+# Python / OS noise
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
