@@ -364,7 +364,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5), w
   - Needs: P0.4, P0.5, S1
   - Automate: `installer/steps/04-hermes.ps1`; `config/templates/default.config.yaml`; `verify/checks/p0-6-hermes.ps1`
 
-- [ ] **S1 Spike — Docker backend on native Windows** [Claude] — The docs don't say it outright. The code handles Windows drive paths and has a Windows mount test (F4: inferred yes). Set `hermes config set terminal.backend docker`, then have the agent run `uname -a` and `ls /workspace/work`.
+- [x] **S1 Spike — Docker backend on native Windows** [Claude] — The docs don't say it outright. The code handles Windows drive paths and has a Windows mount test (F4: inferred yes). Set `hermes config set terminal.backend docker`, then have the agent run `uname -a` and `ls /workspace/work`.
   - It works (Linux output, and the mount is visible): continue with P0.6.
   - Containers start but the mount fails: try the `C:\\agent\\workspace` host-path form (verify) and check Docker Desktop's file sharing.
   - It doesn't work at all, choose one:
@@ -1314,7 +1314,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 
 | ID | Question | Result | Date |
 |---|---|---|---|
-| S1 | Docker backend on native Windows | | |
+| S1 | Docker backend on native Windows | **Works; continue with P0.6 as planned.** Hermes v0.22.4 (stable), Docker Desktop 4.96.1 on WSL 2. With `terminal.backend: docker` and `docker_volumes: ["C:/agent/workspace:/workspace/work"]`, the local model (qwen3 30B-A3B q4_K_M) ran `uname -a` (`Linux … 6.18.54.1-microsoft-standard-WSL2 … x86_64`) and `ls -la /workspace/work` (showed `calls`, the folder created on the host). The forward-slash `C:/…` host path works; the `C:\…` form wasn't needed. Run as `hermes` through `scripts/invoke-as-hermes.ps1` and `installer/steps/04-hermes.ps1 -Configure`. | 2026-10-21 |
 | S2 | AgentMail MCP relay on native Windows with `--tools` | | |
 | S3 | Cron `--provider` for local Ollama | | |
 | S4 | Does `hermes backup` cover all profiles? | | |
