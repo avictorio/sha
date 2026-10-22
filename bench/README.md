@@ -146,3 +146,20 @@ A candidate is **GO** if all three hold:
 - Record a **revised D2**: the private profile keeps the best local candidate but narrows local work to extraction and summaries, i.e. B4/B5/B7-class tasks such as inbox triage, the morning brief and itinerary extraction.
 - The default profile runs **cloud-first**: `model.default` is the D9 cloud model, still under the OpenRouter key cap.
 - Re-run the benchmark when a new local model you want to try appears.
+
+## Screening a new model first: `speed-probe.ps1`
+
+Before giving a newly released model a full run, screen it with `bench/speed-probe.ps1 -Models <tag>[,<tag>]`. It asks Ollama directly (not through Hermes) for:
+- the native context length;
+- the CPU/GPU split at 64K;
+- generation and prompt-reading speed;
+- 3 simple tool calls.
+
+A model far slower than the current default can't meet the 30 s go rule, so it can skip the full run.
+
+Results on the Legion (RTX 4080 Laptop GPU, 12 GB; 64 GB RAM; Ollama 0.40.8; 64K context; 2026-10-22):
+
+| Model | Native ctx | CPU/GPU | Writing, tok/s | Prompt reading, tok/s | Tool calls | Verdict |
+|---|---|---|---|---|---|---|
+| `qwen3:30b-a3b-instruct-2507-q4_K_M` (MoE, ~3B active) | 262144 | 53%/47% | 27.3 | 458 | 3/3 | Current default; full run in P1.1 |
+| `muse-glimmer:30b` (Meta, dense, Q4_K_M, 18 GB) | 131072 | 48%/52% | 4.7 | 131 | 3/3 | **Screened out.** About 6x slower: a 300-word reply takes about 1.5 min, so it can't meet the 30 s go rule on 12 GB of VRAM. Worth re-testing on a 24 GB+ GPU, where it fits entirely in VRAM. |
