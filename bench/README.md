@@ -163,3 +163,5 @@ Results on the Legion (RTX 4080 Laptop GPU, 12 GB; 64 GB RAM; Ollama 0.40.8; 64K
 |---|---|---|---|---|---|---|
 | `qwen3:30b-a3b-instruct-2507-q4_K_M` (MoE, ~3B active) | 262144 | 53%/47% | 27.3 | 458 | 3/3 | Current default; full run in P1.1 |
 | `muse-glimmer:30b` (Meta, dense, Q4_K_M, 18 GB) | 131072 | 48%/52% | 4.7 | 131 | 3/3 | **Screened out.** About 6x slower: a 300-word reply takes about 1.5 min, so it can't meet the 30 s go rule on 12 GB of VRAM. Worth re-testing on a 24 GB+ GPU, where it fits entirely in VRAM. |
+
+`muse-glimmer:30b` stays pulled (18 GB on D:). The owner may use it later in a hybrid setup: qwen3 by default, Glimmer for a few tasks where its quality is worth the wait. The two models don't fit in VRAM together, so switching evicts the other model (about 10 s to reload). That makes Glimmer a better fit for slow, non-interactive work, such as cron jobs or overnight runs, than for chat replies. Benchmark it on those tasks first.
