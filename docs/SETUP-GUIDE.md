@@ -46,3 +46,50 @@ PLAN.md P0.2, per D4 and D5: the AgentMail Free plan, with one inbox and no cust
 4. From your personal address, send a test message to the inbox and check that it appears in the console.
 
 There is no DNS to set up: MX, SPF, DKIM and DMARC are AgentMail's on `agentmail.to`.
+
+## host-prep
+
+PLAN.md P0.3. The scripted parts are in `installer/steps/01-host.ps1` and the checks in `verify/checks/p0-3-host.ps1`.
+
+### Running 01-host.ps1
+
+- `operator` must be in the local Administrators group. If it was added during the current sign-in, the admin prompt asks for credentials: enter **`operator`** and its password, not the owner's account. The script refuses to run as any other user.
+- It asks for the `hermes` password at a hidden prompt. The owner types it there and also saves it in their password manager.
+- `hermes` is created with a password that never expires, because an expiring password would quietly stop Autologon from working.
+
+### Autologon (Sysinternals)
+
+The script installs it with winget, to `%LOCALAPPDATA%\Microsoft\WinGet\Packages\Microsoft.Sysinternals.Autologon_*\Autologon64.exe`. Run it as administrator, accept the license, enter username `hermes`, the computer name as the domain and the `hermes` password, then click **Enable**. The password is stored as an LSA secret, not in plain text in the registry.
+
+### Device encryption (owner's account)
+
+Sign in to the owner's Microsoft account, then go to Settings → Privacy & security → Device encryption and turn it on. Windows 11 Home backs up the recovery key to the account that turns encryption on, so check that it's listed at account.microsoft.com/devices/recoverykey.
+
+### Windows Update
+
+Settings → Windows Update → **Download & install all**. Driver updates can sit under Advanced options → Optional updates. Set active hours under Advanced options → Active hours.
+
+### Battery conservation
+
+Turn it on in Lenovo Vantage or Legion Space from the owner's account; neither app is installed in `operator`.
+
+## router-and-tailscale
+
+### DHCP reservation
+
+In the router's admin page, reserve the laptop's current IPv4 address for its Wi-Fi adapter's MAC address. If Ethernet will be used, reserve the Ethernet adapter's MAC address too. Get both addresses with:
+
+```powershell
+Get-NetAdapter -Physical | Format-Table Name, MacAddress, Status
+Get-NetIPConfiguration | Where-Object IPv4DefaultGateway
+```
+
+### Tailscale
+
+`01-host.ps1` installs it with winget. Don't sign in from a browser in `operator`, because that would leave the owner's account signed in there. Instead, run:
+
+```powershell
+& "$env:ProgramFiles\Tailscale\tailscale.exe" up --unattended
+```
+
+It prints a `https://login.tailscale.com/a/...` link. The owner opens the link on their phone, signs in and approves the device. `--unattended` keeps Tailscale running when nobody is signed in; `tailscale debug prefs` then shows `"ForceDaemon": true`. The installer's "connect this device" window can be closed.

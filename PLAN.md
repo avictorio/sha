@@ -251,7 +251,7 @@ A Claude agent runs on the Legion, in its own `operator` account (P0.0a, §5): C
   - Needs: P0.0b, D4, D5
   - Automate: `docs/SETUP-GUIDE.md#domain-and-mailbox` (console steps only; nothing to script)
 
-- [ ] **P0.3 Host prep** [Claude + you] (you: turn on Device encryption from your own Microsoft account and check the recovery key is listed online; choose the `hermes` password and type it into the prompt, Autologon and your password manager; add the DHCP reservation in the router admin; sign in to Tailscale) — Done from the `operator` account, except Device encryption:
+- [x] **P0.3 Host prep** [Claude + you] (you: turn on Device encryption from your own Microsoft account and check the recovery key is listed online; choose the `hermes` password and type it into the prompt, Autologon and your password manager; add the DHCP reservation in the router admin; sign in to Tailscale) — Done from the `operator` account, except Device encryption:
   - **Windows Update.** Install updates; set active hours (Settings → Windows Update → Advanced options) (verify).
   - **Disk encryption** (you, in your own account). Turn on Settings → Privacy & security → Device encryption from your Microsoft account, because Windows 11 Home backs the recovery key up to the Microsoft account that turns encryption on. Then check the key is listed at account.microsoft.com/devices/recoverykey (verify). If the Device encryption page isn't there, consider Windows 11 Pro for BitLocker.
   - **The `hermes` account.**
