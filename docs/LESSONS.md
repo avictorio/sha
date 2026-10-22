@@ -42,6 +42,8 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **Non-ASCII characters in a script file need a BOM.** PS 5.1 reads a BOM-less `.ps1` as ANSI, so an em dash in a regex silently never matched. Use `[char]0x2014`. The Edit tool also turns a literal `—` back into the dash.
 - **`$Matches` is overwritten by every successful `-match`,** including one nested inside an expression that reads `$Matches`. Copy it first (`$m = $Matches.Clone()`).
 - **Repo files have CRLF line endings,** so a `sed`/`perl` pattern that spans `\n` silently matches nothing. Use the Edit tool.
+- **`$null` passed to a `[string]` parameter arrives as `""`.** `isolate.ps1 -Off` meant to remove `TERMINAL_DOCKER_NETWORK` but wrote `TERMINAL_DOCKER_NETWORK=` instead. Use a `-Remove` switch.
+- **`GetOwner` throws "Not found" for a process that exited after the listing.** Under `-ErrorAction Stop` that killed `isolate.ps1 -On` mid-run. Filter by path first, and wrap `GetOwner` in try/catch.
 - `Get-AppxPackage -Name` and `Get-WindowsOptionalFeature -FeatureName` take one name, not an array.
 - There's no Python on the machine. Don't plan on it for helper scripts.
 

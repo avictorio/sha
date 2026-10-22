@@ -26,14 +26,12 @@ This benchmark decides **D2**, the single local model both profiles use. It runs
    foreach ($k in $times.Keys) { (Get-Item (Join-Path $d $k)).LastWriteTime = [datetime]$times[$k] }
    ```
    Check once that `ls -lt /workspace/work/bench/fixtures/newest` in the sandbox shows `draft-letter.txt` first. Times should carry through the bind mount (verify). If they don't, set them inside the container with `touch -d`.
-4. **Isolate Hermes from the network** (PLAN.md S14). The on-machine Claude can't run this with Wi-Fi off, because that would cut its own connection. So block only Hermes. The rule's shape, the loopback behaviour and the Hermes executable path are all (verify):
+4. **Isolate Hermes from the network** (PLAN.md S14, verified 2026-10-22). The on-machine Claude can't turn Wi-Fi off, because that would cut its own connection, so it blocks only Hermes. In an elevated PowerShell:
    ```powershell
-   New-NetFirewallRule -DisplayName "bench-block-hermes" -Direction Outbound -Action Block -Program "<Hermes exe path>"
-   hermes config set terminal.docker_network false      # sandbox gets --network=none (notes F4)
-   # when done:
-   Remove-NetFirewallRule -DisplayName "bench-block-hermes"; hermes config set terminal.docker_network true
+   bench\isolate.ps1 -On     # before the first run
+   bench\isolate.ps1 -Off    # after the last run (also restarts the Telegram gateway)
    ```
-   Check that `hermes chat` still answers from Ollama on `127.0.0.1`, and that asking the agent to fetch a web page fails. S14 turns this into `bench/isolate.ps1 -On / -Off`. **Fallback, if S14 finds no reliable isolation:** you turn Wi-Fi off, unplug Ethernet, and run the suite yourself at the Legion's keyboard. Telegram and Tailscale are cut off either way, so every task runs in `hermes chat` on the box.
+   `-On` adds outbound firewall block rules (group `hermes-bench`) on every program Hermes runs as. The real worker is `%LOCALAPPDATA%\hermes\tools\python-<ver>\python.exe`; `hermes.exe` is only a launcher. `-On` also sets `TERMINAL_DOCKER_NETWORK=false` in `hermes`'s `.env` and removes the sandbox, so it comes back with `--network=none`. Loopback is unaffected, so Hermes still reaches Ollama on `127.0.0.1`. `hermes chat` runs through the gateway process, which can't reach Telegram while isolated, so Telegram is down for the whole run. `verify/checks/s14-isolation.ps1` proves all of this end to end and ends with `-Off`. **Fallback, if the check ever fails:** you turn Wi-Fi off, unplug Ethernet, and run the suite yourself at the Legion's keyboard.
 5. **Select the candidate.** Run `hermes config set model.default <tag>`, then open `hermes chat`. In a second window, run `ollama ps`: CONTEXT should be 65536. Note the PROCESSOR split (CPU/GPU %) in `notes`.
 6. **Each run:**
    - Start a fresh session (`/new`, or exit and reopen `hermes chat`) and paste the prompt exactly.

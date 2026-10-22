@@ -399,7 +399,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P0.4
   - Automate: `versions.lock` (model tags and native context); `verify/checks/s6-model-context.ps1`
 
-- [ ] **S14 Spike — Offline isolation without turning Wi-Fi off** [Claude] — Turning Wi-Fi off would cut Claude's own connection, so isolate Hermes instead of the machine. Find out three things:
+- [x] **S14 Spike — Offline isolation without turning Wi-Fi off** [Claude] — Turning Wi-Fi off would cut Claude's own connection, so isolate Hermes instead of the machine. Find out three things:
   1. Which executable(s) Hermes runs as on Windows. Watch `Get-NetTCPConnection -OwningProcess <pid>` during a `hermes chat` turn (verify).
   2. Whether an outbound block rule on them still lets Hermes reach Ollama on `127.0.0.1`. Windows Firewall rules aren't applied to loopback traffic by default (verify).
   3. Whether the sandbox can be cut off with `terminal.docker_network: false`, which means `--network=none` (F4). Container traffic doesn't pass through the Hermes process.
@@ -1328,7 +1328,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | S11 | Plivo plugin install path on native Windows | | |
 | S12 | `make_call` arguments and the live-call model | | |
 | S13 | Hermes version pinning and rollback | | |
-| S14 | Offline isolation for the benchmark without Wi-Fi off | | |
+| S14 | Offline isolation for the benchmark without Wi-Fi off | **(a): works; Claude runs P1.1.**<br>1. Hermes runs as `…\hermes\bin\hermes.exe`, a launcher with no connections, plus the real worker `…\hermes\tools\python-3.14.7+20260901-win32-x64\python.exe`, which holds Telegram (`149.154.166.110:443`) and loopback. `hermes chat` runs through that gateway process (`platform=local`). Venv `python.exe` files are launchers, so `bench/isolate.ps1 -On` blocks every `hermes.exe`/`python*.exe`/`uv.exe`/`node.exe` under `hermes`'s AppData plus the live ones: 30 programs.<br>2. Loopback is unaffected. With the rules on, Hermes's Python got `WinError 10013` for `https://example.com` but 200 from Ollama on `127.0.0.1:11434`, and `hermes chat` answered `PONG`.<br>3. `TERMINAL_DOCKER_NETWORK=false` in `.env` works like `terminal.docker_network: false`: the recreated sandbox had `NetworkMode=none`, and `curl` failed with "Could not resolve host".<br>`-Off` removes the rules and the key, recreates the sandbox and restarts the gateway; Telegram reconnected in 22 s. Checked by `verify/checks/s14-isolation.ps1`. | 2026-10-22 |
 
 ## Appendix B: Sources
 
