@@ -86,8 +86,8 @@ The `github-sha` alias in `~\.ssh\config` (no BOM) is shared by both clients. `s
 PLAN.md P0.2, per D4 and D5: the AgentMail Free plan, with one inbox and no custom domain. Everything is done in the AgentMail web console by the owner; there is nothing to script.
 
 1. Sign up at agentmail.to on the Free plan.
-2. Create one inbox, `<name>@agentmail.to`. It receives everything; there are no per-designation addresses.
-3. Create an API key and store it in your password manager. It goes into Hermes's `.env` later (P2.2), typed into a hidden prompt.
+2. Create one inbox, `<name>@agentmail.to`. This is "main": it receives all designated mail, sorted by sender domain and subject tags (PLAN.md §7). The otp inbox is added in P2.2.
+3. Create an API key and store it in your password manager. This full key never goes into Hermes: Claude uses it only through a hidden prompt for admin calls (S8, P2.2), and Hermes gets a separate read-only key scoped to main (PLAN.md §7).
 4. From your personal address, send a test message to the inbox and check that it appears in the console.
 
 There is no DNS to set up: MX, SPF, DKIM and DMARC are AgentMail's on `agentmail.to`.
