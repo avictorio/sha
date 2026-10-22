@@ -1,0 +1,52 @@
+# config/templates/private.config.yaml -- PLAN.md P1.3: the private (local-only) profile's settings.
+# installer/steps/06-private-profile.ps1 deep-merges this into
+# %LOCALAPPDATA%\hermes\profiles\private\config.yaml (as hermes); lists here replace the lists there.
+# Local-only: no cloud provider, no fallback, no cloud keys in this profile's .env.
+model:
+  default: qwen3-coder:30b            # D2 (versions.lock model_default)
+  provider: custom
+  base_url: http://localhost:11434/v1
+  context_length: 65536               # must be >= 64000 or Hermes refuses to start
+  ollama_num_ctx: 65536
+fallback_providers: []                # no failover anywhere (F3); `hermes -p private fallback list` stays empty
+delegation:
+  fallback_providers: []              # subagents never fail over either
+gateway:
+  # Hermes v0.22.4 multiplexes every profile into the default profile's gateway, and ignores
+  # multiplex_profiles: false. This keeps private out of it: its own process, its own guarded task
+  # (Hermes_Gateway_private). Hermes calls it a deprecated shim; recheck after every `hermes update`.
+  standalone: true
+terminal:
+  backend: docker
+  container_persistent: true
+  docker_mount_cwd_to_workspace: false
+  docker_volumes:
+    - "C:/agent/private/workspace:/workspace/work"   # more in P2.3; no build-status mount here
+  container_cpu: 8
+  container_memory: 16384
+approvals:                            # same block as default.config.yaml (P0.6), including deny
+  mode: manual
+  timeout: 300
+  cron_mode: deny
+  unattended_mode: deny
+  deny:
+    - "git push --force*"
+    - "rm -rf /"
+    - "rm -rf /*"
+    - "rm -rf ~*"
+    - "mkfs*"
+    - "dd if=*"
+    - "*himalaya message send*"
+    - "*himalaya message reply*"
+    - "*himalaya message forward*"
+    - "*himalaya message write*"
+    - "*himalaya template send*"
+    - "*agentmail inboxes messages send*"
+    - "*agentmail inboxes messages reply*"
+    - "*agentmail inboxes messages forward*"
+    - "*agentmail inboxes drafts*"
+    - "*agentmail inboxes:messages send*"
+    - "*agentmail inboxes:messages reply*"
+    - "*agentmail inboxes:messages forward*"
+    - "*agentmail inboxes:drafts*"
+    - "*agentmail agent *"

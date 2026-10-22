@@ -52,15 +52,9 @@ if ($On) {
   Set-EnvKey 'TERMINAL_DOCKER_NETWORK' -Remove
   Remove-Sandbox
   # Clean gateway restart: its Telegram polling gives up after 10 failed reconnects (40 s apart), fewer
-  # than a benchmark run lasts. Same steps as 05-telegram.ps1 (Start-ScheduledTask alone is a no-op).
-  if (Get-ScheduledTask -TaskName 'Hermes_Gateway' -ErrorAction SilentlyContinue) {
-    Stop-ScheduledTask -TaskName 'Hermes_Gateway' -ErrorAction SilentlyContinue
-    Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'gateway run|start-gateway\.ps1' } |
-      Where-Object { try { (Invoke-CimMethod -InputObject $_ -MethodName GetOwner -ErrorAction Stop).User -eq 'hermes' } catch { $false } } |
-      ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
-    Start-Sleep 3
-    Start-ScheduledTask -TaskName 'Hermes_Gateway'
-    Write-Host "restarted Hermes_Gateway"
-  }
+  # than a benchmark run lasts. Both bots: each one's Telegram polling was blocked.
+  $repo = Split-Path $PSScriptRoot
+  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile default
+  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile private
   Write-Host "NOT ISOLATED: rules removed; sandbox network back to default." -ForegroundColor Green
 }

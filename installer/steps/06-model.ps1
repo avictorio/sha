@@ -35,15 +35,9 @@ try {
   $r.Output | ForEach-Object { Write-Host "  $_" }
   if (($r.Output | Where-Object { $_ -like 'MODEL=*' }) -ne "MODEL=$tag") { throw "model.default didn't read back as $tag; gateway not restarted." }
 
-  Step "Restart the Telegram gateway cleanly"
-  # Start-ScheduledTask is a no-op on a running task, and Stop-ScheduledTask can leave hermes.exe/python behind.
-  Stop-ScheduledTask -TaskName 'Hermes_Gateway' -ErrorAction SilentlyContinue
-  Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'gateway run|start-gateway\.ps1' } |
-    Where-Object { try { (Invoke-CimMethod -InputObject $_ -MethodName GetOwner -ErrorAction Stop).User -eq 'hermes' } catch { $false } } |
-    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
-  Start-Sleep 3
-  Start-ScheduledTask -TaskName 'Hermes_Gateway'
-  Write-Host "restarted Hermes_Gateway"
+  Step "Restart the Telegram gateways cleanly (both profiles use model_default)"
+  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile default
+  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile private
 
   Step "Check (verify/checks/p1-2-model.ps1)"
   & (Join-Path $repo 'verify\checks\p1-2-model.ps1') -Password $pw

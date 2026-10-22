@@ -93,7 +93,7 @@ New-Item -ItemType Directory -Force 'C:\agent\bin' | Out-Null
 Copy-Item (Join-Path $repo 'scripts\start-gateway.ps1') 'C:\agent\bin\start-gateway.ps1' -Force
 $hermesId = "$env:COMPUTERNAME\hermes"
 Register-ScheduledTask -TaskName 'Hermes_Gateway' -Force `
-  -Action    (New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\agent\bin\start-gateway.ps1') `
+  -Action    (New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\agent\bin\start-gateway.ps1 -Profile default') `
   -Trigger   (New-ScheduledTaskTrigger -AtLogOn -User $hermesId) `
   -Principal (New-ScheduledTaskPrincipal -UserId $hermesId -LogonType Interactive -RunLevel Limited) `
   -Settings  (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
@@ -105,15 +105,10 @@ Write-Host "registered Hermes_Gateway (at hermes logon, in hermes's session)"
 $hermesSignedIn = [bool](Get-CimInstance Win32_Process -Filter "Name='explorer.exe'" |
   Where-Object { (Invoke-CimMethod -InputObject $_ -MethodName GetOwner).User -eq 'hermes' })
 if ($hermesSignedIn) {
-  # Clean restart: Start-ScheduledTask is a no-op on a running task, and Stop-ScheduledTask can leave
-  # hermes.exe/python behind, so a gateway started before the Telegram extra keeps running without it.
-  Stop-ScheduledTask -TaskName 'Hermes_Gateway' -ErrorAction SilentlyContinue
-  Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'gateway run|start-gateway\.ps1' } |
-    Where-Object { (Invoke-CimMethod -InputObject $_ -MethodName GetOwner).User -eq 'hermes' } |
-    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
-  Start-Sleep 3
+  # Clean restart (scripts/restart-gateway.ps1): a gateway started before the Telegram extra was
+  # installed would otherwise keep running without it.
   $start = Get-Date
-  Start-ScheduledTask -TaskName 'Hermes_Gateway'
+  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile default
   $deadline = $start.AddSeconds(90); $connected = $false
   while (-not $connected -and (Get-Date) -lt $deadline) {
     Start-Sleep 5
