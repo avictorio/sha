@@ -1007,6 +1007,38 @@ Tags:
 ### AM14. Server-side forwarding
 - **Automatic forwarding:** NOT FOUND. The API has no rules or auto-forward resource; the only forward is the per-message one, which is a send. VERIFIED (source) that the API surface has none.
 
+## Reference design: Muse (2026-10-23)
+
+How another agent product handles the same risks; the source for PLAN.md's hardening items (S16, P2.1b, P3.1, P3.5). Items MU1–MU6. Read with WebFetch on 2026-10-23:
+- **[A]** "How We Built Safety Into Muse", Tarek Sheasha, Meta Superintelligence Labs, 2026-09-08: https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse (`https://security.muse.ai/` redirects here).
+- **[B]** "How We Designed Muse", Mona Sarantakos with Christine Awad, 2026-09: https://introducing.muse.ai/
+
+These describe Muse, not Hermes: nothing here is a Hermes command or key. Tags as above; VERIFIED (source) means the post states it.
+
+### MU1. A permission service outside the agent
+- "Sentinel" is "a separate host-side agent", outside the agent's isolated runtime cell, and "the sole permission authority" for connector actions and network egress; the safety services run as separate systemd units outside the cell "so attackers cannot disable these protections". VERIFIED (source) [A].
+- No hash or signature check on the safety configuration is described. NOT FOUND.
+
+### MU2. Egress
+- Sentinel checks every request (hostname, resolved IP, port, protocol, method, path); clean requests within a "narrowly bounded auto allow policy" pass, and a process that has handled untrusted data loses the auto-allow. VERIFIED (source) [A].
+- A named-host allowlist: NOT FOUND (the post describes per-request policy instead).
+- SSRF: public hostnames that resolve to private addresses are blocked at egress. VERIFIED (source) [A].
+
+### MU3. Credentials
+- The agent never sees real credentials: code in the cell holds a surrogate token, swapped for the real one at the network boundary; browser passwords are injected from a separate store. VERIFIED (source) [A].
+
+### MU4. Isolation and prompt injection
+- `systemd-nspawn` cell (unprivileged root mapping, own filesystem, virtual NIC, filtered syscalls) inside a per-user VM. VERIFIED (source) [A].
+- Assume-breach: external data labelled untrusted, a classifier ensemble, and human approval for data leaving the VM; "Muse isn't immune to attack". VERIFIED (source) [A].
+- A reader/actor split (one model reads untrusted content, another acts): NOT FOUND. The nearest measures are the untrusted-data labels, losing auto-allow after untrusted input, and a browser sub-agent. INFERRED.
+
+### MU5. Purchases and approvals
+- Muse detects checkout pages and requires approval showing the exact purchase; single-use card numbers per merchant; a classifier flags high-risk form submissions. VERIFIED (source) [A].
+- Hard-to-undo actions (an email, a purchase) stop for an approval card by default; browsing doesn't. VERIFIED (source) [B].
+
+### MU6. Data
+- VM data is backed up continuously; trajectories may be used for training after PII removal, with an opt-out. VERIFIED (source) [A]. Not related to OpenRouter's retention (PLAN.md D9).
+
 ---
 
 ## Archive: paths not taken (D4)
