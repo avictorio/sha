@@ -10,7 +10,7 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 - "notes #N", "F#" and "AM#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position (2026-10-22).**
-- Phase 0 is done; Phase 1 is done except the cloud/local rename (D3). **Next: S15, then P1.10; then Phase 2, starting with P2.1.**
+- Phase 0 is done; Phase 1 is done except the cloud/local rename (D3). **Next: P1.10 (S15 done: a built-in rename exists); then Phase 2, starting with P2.1.**
 - Still open: **P1.9** (one check left: a side task seen running on the local model in real use) and **P0.0a** (owner: the desktop-app check; revisit when computer use or a browser is first needed).
 
 ## 1. Summary
@@ -227,22 +227,17 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
   - Needs: P1.4, P1.5
   - Automate: `installer/steps/11-token-diet.ps1`; `config/templates/default.token-diet.yaml`; `verify/checks/tokens-inventory.ps1`; `verify/checks/p1-5-usage-log.ps1`
 
-- [ ] **S15 Spike — Can Hermes rename a profile in place?** [Claude] — For D3's rename of `private` to `local`. Check `hermes profile --help` for a rename command (verify).
-  - **A** — a supported rename exists: use it in P1.10.
-  - **B** — none: P1.10 creates a blank `local` profile (as P1.3, no `--clone`), copies `config.yaml`, `.env`, `SOUL.md`, `memories\`, `skills\` and the vault from `private`, re-creates its cron jobs with `10-cron.ps1`, and deletes `private` only after P1.10's checks pass.
-  - Also record whether `default` can be renamed. Expected: no (it is Hermes's base profile), so the cloud agent keeps the id `default` and the docs call it the cloud agent.
-  - Done when: the outcome is recorded in Appendix A.
-  - Needs: P1.3
+- [x] **S15 Spike — Can Hermes rename a profile in place?** [Claude] — Done 2026-10-22: yes, `hermes profile rename <old> <new>`; for `default` it only sets a display name → Appendix A. Files: `verify/checks/s15-profile-rename.ps1`.
 
 - [ ] **P1.10 Cloud/local rename** [Claude + you] — D3, before Phase 2 creates inboxes and configs under the old name. Take a backup first (`scripts/backup.ps1`) and stop the private gateway.
   - You: in @BotFather, `/setname` the bots to "Hermes Cloud" and "Hermes Local"; send each a test message.
-  1. Profile `private` → `local` per S15.
+  1. `hermes profile rename private local` (S15; it also migrates the profile's session and routing identity; if that step fails, `hermes profile migrate-identity` retries it). `hermes profile rename default cloud` sets the cloud profile's display name; its id stays `default`.
   2. Scheduled task `Hermes_Gateway_private` → `Hermes_Gateway_local`, keeping the 45 s logon delay and the `TELEGRAM_ALLOWED_USERS` guard.
   3. Folders `C:\agent\private\*` → `C:\agent\local\*`, and the mounts in `config/templates/local.config.yaml` (renamed from `private.config.yaml`).
   4. Usage log `usage-private.jsonl` → `usage-local.jsonl`, keeping its history.
-  5. Repo: every script, check, template, cron file and the usage-log plugin say `local` (`ValidateSet('default', 'local')`; `06-private-profile.ps1` → `06-local-profile.ps1`; `p1-3-private.ps1` → `p1-3-local.ps1`); the docs say "cloud agent" and "local agent". `default` stays `default` internally unless S15 says otherwise.
-  - Done when: `hermes profile list` shows `default` and `local` and no `private`; `p1-3-local.ps1`, `p1-5-usage-log.ps1 -Profile local`, `p1-7-backup.ps1` and `p1-8-ping.ps1` pass; `usage-local.jsonl` has no `"local": false` line; both bots answer under their new names; and `git grep -i private` shows only intended uses (the word, not the profile id).
-  - Needs: S15, P1.9
+  5. Repo: every script, check, template, cron file and the usage-log plugin say `local` (`ValidateSet('default', 'local')`; `06-private-profile.ps1` → `06-local-profile.ps1`; `p1-3-private.ps1` → `p1-3-local.ps1`); the docs say "cloud agent" and "local agent". `default` stays `default` internally (S15).
+  - Done when: `hermes profile list` shows `default` (display name `cloud`) and `local`, and no `private`; `p1-3-local.ps1`, `p1-5-usage-log.ps1 -Profile local`, `p1-7-backup.ps1` and `p1-8-ping.ps1` pass; `usage-local.jsonl` has no `"local": false` line; both bots answer under their new names; and `git grep -i private` shows only intended uses (the word, not the profile id).
+  - Needs: S15, P1.3
   - Automate: `installer/steps/06-local-profile.ps1`; `config/templates/local.config.yaml`; the renamed checks
 
 **Phase 1 exit state:** two bots on your hardware. Default is cloud-first on OpenRouter under the $50 cap, with local fallback, local side tasks and local cron; private is provably local-only. Every model call is logged; backups run nightly; both profiles ping daily.
@@ -928,6 +923,7 @@ Today the bots can't see their own setup: their tools run in Docker, which mount
 | S12 | `make_call` arguments and the live-call model | | |
 | S13 | Hermes version pinning and rollback | | |
 | S14 | Offline isolation for the benchmark without Wi-Fi off | **(a): works.** `bench/isolate.ps1 -On` blocks outbound traffic for every `hermes.exe`/`python*.exe`/`uv.exe`/`node.exe` under `hermes`'s AppData (the worker is the bundled `python.exe`); loopback to Ollama still works; `TERMINAL_DOCKER_NETWORK=false` in `.env` gives the sandbox no network. `-Off` undoes it all. `verify/checks/s14-isolation.ps1`. | 2026-10-22 |
+| S15 | Can Hermes rename a profile in place? | **Yes (A).** v0.22.4 has `hermes profile rename <old_name> <new_name>`, plus `migrate-identity` to retry a renamed profile's session/routing identity migration. For `default` it sets a display name only; the id stays `default`. Also available: `profile export`/`import` (a `.tar.gz` archive) and `create --clone-from`. `verify/checks/s15-profile-rename.ps1`. | 2026-10-22 |
 
 ## Appendix B: Sources
 
