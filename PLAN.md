@@ -620,6 +620,16 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - First unattended reboot (17:12): both logon tasks started together. The default gateway lost the race (exit 75, "second gateway on this host") and stayed down; the private ping still fired at 17:20. Fixed with a retry in `start-gateway.ps1` and a 45 s logon delay on `Hermes_Gateway_private` (fb1406e).
   - Second reboot (boot 17:30:05): default started at 17:30:37 on the first try, private at 17:31:14. One-time `ping-reboot` jobs (`10-cron.ps1 -TestInMinutes 10`) fired at 17:39 in both profiles and were delivered; the owner saw both pongs.
   - `p1-8-ping.ps1 -Since '2026-10-22 17:38'` passed 4/4: each profile logged `platform cron` calls under its own profile, `qwen3-coder:30b`, localhost, `"local": true`.
+- [ ] **P1.9 Token diet for the default profile** [Claude] (follow-up the owner asked for after Phase 1) — Cloud calls ran 13–24K input tokens each. Cut what every request carries and what runs in the background, measuring before and after.
+  1. Log cached tokens in usage-log (`cache_read`, `cache_write`) so the cost per call is visible.
+  2. Route side tasks to the local model: `auxiliary.<task>` `provider`/`model`/`base_url` (background review, compression, session search and the other text-only tasks). Vision stays `auto`. Skip the title model call (`auxiliary.title_generation.model_upgrade_enabled: false`).
+  3. Switch off toolsets the default bot doesn't use yet, on cli and telegram: `hermes tools disable --platform <p> <toolsets>`. Keep the browser (Phase 3).
+  4. Trim the skills index: `skills.disabled`.
+  5. Shorter conversations: an earlier `compression.threshold` and `compression.idle_compact_after_seconds`.
+  - Baseline (2026-10-22, `p1-5-usage-log.ps1 -Profile default`): a fresh CLI chat sent 13,034 input tokens, `cache_read` 0. Telegram turns: 22–24K. A background review was one 23K cloud call with no cache reads.
+  - Done when: the same fresh chat sends at least 30% fewer input tokens than the baseline; usage-log lines carry the cache fields; side tasks run on the local model (`"local": true` or the agent log); and both bots still answer on Telegram.
+  - Needs: P1.4, P1.5
+  - Automate: `installer/steps/11-token-diet.ps1`; `verify/checks/tokens-inventory.ps1`; `verify/checks/p1-5-usage-log.ps1`
 
 **Phase 1 exit state:** two bots on your hardware, the private one provably local-only; cloud use is explicit and logged; backups are running.
 

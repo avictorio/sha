@@ -41,9 +41,11 @@ $calls = @($new | ForEach-Object { try { $_ | ConvertFrom-Json } catch { } } | W
 $c = $calls | Select-Object -Last 1
 if ($c) {
   Record 'profile' ($c.profile -eq $Profile) "profile=$($c.profile) hermes_home=$($c.hermes_home)"
-  Record 'model' ($c.model -eq $lock.model_default) "model=$($c.model) provider=$($c.provider)"
-  Record 'base-url-local' ($c.local -eq $true -and $c.base_url -match '^http://(localhost|127\.0\.0\.1)') "base_url=$($c.base_url) local=$($c.local)"
-  Record 'tokens-and-duration' ($null -ne $c.tokens.total -and $null -ne $c.duration) "tokens=$($c.tokens.input)/$($c.tokens.output) duration=$($c.duration) platform=$($c.platform)"
+  $want = if ($Profile -eq 'default') { $lock.cloud_model_default } else { $lock.model_default }   # default is cloud-first (P1.4)
+  Record 'model' ($c.model -eq $want) "model=$($c.model) provider=$($c.provider)"
+  $isLocal = $c.local -eq $true -and $c.base_url -match '^http://(localhost|127\.0\.0\.1)'
+  Record 'base-url' $(if ($Profile -eq 'default') { $c.local -eq $false } else { $isLocal }) "base_url=$($c.base_url) local=$($c.local)"
+  Record 'tokens-and-duration' ($null -ne $c.tokens.total -and $null -ne $c.duration) "tokens in=$($c.tokens.input) out=$($c.tokens.output) total=$($c.tokens.total) cache_read=$($c.tokens.cache_read) unaccounted=$($c.tokens.unaccounted) keys=$($c.tokens.usage_keys -join ',') duration=$($c.duration) platform=$($c.platform)"
 } else { Record 'call-line' $false 'no line with event=call' }
 Record 'no-cloud-in-private' (($Profile -ne 'private') -or -not (Select-String -Path $log -Pattern '"local": false' -Quiet)) "profile=$Profile"
 
