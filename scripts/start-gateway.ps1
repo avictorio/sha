@@ -21,7 +21,16 @@ if ($Profile -ne 'default' -and -not (Select-String -Path (Join-Path $home_ 'con
   Log "REFUSED: gateway.standalone is not true in $home_\config.yaml; gateway not started."
   exit 3
 }
-Log "starting gateway (allowed users set)"
-& (Join-Path $root 'bin\hermes.exe') -p $Profile gateway run --quiet
-Log "gateway exited with $LASTEXITCODE"
-exit $LASTEXITCODE
+# At logon both tasks start together. A gateway that starts while another is still starting up exits 75
+# ("Refusing to start a second gateway on this host … profiles: unknown"), and Task Scheduler doesn't restart
+# a task for a non-zero exit. So a quick exit 75 is retried, up to 6 times, 30 s apart (P1.8 reboot test).
+for ($try = 1; $try -le 6; $try++) {
+  Log "starting gateway (allowed users set)$(if ($try -gt 1) { "; retry $try" })"
+  $t0 = Get-Date
+  & (Join-Path $root 'bin\hermes.exe') -p $Profile gateway run --quiet
+  $rc = $LASTEXITCODE
+  Log "gateway exited with $rc"
+  if ($rc -ne 75 -or ((Get-Date) - $t0).TotalSeconds -gt 120) { break }
+  Start-Sleep 30
+}
+exit $rc
