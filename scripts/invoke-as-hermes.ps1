@@ -72,6 +72,13 @@ try {
       Write-Host ''
       throw ("the task did not start within 20 s (LastTaskResult=0x{0:X8}). Is hermes granted 'Log on as a batch job' (installer/steps/01-host.ps1)?" -f $info.LastTaskResult)
     }
+    # Ended without writing rc.txt (e.g. the command doesn't parse): stop waiting instead of sitting out the timeout.
+    if (-not $done -and $info.LastRunTime -gt $neverRan -and ((Get-Date) - $started).TotalSeconds -gt 10 -and
+        (Get-ScheduledTask -TaskName $task).State -eq 'Ready' -and -not (Test-Path "$dir\rc.txt")) {
+      Write-Host ''
+      Write-Host ("the task ended without a result (LastTaskResult=0x{0:X8}); does the command parse?" -f $info.LastTaskResult) -ForegroundColor Red
+      break
+    }
   } until ($done -or (Get-Date) -gt $deadline)
   Write-Host ''
 

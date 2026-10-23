@@ -9,6 +9,9 @@ model:
   context_length: 65536               # must be >= 64000 or Hermes refuses to start
   ollama_num_ctx: 65536
 fallback_providers: []                # no failover anywhere (F3); `hermes -p private fallback list` stays empty
+providers:                            # S3: pinned cron jobs use --provider ollama in both profiles (local)
+  ollama:
+    base_url: http://localhost:11434/v1
 delegation:
   fallback_providers: []              # subagents never fail over either
 gateway:

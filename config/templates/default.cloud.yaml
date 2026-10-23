@@ -11,3 +11,6 @@ fallback_providers:                       # cloud errors (429, 5xx, 401/403, 404
   - provider: custom
     model: qwen3-coder:30b                # D2 (versions.lock model_default)
     base_url: http://localhost:11434/v1
+providers:                                # S3: cron jobs pinned to the local model use --provider ollama.
+  ollama:                                 # (--provider custom here means model.base_url, i.e. OpenRouter.)
+    base_url: http://localhost:11434/v1

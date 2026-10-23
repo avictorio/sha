@@ -97,6 +97,9 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **Pasting into a hidden `Read-Host -AsSecureString` prompt:** Ctrl+V can fail without any sign. Right-click to paste.
 - **A `-NoExit` window that stopped on an error keeps its transcript file open.** Use a new `-LogPath` for each run.
 - **A cloud model can say "I'll remember that" and save nothing.** Muse Wonder confirmed it had saved the owner's facts, but no `USER.md` was written. Check the memories folder, not the reply. Also, Telegram passes the sender's display name to every bot, so "it knows my name" doesn't mean it has memory.- **PowerShell variable names ignore case.** `$force = '…'` reassigns the `[switch]$Force` parameter ("Cannot convert value System.String to … SwitchParameter").
+- **In the default profile, `--provider custom` on a cron job means the CLOUD.** `custom` takes `model.base_url`, which is OpenRouter since P1.4, so a job "pinned" to `qwen3-coder:30b` went to OpenRouter. Use `--provider ollama` with `providers.ollama.base_url` (S3).
+- **`hermes cron run` refuses a paused job**, despite `--paused`'s help ("resume to schedule, or explicitly run now"). An active job runs at once ("Ran now: succeeded").
+- **`"$name:"` in a PowerShell string reads as a scope-qualified variable** (`$env:`-style) and breaks parsing. Write `"${name}:"`. When the command passed to `invoke-as-hermes.ps1` doesn't parse, the task exits without `rc.txt`. The helper used to wait out the whole timeout with no output; it now stops when the task ends. Render and parse generated command text before running it.
 - **P0.5's sandbox image depends on P0.6** (`hermes config get terminal.docker_image`), so P0.5 can't be ticked until after P0.6. **Next:** move that Done-when item into P0.6.
 
 ## Plan and process
