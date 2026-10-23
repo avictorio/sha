@@ -53,3 +53,5 @@ approvals:                            # same block as default.config.yaml (P0.6)
     - "*agentmail inboxes:messages forward*"
     - "*agentmail inboxes:drafts*"
     - "*agentmail agent *"
+cron:
+  wrap_response: false  # deliver the job's own text, without the "Cronjob Response" header and footer (P1.8)
