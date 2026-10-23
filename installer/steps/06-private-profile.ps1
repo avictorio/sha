@@ -6,7 +6,9 @@
 #                  never serves it), install the usage log (P1.5), pin Hermes_Gateway to -p default, and
 #                  print what the Bot phase and the checks need. Re-runnable.
 #   -Phase Bot     the second bot: added after Create (PLAN.md P1.3 step 4).
-param([Parameter(Mandatory)][ValidateSet('Create', 'Bot')][string]$Phase, [string]$LogPath)
+#   -Phase Tasks   re-copy start-gateway.ps1 and give Hermes_Gateway_private its 45 s logon delay (P1.8 boot race).
+#                  No password needed.
+param([Parameter(Mandatory)][ValidateSet('Create', 'Bot', 'Tasks')][string]$Phase, [string]$LogPath)
 
 $ErrorActionPreference = 'Stop'
 if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
@@ -20,6 +22,17 @@ $hermesRoot = 'C:\Users\hermes\AppData\Local\hermes'
 $privHome = "$hermesRoot\profiles\private"
 
 function Restart-Gateway([string]$profile) { & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile $profile }
+# At hermes's logon the private gateway starts 45 s after the default one: a gateway that starts while the
+# other is still starting exits 75 ("second gateway on this host"; start-gateway.ps1 also retries).
+function PrivateTrigger([string]$user) { $t = New-ScheduledTaskTrigger -AtLogOn -User $user; $t.Delay = 'PT45S'; $t }
+
+if ($Phase -eq 'Tasks') {
+  Copy-Item (Join-Path $repo 'scripts\start-gateway.ps1') 'C:\agent\bin\start-gateway.ps1' -Force
+  Set-ScheduledTask -TaskName 'Hermes_Gateway_private' -Trigger (PrivateTrigger "$env:COMPUTERNAME\hermes") | Out-Null
+  $t = (Get-ScheduledTask -TaskName 'Hermes_Gateway_private').Triggers[0]
+  Write-Host "Hermes_Gateway_private trigger: $($t.CimClass.CimClassName) user=$($t.UserId) delay=$($t.Delay)"
+  Write-Host "start-gateway.ps1 updated: $((Get-FileHash 'C:\agent\bin\start-gateway.ps1').Hash -eq (Get-FileHash (Join-Path $repo 'scripts\start-gateway.ps1')).Hash)"
+}
 
 if ($Phase -eq 'Create') {
   $dir = Join-Path $env:PUBLIC ("hermes-private-" + [guid]::NewGuid().ToString('N'))
@@ -162,7 +175,7 @@ foreach (`$pf in 'cli', 'telegram') { & `$h -p private tools disable --platform 
   # gateway exits and retries (Hermes host_attach).
   Register-ScheduledTask -TaskName 'Hermes_Gateway_private' -Force `
     -Action    (New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\agent\bin\start-gateway.ps1 -Profile private') `
-    -Trigger   (New-ScheduledTaskTrigger -AtLogOn -User $hermesId) `
+    -Trigger   (PrivateTrigger $hermesId) `
     -Principal (New-ScheduledTaskPrincipal -UserId $hermesId -LogonType Interactive -RunLevel Limited) `
     -Settings  (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
                   -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1)) | Out-Null
