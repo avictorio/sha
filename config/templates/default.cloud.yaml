@@ -1,0 +1,16 @@
+# config/templates/default.cloud.yaml -- PLAN.md P1.4: the default profile runs cloud-first (D2 revised per §9, D9).
+# installer/steps/07-cloud.ps1 deep-merges this into %LOCALAPPDATA%\hermes\config.yaml (as hermes), after
+# default.config.yaml (P0.6) and 06-model.ps1 (P1.2); lists here replace the lists there.
+# The OpenRouter key is NOT here: the owner types it into a hidden prompt, and it goes to the default .env only.
+model:
+  default: meta/muse-wonder               # D9 (versions.lock cloud_model_default)
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  context_length: 65536                   # kept at 64K: compression starts earlier, so each turn costs less
+fallback_providers:                       # cloud errors (429, 5xx, 401/403, 404; 402 billing (verify)) -> local
+  - provider: custom
+    model: qwen3-coder:30b                # D2 (versions.lock model_default)
+    base_url: http://localhost:11434/v1
+providers:                                # S3: cron jobs pinned to the local model use --provider ollama.
+  ollama:                                 # (--provider custom here means model.base_url, i.e. OpenRouter.)
+    base_url: http://localhost:11434/v1

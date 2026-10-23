@@ -56,8 +56,8 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 | D6 | Agent sends email? | No: receive-only in the MVP, with four layers: an inbox-scoped key with no send permissions, main's send allowlist holding only your address, the policy plugin's blocks and `approvals.deny` (§7). Later: approve-first sending (§14). | P2.2 | |
 | D7 | Secret store for API keys | `.env` for the MVP; in Phase 3, whichever of Bitwarden or 1Password you already use. | P3.4 | |
 | D8 | Telephony | The Plivo plugin. The alternative is the official Twilio + Vapi `telephony` skill (outbound only). | P4.1 | |
-| D9 | Cloud escalation model + monthly OpenRouter key cap | Your choice. Start small, e.g. $20–30/month with a monthly reset. | P1.4 | **`meta/muse-wonder`** as the default profile's `model.default` (cloud-first, §9), falling back to the local D2 model when the cloud fails or the key is exhausted; **$50/month** key limit with a monthly reset (owner, 2026-10-22). Escalation for hard tasks: `/model` to any OpenRouter model, under the same key. |
-| D10 | Backup targets | Nightly, encrypted, to the second SSD (`D:\backups`), plus a weekly offsite copy. | P1.7 | |
+| D9 | Cloud escalation model + monthly OpenRouter key cap | Your choice. Start small, e.g. $20–30/month with a monthly reset. | P1.4 | **`meta/muse-wonder`** as the default profile's `model.default` (cloud-first, §9), falling back to the local D2 model when the cloud fails or the key is exhausted; **$50/month** key limit with a monthly reset (owner, 2026-10-22). Escalation for hard tasks: `/model` to any OpenRouter model, under the same key. OpenRouter privacy: training off; "Zero Data Retention only" off, because it excludes Muse Wonder (owner, 2026-10-22). |
+| D10 | Backup targets | Nightly, encrypted, to the second SSD (`D:\backups`), plus a weekly offsite copy. | P1.7 | **Nightly to `D:\backups` only, for the MVP** (owner, 2026-10-22). The weekly offsite copy moves to the Later backlog (§14) and is to be closed after the MVP. |
 | D11 | Purchases | All approve-first, with no saved payment methods on sites. Store a card in the vault: yes / no. | P3.3 | |
 | D12 | v1 platform scope | Windows 11 + an NVIDIA GPU at or above the benchmarked minimum (§11). | P6.2 | |
 | D13 | How it's offered | A free/open repo, a paid package, or a set-up service. This affects licensing and support. | P6.8 | |
@@ -498,7 +498,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
     - Both tasks now name their profile (`start-gateway.ps1 -Profile`). `scripts/restart-gateway.ps1` restarts one profile's gateway. Hermes drops `-p` when it re-executes, so it finds a profile's processes under that profile's launcher. It also stops the temporary `--idle-exit` gateways that `hermes chat` starts, which hold the profile's gateway lock: the first private start exited 1 because of one.
     - Cloud-facing toolsets are off in private (cli and telegram): web, browser, vision, image_gen, tts. The auxiliary tasks are `auto`, which uses the main (local) model first. With no credentials, the log shows only warnings that the Nous auxiliary client is unavailable.
 
-- [ ] **P1.4 OpenRouter for the default profile only** [Claude + you] (you: create the OpenRouter account, pay, create a key with a credit `limit` and `limit_reset: monthly` (D9), and type the key into the prompt) — An exhausted key returns 402 (notes #18).
+- [x] **P1.4 OpenRouter for the default profile only** [Claude + you] (you: create the OpenRouter account, pay, create a key with a credit `limit` and `limit_reset: monthly` (D9), and type the key into the prompt) — An exhausted key returns 402 (notes #18).
   ```powershell
   hermes config set OPENROUTER_API_KEY <key>     # default profile .env only
   ```
@@ -518,8 +518,19 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: a `--once` reply is logged with a non-local `base_url`, and the next reply is local. With Ollama stopped, the default bot answers through the fallback, and that call is logged. Connection-refused isn't a documented trigger (notes #4) (verify). If fallback doesn't fire, test with a `model.default` that doesn't exist, which should return 404 (verify), and record in §13 that a dead Ollama means a dead default bot. `hermes usage --provider openrouter` shows the key's limit.
   - Needs: P1.2, P1.5, D9
   - Automate: `installer/steps/07-cloud.ps1`; `docs/SETUP-GUIDE.md#openrouter`; `verify/checks/p1-4-cloud.ps1`
+  - Done (2026-10-22), with the Done-when adapted to D2's §9 revision (cloud-first: the cloud model is primary, local is the fallback). `07-cloud.ps1` merges `config/templates/default.cloud.yaml`, and `p1-4-cloud.ps1` passes 9/9:
+    - a chat is logged `meta/muse-wonder`, openrouter, `"local": false`;
+    - with `model.default` set to a model that doesn't exist, OpenRouter returns 400 (not the 404 the plan expected), Hermes falls back to `qwen3-coder:30b` at once, and the reply is logged `"local": true`;
+    - `hermes usage --provider openrouter` shows "$50.00 … resets monthly";
+    - the private profile has no OpenRouter entry and no non-local lines.
+    - In Telegram, the owner's message to the default bot was logged `meta/muse-wonder`, `"local": false` (22,195 input tokens).
+    - As built:
+      - OpenRouter's `GET /api/v1/key` returns `limit` but no `limit_reset`, so the script asks the owner to confirm the monthly reset.
+      - OpenRouter's "Zero Data Retention only" setting excludes Muse Wonder (404 "ZDR violation"). The owner turned ZDR off and kept training off (D9).
+      - Not tested: an exhausted key's 402. Hermes's source maps it to a billing failover. (verify) when the cap is first hit.
+      - Subagents and auxiliary tasks inherit the cloud model (`delegation.model` empty, `auxiliary.*: auto`). Moving them local is a cost-tuning follow-up.
 
-- [ ] **P1.5 Usage-log plugin (both profiles)** [Claude] — Copy, enable and restart:
+- [x] **P1.5 Usage-log plugin (both profiles)** [Claude] — Copy, enable and restart:
   ```powershell
   Copy-Item -Recurse <repo>\templates\plugins\usage-log "$env:LOCALAPPDATA\hermes\plugins\usage-log"
   Copy-Item -Recurse <repo>\templates\plugins\usage-log "$env:LOCALAPPDATA\hermes\profiles\private\plugins\usage-log"   # path (verify)
@@ -532,16 +543,18 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P0.6
   - Automate: `plugins/usage-log/`; `installer/steps/08-plugins.ps1`; `verify/checks/p1-5-usage-log.ps1`
   - Progress (2026-10-22): installed in the **default** profile by `08-plugins.ps1 -Profile default`, with `p1-5-usage-log.ps1` 8/8 PASS. A test chat logged one line: profile `default`, model `qwen3-coder:30b`, `base_url` `http://localhost:11434/v1`, `local: true`, tokens and duration in seconds. `hermes plugins enable` also reloads plugins into the running gateway. Still to do: `-Profile private` right after P1.3 step 1, and the per-bot checks in P1.3/P1.4. Input tokens read 1 on a cached prompt (check this on a real turn).
+- Done (2026-10-22): installed in the private profile too (`08-plugins.ps1 -Profile private`, 8/8). Telegram calls were logged per bot, with `profile` matching the bot. Default: `meta/muse-wonder`, openrouter, `"local": false`. Private: 5 calls, `qwen3-coder:30b`, `"local": true`. `usage-private.jsonl` has no `"local": false` line, including during the P1.3 Ollama-stop test. Each profile has its own gateway (`gateway.standalone`), so no per-copy `PROFILE` was needed.
 
-- [ ] **P1.6 Seed memory** [You] — The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
+- [x] **P1.6 Seed memory** [You] — The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
   - Default profile: facts that are fine to send to a cloud provider (name, time zone, preferences, home airport). Claude can format these into `%LOCALAPPDATA%\hermes\memories\USER.md` from your list.
   - Private profile: health, finances and anything personal. Only you tell these, directly to the private bot.
   - Option: if the default profile should carry no memory at all, set `memory.memory_enabled: false` and `memory.user_profile_enabled: false` there (F2).
   - Done when: asked "what do you know about me?", the default bot lists only the cloud-OK facts, and the private bot knows the private facts.
   - Needs: P1.3
   - Automate: `config/templates/USER.default.md` (placeholders only); `docs/SETUP-GUIDE.md#seed-memory`
+- Done (2026-10-22). The owner asked the default bot to remember the facts. Muse Wonder replied as if it had, but wrote no `USER.md`: the folder held only the Phase 0 `MEMORY.md`. So Claude wrote the owner's cloud-OK facts (name and time zone) with `scripts/seed-user-memory.ps1`, as hermes, from a filled-in copy kept outside the repo. After `/new`, the default bot named them and the private bot didn't know the time zone. The private bot does know the owner's name, but from Telegram's sender metadata: its `memories` folder is empty.
 
-- [ ] **S4 Spike — Does `hermes backup` cover all profiles?** [Claude] — Notes #13 lists `profiles/<name>/` under "what to back up", but doesn't say the command includes it. Run `hermes backup -o C:\agent\backup-stage\test.zip` and look for `profiles\private\` in the zip.
+- [x] **S4 Spike — Does `hermes backup` cover all profiles?** [Claude] — Notes #13 lists `profiles/<name>/` under "what to back up", but doesn't say the command includes it. Run `hermes backup -o C:\agent\backup-stage\test.zip` and look for `profiles\private\` in the zip.
   - It's there: one command is enough.
   - It isn't: also run `hermes -p private backup -o …` (verify).
   - Neither works: stop both gateways and archive `%LOCALAPPDATA%\hermes` with 7-Zip.
@@ -549,7 +562,7 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Needs: P1.3
   - Automate: `scripts/backup.ps1` (per-profile logic)
 
-- [ ] **P1.7 Nightly encrypted backup** [Claude + you] (you: choose the passphrase, type it into its file, and store a copy in your password manager) — `hermes backup` is safe while Hermes runs and exits 1 if the archive is incomplete. It contains `.env` and `auth.json` (so encrypt it), excludes browser profiles and models, and doesn't cover `C:\agent`. The 7-Zip flags below are general knowledge (verify):
+- [x] **P1.7 Nightly encrypted backup** [Claude + you] (you: choose the passphrase, type it into its file, and store a copy in your password manager) — `hermes backup` is safe while Hermes runs and exits 1 if the archive is incomplete. It contains `.env` and `auth.json` (so encrypt it), excludes browser profiles and models, and doesn't cover `C:\agent`. The 7-Zip flags below are general knowledge (verify):
   ```powershell
   # C:\agent\bin\backup.ps1
   $ts = Get-Date -Format yyyyMMdd-HHmm
@@ -570,8 +583,19 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   - Done when: an encrypted `.7z` exists in `D:\backups`; it won't list or extract without the passphrase; and with it, it shows `config.yaml`, `state.db` and the private profile's files.
   - Needs: S4, D10
   - Automate: `scripts/backup.ps1`; `installer/steps/09-backup.ps1` (scheduled task); `verify/checks/p1-7-backup.ps1`
+  - Done (2026-10-22). `09-backup.ps1`:
+    - installs 7-Zip 26.05 (winget, hash verified);
+    - restricts `D:\backups` to SYSTEM, Administrators and hermes;
+    - sets the passphrase file's ACL (hermes R) before writing the passphrase the owner typed;
+    - registers `Agent_Backup` (daily 03:30, as hermes, `StartWhenAvailable`) and runs it once.
+  - The first run wrote `hermes-20261022-1448.7z` (7.2 MB) in about 3 s. `p1-7-backup.ps1` passes 14/14:
+    - a wrong passphrase can neither list nor extract it (7z exit 2);
+    - with the passphrase it lists the inner `hermes backup` zip plus `workspace`, `private` and `shared`;
+    - the inner zip has `config.yaml`, `state.db`, `profiles/private/config.yaml`, `profiles/private/state.db` and `memories/USER.md`.
+  - As built: 7-Zip archives `C:\agent` directly with `-ssw` instead of `Compress-Archive`, which fails on files held open, such as the usage logs.
+  - The weekly offsite copy is deferred past the MVP (owner, D10). It is in the §14 Later backlog.
 
-- [ ] **S3 Spike — Can cron `--provider` name the local Ollama provider?** [Claude] — There's no `--base-url` flag, and whether a `providers:` entry works with `--provider` is untested (F6).
+- [x] **S3 Spike — Can cron `--provider` name the local Ollama provider?** [Claude] — There's no `--base-url` flag, and whether a `providers:` entry works with `--provider` is untested (F6).
   1. Try a test job with `--provider custom`.
   2. If that fails, add `providers.ollama.base_url: "http://localhost:11434/v1"` (notes #3) and try `--provider ollama`.
   - One works: use it as `<S3 provider>` in every pinned job. A pinned job never falls back (F3).
@@ -1311,6 +1335,7 @@ The benchmark ships in the package, so preflight + bench = qualification.
 | A custom domain (AgentMail Developer tier), so you own the address | You want the address to outlive AgentMail, or the Free limits pinch |
 | Agent Armor hold mode: mail flagged `review` is held until you release it (AM6, verify) | Agent Armor is out of Labs, or a flagged email gets past triage |
 | Automated email-OTP retrieval | Relaying codes is a daily chore, and those sites lack TOTP |
+| **Post-MVP, to close:** a weekly offsite copy of the newest `D:\backups\*.7z` (D10). Pick the target (a USB drive or a cloud folder; the archives are already encrypted), then add it to `scripts/backup.ps1` or a weekly task | Right after the MVP (Phase 2) is in daily use; at the latest before P5.5's backlog review |
 | Spend-cap auto-approval for purchases | A month of approve-first purchases with no rejections |
 | Cloud browser backend for parallel or throwaway sessions | Research needs several browsers at once |
 | Chat-by-email via the email gateway (`EMAIL_ALLOWED_USERS`) | You want to reach the agent from a device without Telegram |
@@ -1325,8 +1350,8 @@ The benchmark ships in the package, so preflight + bench = qualification.
 |---|---|---|---|
 | S1 | Docker backend on native Windows | **Works; continue with P0.6 as planned.** Hermes v0.22.4 (stable), Docker Desktop 4.96.1 on WSL 2. With `terminal.backend: docker` and `docker_volumes: ["C:/agent/workspace:/workspace/work"]`, the local model (qwen3 30B-A3B q4_K_M) ran `uname -a` (`Linux … 6.18.54.1-microsoft-standard-WSL2 … x86_64`) and `ls -la /workspace/work` (showed `calls`, the folder created on the host). The forward-slash `C:/…` host path works; the `C:\…` form wasn't needed. Run as `hermes` through `scripts/invoke-as-hermes.ps1` and `installer/steps/04-hermes.ps1 -Configure`. | 2026-10-21 |
 | S2 | AgentMail MCP relay on native Windows with `--tools` | | |
-| S3 | Cron `--provider` for local Ollama | | |
-| S4 | Does `hermes backup` cover all profiles? | | |
+| S3 | Cron `--provider` for local Ollama | **Use `--provider ollama`, with `providers.ollama.base_url: http://localhost:11434/v1`, in both profiles.** Tested 2026-10-22 (v0.22.4, `verify/checks/s3-cron-provider.ps1`), each job `--model qwen3-coder:30b`, triggered with `hermes cron run`:<br>- **default + `--provider custom`: went to the CLOUD.** In the default profile `custom` means `model.base_url`, which is OpenRouter since P1.4; the usage log shows `base_url https://openrouter.ai/api/v1`, `"local": false`.<br>- **default + `--provider ollama`: local**, `http://localhost:11434/v1`, `"local": true`.<br>- **private + `--provider custom`: local** (its `model.base_url` is localhost). `ollama` is added there too, so every pinned job uses one form.<br>Also: `cron run` refuses a paused job ("resume it before running"), and it "runs now" synchronously (`Ran now: succeeded`) rather than waiting for the next tick. `cron create` prints "Created job: <id>". Jobs live in a database, not `cron/jobs.json`. While both gateways run, each profile's jobs run in its own process: a gateway skips a profile whose own gateway is live (`_cron_profile_gate`). | 2026-10-22 |
+| S4 | Does `hermes backup` cover all profiles? | **Yes: one command is enough.** `hermes backup -o C:gentbackup-stages4-test.zip` (v0.22.4, as hermes) exited 0 with a 9 MB zip of 815 entries. It includes `profiles/private/` (381 entries: `config.yaml`, `state.db`, memories, plugins), the default `config.yaml`, `state.db`, `memories/USER.md`, `.env` and `auth.json` (so encrypt it), plus `logs/`, `cron/` and `kanban.db`. `-k N` (default 3) prunes only older `hermes-backup-*.zip` files in the output folder, so `backup.ps1` passes `-k 0`. Checked with `verify/checks/s4-backup-profiles.ps1`, which lists the zip by name and deletes it. | 2026-10-22 |
 | S5 | Plivo transcript output | | |
 | S6 | Context length of each candidate tag | From `ollama show` on Ollama 0.40.8: `qwen3:30b-a3b-instruct-2507-q4_K_M` **262144** (qwen3moe, 30.5B; this settles the notes' 256K-vs-40K conflict); `gpt-oss:20b` **131072** (20.9B, MXFP4); `qwen3-coder:30b` **262144** (qwen3moe); `qwen3:32b` **40960**, which is **dropped**: it is below 64K, would need `num_ctx` stretched past its training, and is dense (Muse Glimmer, a dense 30B, ran at 4.7 tok/s here vs 27.3 for the MoE; bench/README.md). The three kept candidates are pinned in `versions.lock` (`model_candidates`, `model_native_context`), checked by `verify/checks/s6-model-context.ps1`. `qwen3:32b` stays pulled but unused. Not a candidate: `muse-glimmer:30b` 131072. | 2026-10-22 |
 | S7 | What AgentMail exposes for forwards and spoofs | | |

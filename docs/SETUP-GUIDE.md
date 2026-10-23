@@ -216,3 +216,50 @@ Hermes v0.22.4 serves every profile from the default profile's gateway ("multipl
 1. **It answers.** Send the private bot "hello". It replies, and `C:\agent\shared\logs\usage-private.jsonl` gets a line with `"platform": "telegram"` and `"local": true`.
 2. **It can't switch to a cloud model.** Send `/model openrouter:openai/gpt-4o-mini` (any cloud model will do). It must fail or refuse, and the next reply must still come from the local model.
 3. **It doesn't fall back to the cloud.** Run `verify/checks/p1-3-ollama-stop-test.ps1` elevated. It stops Ollama and waits. Send the private bot a question: it must reply with an error, not an answer. Press Enter in the window to restart Ollama. If you forget, it restarts Ollama by itself after 10 minutes.
+
+## openrouter
+
+PLAN.md P1.4, D9. The default profile runs **cloud-first**, which is §9's rule when no local model passes the benchmark. Its model is `meta/muse-wonder` through OpenRouter. When the cloud fails, it falls back to the local model (`qwen3-coder:30b`). The private profile never gets the key. The scripted part is `installer/steps/07-cloud.ps1` (run elevated, in a visible window), and the checks are in `verify/checks/p1-4-cloud.ps1`.
+
+### The owner's steps
+
+1. **Account.** Sign up at openrouter.ai and add credit. Claude stops at payment screens.
+2. **Privacy** (openrouter.ai/settings/privacy). Turn **off** every option that lets providers train on your prompts.
+   - Leave "Zero Data Retention only" **off**. With it on, OpenRouter refuses Muse Wonder: Hermes logs a 404, "ZDR violation (account settings)", and every reply comes from the local fallback. With ZDR on, the Claude models (served through Amazon Bedrock or Google), Muse Spark Open and Muse Glimmer still work.
+3. **Key.** Under Keys, create `hermes-default` with a credit limit of **$50** that **resets monthly**. Save it in the password manager.
+4. **Run `07-cloud.ps1`.**
+   - Paste the key at the hidden prompt with a **right-click**: Ctrl+V doesn't always paste into a hidden prompt.
+   - OpenRouter's key lookup doesn't report the reset period, so the script asks you to confirm "monthly". It refuses a key with no limit, or with a limit over versions.lock's `cloud_key_limit_usd`.
+   - Then type the `hermes` password.
+   - `-SkipKey` reruns everything except the key.
+   - Close any earlier window first: an open window keeps its log file locked.
+
+### What the check proves
+
+- **The cloud model answers.** A chat is logged with `"local": false` and `meta/muse-wonder`.
+- **The fallback works.** `model.default` is set for a moment to a model that doesn't exist. OpenRouter returns 400 "not a valid model ID", Hermes falls back to the local model at once, and the reply is logged with `"local": true`. Then `config.yaml` is restored from its backup. A message to the default bot during that minute may get a local answer.
+- **`hermes usage --provider openrouter`** shows the key's limit and "resets monthly".
+- **Not tested: an exhausted key.** OpenRouter returns 402, and Hermes's source maps 402 to a billing failover (`agent/agent_runtime_helpers.py`). (verify) when the cap is first reached.
+
+### Costs to watch
+
+Hermes sends about 13,000 tokens of context with even a one-word message, which costs Muse Wonder about 5¢. Auxiliary tasks also run on the main model (`auxiliary.*.provider: auto`): titles, compression and vision. So do subagents (`delegation.model` is empty, so they inherit the main model). Check spend at openrouter.ai/activity in the first week. Moving the auxiliary tasks to the local model is a later tuning step.
+
+## seed-memory
+
+PLAN.md P1.6. The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.** The default bot is cloud-first, so its memory goes to OpenRouter with every message.
+
+1. **Default bot.** Send the cloud-OK facts from `config/templates/USER.default.md`, with your values filled in: "Please remember these facts about me in your user profile: …". Hermes writes them to `%LOCALAPPDATA%\hermes\memories\USER.md` in its own format. That's safer than editing the file by hand.
+2. **Private bot.** Tell it anything personal (health, finances) directly, and only there.
+3. **Check (Done when).** Ask each bot "what do you know about me?". The default bot lists only the cloud-OK facts, and the private bot knows only what you told it.
+
+## backup
+
+PLAN.md P1.7. `installer/steps/09-backup.ps1` (elevated) sets up the nightly encrypted backup: `Agent_Backup` runs `C:\agent\bin\backup.ps1` as hermes at 03:30 and writes `D:\backups\hermes-<time>.7z`, keeping 14 days. The log is `C:\agent\shared\logs\backup.log`.
+
+- **The passphrase.** You choose it at a hidden prompt; 12 or more characters, no double quotes. Keep a copy in the password manager. It's stored on the machine in `C:\agent\bin\backup-passphrase.txt`, readable by hermes and admins only, because the unattended task needs it. Losing it means the backups can't be opened. `-NewPassphrase` replaces it, and older archives keep the old one.
+- **Restore.**
+  1. Open the `.7z` with 7-Zip and the passphrase.
+  2. `hermes import hermes-<time>.zip` (as hermes) restores Hermes, both profiles included.
+  3. Copy `workspace`, `private` and `shared` back to `C:\agent`.
+- **Check.** `verify/checks/p1-7-backup.ps1` (elevated) proves the newest archive is locked without the passphrase and complete with it.

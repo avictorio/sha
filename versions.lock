@@ -14,6 +14,12 @@ model_native_context = qwen3:30b-a3b-instruct-2507-q4_K_M@262144,gpt-oss:20b@131
 # D2 (P1.1, 2026-10-22): no candidate passed the go rule; for the proof of concept the owner chose the
 # best scorer that meets the speed rule (4/7). Read by installer/steps/06-model.ps1 (P1.2).
 model_default = qwen3-coder:30b
+# D9 (P1.4, 2026-10-22): the default profile is cloud-first on this OpenRouter model and falls back to
+# model_default; the key's monthly limit (USD) that 07-cloud.ps1 requires. Private stays on model_default.
+cloud_model_default = meta/muse-wonder
+cloud_key_limit_usd = 50
+# P1.7 (2026-10-22): 7-Zip for the encrypted nightly backup (winget id 7zip.7zip, publisher Igor Pavlov).
+sevenzip_winget_version = 26.05
 
 # Hermes Agent installer: the copy read and reviewed on 2026-10-21 (1672 lines). 04-hermes.ps1
 # refuses any other. If upstream changes, review the new copy, then update the hash.
