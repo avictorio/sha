@@ -14,13 +14,11 @@ Contract used (docs/verification-notes.md F9, notes #9):
     plugins.hook_callback_timeout (default 30 s) all fail CLOSED (the tool is blocked).
     gate() below also turns its own internal errors into an explicit block.
 
-Install (Windows native). Plugin folders per F9; the profile path follows F1 (verify):
-  default profile:  %LOCALAPPDATA%\hermes\plugins\approval-policy\
-  private profile:  %LOCALAPPDATA%\hermes\profiles\private\plugins\approval-policy\
-Plugins are off until enabled. Enable, then restart the gateway:
-  hermes plugins enable approval-policy
-  hermes -p private plugins enable approval-policy
-  hermes gateway restart
+Install: installer/steps/08-plugins.ps1 -Profile default|local (PLAN.md P2.1). It copies this folder to
+  cloud profile:  %LOCALAPPDATA%\hermes\plugins\approval-policy\
+  local profile:  %LOCALAPPDATA%\hermes\profiles\local\plugins\approval-policy\
+runs `hermes [-p local] plugins enable approval-policy`, and restarts that profile's gateway with
+scripts/restart-gateway.ps1 (never `hermes gateway restart`; docs/LESSONS.md, Hermes).
 
 Self-test: ask the bot to run  echo approval-selftest  -> you should get an approval prompt.
 
@@ -42,7 +40,7 @@ import time
 # CONFIG: edit this section
 # ============================================================================
 
-# Set to "default" / "private" to override the automatic profile detection.
+# Set to "default" / "local" to override the automatic profile detection.
 PROFILE = None
 
 # --- APPROVE: these always need your yes in chat ---------------------------
@@ -65,9 +63,13 @@ APPROVE_ALL_VAULT_FILLS = False
 
 # make_call: refuse unless the agent wrote a matching call brief first
 # (templates/call-brief.yaml). The plugin runs on the host, so this is the host
-# path of /workspace/work/calls/briefs inside the default profile's sandbox.
+# path of /workspace/work/calls/briefs inside each profile's sandbox
+# (config/templates/default.config.yaml and local.config.yaml mounts).
 REQUIRE_BRIEF_FOR_CALLS = True
-BRIEF_DIR = r"C:\agent\workspace\calls\briefs"
+BRIEF_DIRS = {
+    "default": r"C:\agent\workspace\calls\briefs",
+    "local": r"C:\agent\local\workspace\calls\briefs",
+}
 BRIEF_MAX_AGE_MINUTES = 120
 # Candidate argument keys for the destination number (verify in Spike S12).
 NUMBER_ARG_KEYS = ("to", "to_number", "destination", "number", "phone_number", "dst")
@@ -140,7 +142,7 @@ SELFTEST_PATTERN = r"\bapproval-selftest\b"
 DENY_LOG = r"C:\agent\shared\logs\policy-{profile}.jsonl"
 # Set True for a day to log every tool call's name and arg keys. That's how
 # you confirm TERMINAL_TOOLS, COMMAND_ARG_KEYS and NUMBER_ARG_KEYS.
-LOG_ALL_TOOL_CALLS = False
+LOG_ALL_TOOL_CALLS = True   # P2.1 step 2: on for one day, then back to False (step 3)
 
 # Keep approval prompts readable on a phone.
 MAX_MESSAGE_CHARS = 1500
@@ -251,15 +253,16 @@ def _load_yaml(text):
 
 
 def _find_brief(number):
-    """Newest brief in BRIEF_DIR, younger than BRIEF_MAX_AGE_MINUTES, for this number."""
-    if not os.path.isdir(BRIEF_DIR):
+    """Newest brief in this profile's BRIEF_DIRS entry, younger than BRIEF_MAX_AGE_MINUTES, for this number."""
+    brief_dir = BRIEF_DIRS.get(_profile(), BRIEF_DIRS["default"])
+    if not os.path.isdir(brief_dir):
         return None, None, None
     cutoff = time.time() - BRIEF_MAX_AGE_MINUTES * 60
     candidates = []
-    for name in os.listdir(BRIEF_DIR):
+    for name in os.listdir(brief_dir):
         if not name.lower().endswith((".yaml", ".yml")):
             continue
-        path = os.path.join(BRIEF_DIR, name)
+        path = os.path.join(brief_dir, name)
         try:
             mtime = os.path.getmtime(path)
         except OSError:
@@ -354,7 +357,7 @@ def _decide(tool_name, args):
         path, data, text = _find_brief(number)
         if path is None and REQUIRE_BRIEF_FOR_CALLS:
             return _block(
-                f"{tool_name} to +{number} blocked: no call brief for this number in {BRIEF_DIR} "
+                f"{tool_name} to +{number} blocked: no call brief for this number in {BRIEF_DIRS.get(_profile(), BRIEF_DIRS['default'])} "
                 f"from the last {BRIEF_MAX_AGE_MINUTES} minutes. Write one first (templates/call-brief.yaml)."
             )
         body = _render_brief(path, data, text) if path else "(no brief found)"
