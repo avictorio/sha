@@ -25,3 +25,5 @@ sevenzip_winget_version = 26.05
 # refuses any other. If upstream changes, review the new copy, then update the hash.
 hermes_install_url = https://hermes-agent.nousresearch.com/install.ps1
 hermes_install_ps1_sha256 = 9B7C951B2455DF32F6C07A43B0AD6ACDAD9A5ADCD86753AA9B195609AEE42BC5
+# The Hermes version that installer produced on this machine (as reported by Hermes during Phases 0-1). P5.2 and P6.9 compare against it.
+hermes_version = 0.22.4

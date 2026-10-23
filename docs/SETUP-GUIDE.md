@@ -1,128 +1,116 @@
 # Setup guide
 
-Steps that can't be scripted, or that were done by hand, one section per task. Scripted steps live in `installer/steps/` and their checks in `verify/checks/`.
+Owner-facing steps that can't be scripted, one section per task. Scripted steps live in `installer/steps/`, their checks in `verify/checks/`. The reasons behind these steps are in docs/LESSONS.md.
 
 ## operator-account
 
-PLAN.md P0.0a and P0.0b. The owner creates `operator` and installs Claude's tools (P0.0a). Claude then confirms the tools, applies the privacy settings and sets up repo access (P0.0b). Claude's part is scripted in `installer/steps/00-operator.ps1` (tool check, deploy key, SSH alias) and `verify/checks/p0-0b-operator.ps1` (host key, clone, commit identity, Done-when checks); the rest is written down below. The findings are from the Legion on 2026-10-21, when Claude still installed Git and Claude Code itself in P0.0b.
+PLAN.md P0.0a (owner) and P0.0b (Claude). Claude's part is scripted in `installer/steps/00-operator.ps1` and `verify/checks/p0-0b-operator.ps1`.
 
 ### Owner's steps (P0.0a)
 
 About 20–30 minutes. Claude can't create the account it runs in.
 
-1. **Create `operator`:** Settings → Accounts → Other users → Add account → "I don't have this person's sign-in information" → "Add a user without a Microsoft account". Then change its account type to Administrator (verify the exact labels). Check that the change took: on the Legion, `operator` was first left a standard user, P0.0b passed anyway, and P0.3 then failed until the owner added `operator` to Administrators. The P0.0b verify script now checks this (`operator-admin`).
-2. **Sign in as `operator`.** Don't sign in to anything personal there: no Microsoft account, OneDrive, personal browser profile, Telegram or password manager.
-3. **Claude desktop app:** install it and sign in. Turn on computer use: Claude desktop app → Settings → This computer → Computer use (off by default).
+1. **Create `operator`:** Settings → Accounts → Other users → Add account → "I don't have this person's sign-in information" → "Add a user without a Microsoft account". Change its account type to **Administrator** (verify the exact labels), and check that it took.
+2. **Sign in as `operator`.** Sign in to nothing personal there: no Microsoft account, OneDrive, personal browser profile, Telegram or password manager.
+3. **Claude desktop app:** install it, sign in, and turn on Settings → This computer → Computer use (off by default).
 4. **Git for Windows**, before Claude Code. See [Git for Windows](#git-for-windows).
 5. **Claude Code.** See [Claude Code](#claude-code).
-6. **Browser tool** for websites (verify the exact install steps): install Chrome plus the Claude in Chrome extension and sign in to it, or enable the desktop app's built-in browser. This is `operator`'s own admin browser, not the agent's Chrome profile (`C:\agent\chrome`, which runs in `hermes`).
-7. **Start the session** on the Legion, in `operator`, from the Claude desktop app or Claude Code, with the [starter prompt](../README.md#starter-prompt). A cloud session (Slack, or claude.ai on the web) can't reach the machine unless it's linked from the claude.ai composer's + menu → Devices; even then terminals are click-only, so commands still need a local session.
+6. **Browser tool** (verify the exact install steps): Chrome plus the Claude in Chrome extension, signed in, or the desktop app's built-in browser. This is `operator`'s admin browser, not the agent's Chrome profile (`C:\agent\chrome`, in `hermes`).
+7. **Start the session** on the Legion, in `operator`, from the desktop app or Claude Code, with the [starter prompt](../README.md#starter-prompt). A cloud session can't run commands on the machine.
 
-Done when: the Claude desktop app is running in `operator` with computer use available; `git --version` and `claude --version` work in PowerShell there; and the browser tool can open a web page.
+Done when: the desktop app runs in `operator` with computer use available; `git --version` and `claude --version` work in PowerShell; the browser tool opens a web page.
 
 #### Git for Windows
 
-Install it from PowerShell in `operator`:
+From PowerShell in `operator`:
 
 ```powershell
 winget install --id Git.Git -e --source winget
 ```
 
-Run from `operator`, this installs Git **per-user** under `%LOCALAPPDATA%\Programs\Git`, not `C:\Program Files\Git`. `git.exe` is at `...\Programs\Git\cmd\git.exe`, and Git's bundled OpenSSH is in `...\Programs\Git\usr\bin\`. The verify script looks in both locations. P0.0b connects to GitHub with Git's OpenSSH (see [SSH client for GitHub](#ssh-client-for-github)). Git goes first because Claude Code on native Windows is believed to need it (verify).
+This installs Git per-user under `%LOCALAPPDATA%\Programs\Git`; its OpenSSH is in `...\Programs\Git\usr\bin\`. P0.0b connects to GitHub with it (see [SSH client for GitHub](#ssh-client-for-github)).
 
 #### Claude Code
 
-Install it with the official native Windows installer, from PowerShell in `operator`:
+From PowerShell in `operator`:
 
 ```powershell
 irm https://claude.ai/install.ps1 | iex
 ```
 
-On the Legion this installed Claude Code 2.1.307 into `~\.local\bin`. Both P0.0b scripts add `~\.local\bin` to PATH for their own session. If the desktop app's Code mode runs commands locally, it can stand in for the CLI (verify).
+It installs into `~\.local\bin`. If the desktop app's Code mode runs commands locally, it can stand in for the CLI (verify).
 
 ### Claude's steps (P0.0b)
 
-1. **Confirm the tools.** `00-operator.ps1` checks that `git` and `claude` are on PATH and prints their versions; running it from Claude's session also shows that the session can run PowerShell. It installs nothing: if either tool is missing, it stops and points back to P0.0a.
-2. **Privacy settings**, in Windows Settings. See [Privacy settings](#privacy-settings-windows-settings) and [OneDrive](#onedrive).
-3. **Deploy key.** `00-operator.ps1` creates `~\.ssh\sha_deploy` (ed25519, empty passphrase), adds the `github-sha` alias to `~\.ssh\config` without a BOM, and prints the public key and its fingerprint. The private key never leaves `operator`.
-   - **Owner:** paste the public key into GitHub → the repo's Settings → Deploy keys → Add deploy key, with "Allow write access" ticked. Do it from your phone or your own account, so your GitHub account is never signed in on `operator`. In the same visit, add a rule on `main` requiring a pull request before merging, because the deploy key could otherwise push to `main`. Branch rules are free on a public repo; a private one needs GitHub Pro or higher (verify the current plan terms).
-4. **Host key, clone, commit identity and checks.** Once the deploy key and the `main` rule exist, run `verify/checks/p0-0b-operator.ps1`. It:
-   - trusts GitHub's SSH host keys only if every scanned key matches GitHub's published fingerprints (docs.github.com, "GitHub's SSH key fingerprints", read 2026-10-21);
-   - clones `git@github-sha:avictorio/sha.git` to `$HOME\sha` (`-CloneDir`);
-   - sets the repo-local commit identity (`-CommitName`, default `Claude (Legion operator)`; `-CommitEmail`, default the owner's GitHub noreply address, which keeps a personal email out of the history) and pins `core.sshCommand`;
-   - runs the Done-when checks, printing PASS or FAIL for each.
+1. **Confirm the tools.** `00-operator.ps1` checks `git` and `claude` are on PATH. It installs nothing; if one is missing, it hands back to P0.0a.
+2. **Privacy settings and OneDrive.** See [Privacy settings](#privacy-settings-windows-settings) and [OneDrive](#onedrive).
+3. **Deploy key.** `00-operator.ps1` creates `~\.ssh\sha_deploy` (ed25519), adds the `github-sha` alias to `~\.ssh\config`, and prints the public key. The private key never leaves `operator`.
+   - **Owner:** from your phone or your own account (never signed in on `operator`), add the public key at GitHub → the repo's Settings → Deploy keys, with "Allow write access" ticked. In the same visit, add a rule on `main` requiring a pull request before merging. Branch rules are free on a public repo; a private one needs GitHub Pro or higher (verify).
+4. **Host key, clone, identity and checks.** `verify/checks/p0-0b-operator.ps1` trusts GitHub's host keys only if they match GitHub's published fingerprints, clones `git@github-sha:avictorio/sha.git` to `$HOME\sha`, sets the repo-local commit identity (default: the owner's GitHub noreply address) and `core.sshCommand`, and prints PASS/FAIL for each Done-when check.
 5. **Start `claude` in the clone** and check that it reads CLAUDE.md.
-
-On 2026-10-21 every check passed: `host-key`, `ssh-greeting`, `clone`, `push-legion-test`, `main-rejects-direct-push` (GH013, pull request required), `onedrive-absent`, `advertising-id-off`, `no-microsoft-account` and `claude-code-installed`. Claude started in the clone read CLAUDE.md. `operator-admin` was added later; the same check in `p0-3-host.ps1` passed once the owner had added `operator` to Administrators.
 
 #### Privacy settings (Windows Settings)
 
-- **Advertising ID:** Settings → Privacy & security → General. It was already off. (`HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo` `Enabled` = 0.)
-- **Diagnostic data:** Settings → Privacy & security → Diagnostics & feedback. It was already "Required only". (`HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection` `AllowTelemetry` = 1.)
-- **Windows Backup / settings sync:** Settings → Accounts → Windows backup. It was already off.
+The one list, for every account set up on this machine (`operator` in P0.0b, `hermes` in P0.5):
+
+- **Advertising ID:** Settings → Privacy & security → General → **off**.
+- **Diagnostic data:** Settings → Privacy & security → Diagnostics & feedback → **Required diagnostic data** only.
+- **Windows backup / settings sync:** Settings → Accounts → Windows backup → everything **off**.
+- **OneDrive:** sign nothing in; see [OneDrive](#onedrive).
 
 #### OneDrive
 
-Uninstalled from Settings → Apps → Installed apps → Microsoft OneDrive → Uninstall. Afterwards, `OneDrive.exe` is in neither `%LOCALAPPDATA%\Microsoft\OneDrive` nor `%ProgramFiles%\Microsoft OneDrive`.
+Uninstall it: Settings → Apps → Installed apps → Microsoft OneDrive → Uninstall. Afterwards `OneDrive.exe` is in neither `%LOCALAPPDATA%\Microsoft\OneDrive` nor `%ProgramFiles%\Microsoft OneDrive`.
 
 #### SSH client for GitHub
 
-On 2026-10-21, Windows' built-in OpenSSH (`C:\Windows\System32\OpenSSH\ssh.exe`, OpenSSH_for_Windows 9.5p2) failed to connect to GitHub:
-
-```text
-choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
-```
-
-A re-test later the same day negotiated `curve25519-sha256` and connected, so the failure doesn't happen every time. Either way, the clone pins Git's newer OpenSSH (10.5p1, installed with Git in P0.0a) for this repo, and the verify script sets it:
+The clone uses Git's OpenSSH, not Windows' built-in client (why: docs/LESSONS.md, Git and GitHub). The verify script sets:
 
 ```powershell
 git config core.sshCommand '"C:/Users/operator/AppData/Local/Programs/Git/usr/bin/ssh.exe"'
 ```
 
-The `github-sha` alias in `~\.ssh\config` (no BOM) is shared by both clients. `ssh -T git@github-sha` greets with `Hi avictorio/sha! You've successfully authenticated, but GitHub does not provide shell access.`
+`ssh -T git@github-sha` should greet with `Hi avictorio/sha! You've successfully authenticated…`.
 
 ## domain-and-mailbox
 
-PLAN.md P0.2, per D4 and D5: the AgentMail Free plan, with one inbox and no custom domain. Everything is done in the AgentMail web console by the owner; there is nothing to script.
+PLAN.md P0.2, D4 and D5. No custom domain and no DNS (D4): AgentMail Free on `agentmail.to`. Two inboxes (D5), one per profile. Login codes for your accounts come to your own email (D15). Everything here is in the AgentMail web console; nothing to script.
 
 1. Sign up at agentmail.to on the Free plan.
-2. Create one inbox, `<name>@agentmail.to`. This is "main": it receives all designated mail, sorted by sender domain and subject tags (PLAN.md §7). The otp inbox is added in P2.2.
-3. Create an API key and store it in your password manager. This full key never goes into Hermes: Claude uses it only through a hidden prompt for admin calls (S8, P2.2), and Hermes gets a separate read-only key scoped to main (PLAN.md §7).
-4. From your personal address, send a test message to the inbox and check that it appears in the console.
-
-There is no DNS to set up: MX, SPF, DKIM and DMARC are AgentMail's on `agentmail.to`.
+2. Create the first inbox, `<name>@agentmail.to`. This is the **local profile's** inbox (older text calls it "main"). The default profile's inbox follows in P2.2.
+3. Create an API key and store it in your password manager. This full key never goes into Hermes: Claude uses it only at a hidden prompt for admin calls (S8, P2.2). Each profile gets its own scoped, receive-only key (PLAN.md §7).
+4. From your personal address, send the inbox a test message and check it appears in the console.
 
 ## host-prep
 
-PLAN.md P0.3. The scripted parts are in `installer/steps/01-host.ps1` and the checks in `verify/checks/p0-3-host.ps1`.
+PLAN.md P0.3. Scripted in `installer/steps/01-host.ps1`, checked by `verify/checks/p0-3-host.ps1`.
 
 ### Running 01-host.ps1
 
-- `operator` must be in the local Administrators group ([P0.0a](#operator-account)). If it was added during the current sign-in, the admin prompt asks for credentials: enter **`operator`** and its password, not the owner's account. The script refuses to run as any other user.
-- It asks for the `hermes` password at a hidden prompt. The owner types it there and also saves it in their password manager.
-- `hermes` is created with a password that never expires, because an expiring password would quietly stop Autologon from working.
+- `operator` must be an administrator ([P0.0a](#operator-account)). If it was added during the current sign-in, the admin prompt asks for credentials: enter **`operator`**'s, not yours.
+- Type the `hermes` password at the hidden prompt, and save it in your password manager. It never expires, so Autologon keeps working.
 
 ### Autologon (Sysinternals)
 
-The script installs it with winget, to `%LOCALAPPDATA%\Microsoft\WinGet\Packages\Microsoft.Sysinternals.Autologon_*\Autologon64.exe`. Run it as administrator, accept the license, enter username `hermes`, the computer name as the domain and the `hermes` password, then click **Enable**. The password is stored as an LSA secret, not in plain text in the registry.
+The script installs it to `%LOCALAPPDATA%\Microsoft\WinGet\Packages\Microsoft.Sysinternals.Autologon_*\Autologon64.exe`. Run it as administrator, accept the license, enter username `hermes`, the computer name as the domain and the `hermes` password, then click **Enable**. The password is stored as an LSA secret.
 
 ### Device encryption (owner's account)
 
-Sign in to the owner's Microsoft account, then go to Settings → Privacy & security → Device encryption and turn it on. Windows 11 Home backs up the recovery key to the account that turns encryption on, so check that it's listed at account.microsoft.com/devices/recoverykey.
+In your own Microsoft account: Settings → Privacy & security → Device encryption → on. Check that the recovery key is listed at account.microsoft.com/devices/recoverykey.
 
 ### Windows Update
 
-Settings → Windows Update → **Download & install all**. Driver updates can sit under Advanced options → Optional updates. Set active hours under Advanced options → Active hours.
+Settings → Windows Update → **Download & install all**. Driver updates may be under Advanced options → Optional updates. Set Advanced options → Active hours.
 
 ### Battery conservation
 
-Turn it on in Lenovo Vantage or Legion Space from the owner's account; neither app is installed in `operator`.
+Turn it on in Lenovo Vantage or Legion Space from your account; neither is installed in `operator`.
 
 ## router-and-tailscale
 
 ### DHCP reservation
 
-In the router's admin page, reserve the laptop's current IPv4 address for its Wi-Fi adapter's MAC address. If Ethernet will be used, reserve the Ethernet adapter's MAC address too. Get both addresses with:
+In the router's admin page, reserve the laptop's current IPv4 address for its Wi-Fi MAC address (and the Ethernet MAC, if used). Get both with:
 
 ```powershell
 Get-NetAdapter -Physical | Format-Table Name, MacAddress, Status
@@ -131,135 +119,117 @@ Get-NetIPConfiguration | Where-Object IPv4DefaultGateway
 
 ### Tailscale
 
-`01-host.ps1` installs it with winget. Either sign-in route is fine: CLAUDE.md allows the Tailscale device login in `operator`'s browser profile (the owner types the credentials, and signs out afterwards), or the owner approves the device from a phone link. The Legion used the phone link, which leaves nothing signed in on the machine:
+`01-host.ps1` installs it. Approve the device from your phone, so nothing stays signed in on the machine:
 
 ```powershell
 & "$env:ProgramFiles\Tailscale\tailscale.exe" up --unattended
 ```
 
-It prints a `https://login.tailscale.com/a/...` link. The owner opens the link on their phone, signs in and approves the device. `--unattended` keeps Tailscale running when nobody is signed in; `tailscale debug prefs` then shows `"ForceDaemon": true`. The installer's "connect this device" window can be closed.
+Open the printed `https://login.tailscale.com/a/...` link on your phone, sign in and approve. (The device login in `operator`'s browser profile is also allowed; sign out afterwards.) `tailscale debug prefs` then shows `"ForceDaemon": true`. Close the installer's "connect this device" window.
 
 ## ollama
 
-PLAN.md P0.4. The scripted parts are in `installer/steps/02-ollama.ps1` (run elevated; then `-PullOnly`, unelevated, for the models) and the checks in `verify/checks/p0-4-ollama.ps1`. Versions and model tags are pinned in `versions.lock`.
+PLAN.md P0.4. Scripted in `installer/steps/02-ollama.ps1` (elevated; then `-PullOnly`, unelevated, for the models), checked by `verify/checks/p0-4-ollama.ps1`. Versions and tags are pinned in `versions.lock`.
 
 ### NVIDIA driver
 
-Ollama's CUDA libraries need a recent driver. With driver 546.92 (CUDA 12.3), GPU detection crashed (`llama-server --list-devices failed: exit status 0xc0000005`), and Ollama fell back to the CPU (`inference compute id=cpu`, `total_vram="0 B"`). Update the driver from the owner's account through Lenovo Vantage → System Update, the NVIDIA app → Drivers, or nvidia.com/drivers. Driver 621.01 (CUDA 13) works. After a reboot, the Ollama log shows `inference compute ... library=CUDA ... NVIDIA GeForce RTX 4080 Laptop GPU`.
+The driver must support CUDA 12.8 or higher, or Ollama silently runs on the CPU (docs/LESSONS.md, Windows, hardware and Docker). Update it from your account through Lenovo Vantage → System Update, the NVIDIA app → Drivers, or nvidia.com/drivers (621.01 works). After a reboot, the Ollama log shows `inference compute ... library=CUDA ... NVIDIA GeForce RTX 4080 Laptop GPU`.
 
 ## docker-autostart
 
-PLAN.md P0.5. The scripted parts are in `installer/steps/03-docker.ps1` (run elevated: WSL, Docker Desktop, `hermes` added to `docker-users`; reboot afterwards) and the checks in `verify/checks/p0-5-docker.ps1`.
+PLAN.md P0.5. Scripted in `installer/steps/03-docker.ps1` (elevated; reboot afterwards), checked by `verify/checks/p0-5-docker.ps1`.
 
 ### The owner's sign-in as hermes
 
-Claude never works in `hermes`, so the owner does this once:
+Claude never works in `hermes`, so you do this once:
 
-1. Sign in as `hermes`, using the `hermes` password from the password manager. After an auto-logon it sits at the lock screen.
-2. Privacy settings, the same as `operator` (P0.0b):
-   - Settings → Privacy & security → General: advertising ID **off**.
-   - Settings → Privacy & security → Diagnostics & feedback: **Required diagnostic data** only.
-   - Settings → Accounts → Windows backup: everything **off**.
-   - OneDrive: if it's running, quit it and sign nothing in. It was uninstalled machine-wide in P0.0b; if it's present for this account anyway, uninstall it from Settings → Apps.
-3. Docker Desktop: start it, accept the Docker Subscription Service Agreement (free for personal use; see D14), and **skip** the Docker sign-in. Then go to Settings → General, tick **"Start Docker Desktop when you sign in to your computer"**, and click Apply.
-4. Lock the screen (Win+L). Don't sign out: that would stop Docker and Hermes.
+1. Sign in as `hermes` with the password from your password manager.
+2. Apply the [privacy settings](#privacy-settings-windows-settings). If OneDrive is present for this account, uninstall it.
+3. Start Docker Desktop, accept the Docker Subscription Service Agreement (free for personal use; D14), and **skip** the Docker sign-in. In Settings → General, tick **"Start Docker Desktop when you sign in to your computer"** and click Apply.
+4. Lock the screen (Win+L). Don't sign out: that stops Docker and Hermes.
 
-There is no option to start Docker Desktop before sign-in (notes #17), so Docker depends on `hermes`'s auto-logon.
+Docker can't start before sign-in (notes #17), so it depends on `hermes`'s auto-logon.
 
 ## telegram-bots
 
-PLAN.md P0.7. The scripted parts are in `installer/steps/05-telegram.ps1` (run elevated, in a visible window) and the checks in `verify/checks/p0-7-telegram.ps1` (run elevated, after an unattended reboot).
+PLAN.md P0.7. Scripted in `installer/steps/05-telegram.ps1` (elevated, visible window), checked by `verify/checks/p0-7-telegram.ps1` (elevated, after an unattended reboot).
 
 ### The owner's steps, on the phone
 
-1. **Create the bot.** In Telegram, open **@BotFather** (check the blue verified tick) and send `/newbot`. Give it a display name (e.g. "Hermes") and a username ending in `bot`. BotFather replies with the bot token (`123456789:AA…`). Save it in the password manager as "Hermes Telegram bot token". It is a secret: don't paste it into chat.
-2. **Get your numeric ID.** Open **@userinfobot** and send it any message. It replies with your numeric ID. The ID isn't a secret, but it is personal: it goes into `instance.yaml`/`.env`, never into the repo.
-3. **Open a chat with your bot** (the `t.me/<username>` link BotFather gives) and press **Start**, so the bot can message you.
+1. **Create the bot.** In Telegram, open **@BotFather** (blue verified tick), send `/newbot`, and give a display name (e.g. "Hermes") and a username ending in `bot`. Save the token in your password manager as "Hermes Telegram bot token". Never paste it into chat.
+2. **Get your numeric ID** from **@userinfobot**. It's personal, not secret: it goes into `instance.yaml`/`.env`, never the repo.
+3. **Open a chat with your bot** (`t.me/<username>`) and press **Start**.
 
 ### Running 05-telegram.ps1
 
-The owner types three things into its prompts:
-- the numeric ID (plain prompt);
-- the bot token (hidden prompt; it goes straight into `hermes`'s `.env`, never on a command line or in a log);
-- the `hermes` password (hidden, for `scripts/invoke-as-hermes.ps1`).
+Type three things at its prompts: your numeric ID; the bot token (hidden prompt, written straight to `hermes`'s `.env`); the `hermes` password. It writes the allow-list before the token, installs the Telegram extra, registers the guarded `Hermes_Gateway` logon task and waits for "telegram connected". `-GatewayOnly` repeats the last steps without the prompts.
 
-It writes `TELEGRAM_ALLOWED_USERS` and `TELEGRAM_HOME_CHANNEL` before the token. Then, as `hermes`, it installs the Telegram extra (`hermes pm install --extra telegram`) and confirms that Hermes reads the allow-list back. Finally it registers the `Hermes_Gateway` logon task and waits for "telegram connected" in `gateway.log`. `-GatewayOnly` repeats the last steps without the prompts.
-
-**Don't use `hermes gateway install`, and don't follow its "Repair: hermes gateway start" hint.**
-- As a standard user, `gateway install` hangs at a UAC y/N prompt.
-- Our `Hermes_Gateway` task instead runs `C:\agent\bin\start-gateway.ps1`. That guard refuses to start the gateway without `TELEGRAM_ALLOWED_USERS` and logs to `start-gateway.log` in `hermes`'s `logs` folder.
-- `hermes gateway status` flags our task as "predating the current template". That warning is expected. Following its repair hint would replace the guarded task with Hermes's own.
+**Don't use `hermes gateway install` or follow `gateway status`'s "Repair" hint**; it would replace the guarded task (docs/LESSONS.md, Hermes). Restart a gateway with `scripts/restart-gateway.ps1 -Profile <p>`.
 
 ### Checks
 
-- **On the phone:** the bot answers you. A message from a second Telegram account gets no reply, and `gateway.log` shows `[Telegram] Blocked unauthorized user <id>`.
-- **After an unattended reboot:** `verify/checks/p0-7-telegram.ps1` passes, and the bot answers again. Messages sent while the gateway was down are dropped, so send a new one.
+- **On the phone:** the bot answers you. A second Telegram account gets no reply, and `gateway.log` shows `[Telegram] Blocked unauthorized user <id>`.
+- **After an unattended reboot:** `p0-7-telegram.ps1` passes and the bot answers. Messages sent while the gateway was down are dropped: send a new one.
 
-## private-bot
+## local-bot
 
-PLAN.md P1.3. The private profile only uses the laptop's model. It has its own bot, "Hermes Private", which runs in its own process under its own guarded task, `Hermes_Gateway_private`. The scripted parts are in `installer/steps/06-private-profile.ps1` (run elevated, in a visible window), and the checks are in `verify/checks/p1-3-private.ps1`.
+PLAN.md P1.3 and P1.10. The local profile (`local`, formerly `private`) uses only the laptop's model, with its own bot ("Hermes Local") and its own guarded task, `Hermes_Gateway_local`. Scripted in `installer/steps/06-local-profile.ps1` (elevated, visible window), checked by `verify/checks/p1-3-local.ps1`.
 
-The rule for you: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
+The rule: **if you wouldn't send it to a cloud provider, tell it to the local bot.**
 
 ### The owner's steps
 
-1. **Create the bot.** As in [telegram-bots](#telegram-bots): **@BotFather**, `/newbot`, then a display name such as "Hermes Private" and a username ending in `bot`. Save the token in the password manager as "Hermes Private Telegram bot token". Open a chat with the bot and press **Start**.
-2. **Run `06-private-profile.ps1 -Phase Create`.** It needs no token. Type the `hermes` password.
-3. **Run `06-private-profile.ps1 -Phase Bot`.** Type the `hermes` password, then paste the token at the hidden "private bot token" prompt. Your Telegram ID is copied from the default profile. The script won't write the token while the default gateway still serves the private profile.
+1. **Create the bot** as in [telegram-bots](#telegram-bots), named e.g. "Hermes Local". Save the token as "Hermes Local Telegram bot token", open a chat and press **Start**.
+2. **Run `06-local-profile.ps1 -Phase Create`** and type the `hermes` password.
+3. **Run `06-local-profile.ps1 -Phase Bot`.** Type the `hermes` password, then paste the token at the hidden prompt. Your Telegram ID is copied from the default profile.
 
 ### Why `gateway.standalone: true`
 
-Hermes v0.22.4 serves every profile from the default profile's gateway ("multiplexing"), and it ignores `multiplex_profiles: false`. `gateway.standalone: true` in the private config keeps the private profile out of that gateway. Hermes calls it a temporary shim, so check it after every `hermes update` (P5.2). Without it, the default gateway would also poll the private bot. `start-gateway.ps1 -Profile private` refuses to start if the setting is missing.
+It gives the local profile its own gateway; without it, v0.22.4's default gateway would also serve the local bot (docs/LESSONS.md, Hermes). `start-gateway.ps1 -Profile local` refuses to start without it. Recheck after every `hermes update` (P5.2).
 
 ### Tests in Telegram (P1.3 Done when)
 
-1. **It answers.** Send the private bot "hello". It replies, and `C:\agent\shared\logs\usage-private.jsonl` gets a line with `"platform": "telegram"` and `"local": true`.
-2. **It can't switch to a cloud model.** Send `/model openrouter:openai/gpt-4o-mini` (any cloud model will do). It must fail or refuse, and the next reply must still come from the local model.
-3. **It doesn't fall back to the cloud.** Run `verify/checks/p1-3-ollama-stop-test.ps1` elevated. It stops Ollama and waits. Send the private bot a question: it must reply with an error, not an answer. Press Enter in the window to restart Ollama. If you forget, it restarts Ollama by itself after 10 minutes.
+1. **It answers.** Send "hello". It replies, and `C:\agent\shared\logs\usage-local.jsonl` gets a line with `"platform": "telegram"` and `"local": true`.
+2. **It can't switch to a cloud model.** `/model openrouter:openai/gpt-4o-mini` must fail or refuse, and the next reply still comes from the local model.
+3. **It doesn't fall back to the cloud.** Run `verify/checks/p1-3-ollama-stop-test.ps1` elevated; it stops Ollama. Ask the local bot something: it must reply with an error. Press Enter to restart Ollama (it restarts by itself after 10 minutes).
 
 ## openrouter
 
-PLAN.md P1.4, D9. The default profile runs **cloud-first**, which is §9's rule when no local model passes the benchmark. Its model is `meta/muse-wonder` through OpenRouter. When the cloud fails, it falls back to the local model (`qwen3-coder:30b`). The private profile never gets the key. The scripted part is `installer/steps/07-cloud.ps1` (run elevated, in a visible window), and the checks are in `verify/checks/p1-4-cloud.ps1`.
+PLAN.md P1.4, D9. The cloud profile (`default`) is **cloud-first**: `meta/muse-wonder` through OpenRouter, falling back to the local `qwen3-coder:30b` on cloud errors. The local profile never gets the key. Scripted in `installer/steps/07-cloud.ps1` (elevated, visible window), checked by `verify/checks/p1-4-cloud.ps1`.
 
 ### The owner's steps
 
-1. **Account.** Sign up at openrouter.ai and add credit. Claude stops at payment screens.
-2. **Privacy** (openrouter.ai/settings/privacy). Turn **off** every option that lets providers train on your prompts.
-   - Leave "Zero Data Retention only" **off**. With it on, OpenRouter refuses Muse Wonder: Hermes logs a 404, "ZDR violation (account settings)", and every reply comes from the local fallback. With ZDR on, the Claude models (served through Amazon Bedrock or Google), Muse Spark Open and Muse Glimmer still work.
-3. **Key.** Under Keys, create `hermes-default` with a credit limit of **$50** that **resets monthly**. Save it in the password manager.
-4. **Run `07-cloud.ps1`.**
-   - Paste the key at the hidden prompt with a **right-click**: Ctrl+V doesn't always paste into a hidden prompt.
-   - OpenRouter's key lookup doesn't report the reset period, so the script asks you to confirm "monthly". It refuses a key with no limit, or with a limit over versions.lock's `cloud_key_limit_usd`.
-   - Then type the `hermes` password.
-   - `-SkipKey` reruns everything except the key.
-   - Close any earlier window first: an open window keeps its log file locked.
+1. **Account.** Sign up at openrouter.ai and add credit (Claude stops at payment screens).
+2. **Privacy** (openrouter.ai/settings/privacy). Turn **off** every option that lets providers train on your prompts. Leave "Zero Data Retention only" **off**: it excludes Muse Wonder (docs/LESSONS.md, OpenRouter).
+3. **Key.** Under Keys, create `hermes-default` with a **$50** limit that **resets monthly**, and save it in your password manager.
+4. **Run `07-cloud.ps1`.** Paste the key at the hidden prompt with a **right-click**, confirm "monthly" (OpenRouter doesn't report it), then type the `hermes` password. It refuses a key with no limit or one over versions.lock's `cloud_key_limit_usd`. `-SkipKey` reruns everything but the key. Close any earlier window first.
 
 ### What the check proves
 
-- **The cloud model answers.** A chat is logged with `"local": false` and `meta/muse-wonder`.
-- **The fallback works.** `model.default` is set for a moment to a model that doesn't exist. OpenRouter returns 400 "not a valid model ID", Hermes falls back to the local model at once, and the reply is logged with `"local": true`. Then `config.yaml` is restored from its backup. A message to the default bot during that minute may get a local answer.
-- **`hermes usage --provider openrouter`** shows the key's limit and "resets monthly".
-- **Not tested: an exhausted key.** OpenRouter returns 402, and Hermes's source maps 402 to a billing failover (`agent/agent_runtime_helpers.py`). (verify) when the cap is first reached.
+- **The cloud model answers:** a chat is logged with `"local": false` and `meta/muse-wonder`.
+- **The fallback works:** with `model.default` briefly set to a nonexistent model, the reply is logged `"local": true`; then `config.yaml` is restored. A message to the default bot during that minute may get a local answer.
+- **`hermes usage --provider openrouter`** shows the limit and "resets monthly".
+- **Not tested: an exhausted key** (402, mapped to a billing failover). (verify) when the cap is first reached.
 
 ### Costs to watch
 
-Hermes sends about 13,000 tokens of context with even a one-word message, which costs Muse Wonder about 5¢. Auxiliary tasks also run on the main model (`auxiliary.*.provider: auto`): titles, compression and vision. So do subagents (`delegation.model` is empty, so they inherit the main model). Check spend at openrouter.ai/activity in the first week. Moving the auxiliary tasks to the local model is a later tuning step.
+After the P1.9 token diet, a fresh chat sends about 10,000 tokens of context, costing Muse Wonder about 4–9¢ per message. Side tasks (titles, compression, vision) run on the local model, and the delegation toolset (subagents) is off. Long chats grow: send `/new` to start fresh. Check spend at openrouter.ai/activity; the key's $50 monthly cap is the hard stop.
 
 ## seed-memory
 
-PLAN.md P1.6. The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.** The default bot is cloud-first, so its memory goes to OpenRouter with every message.
+PLAN.md P1.6. The default bot is cloud-first, so its memory goes to OpenRouter with every message. The rule from [local-bot](#local-bot) applies.
 
-1. **Default bot.** Send the cloud-OK facts from `config/templates/USER.default.md`, with your values filled in: "Please remember these facts about me in your user profile: …". Hermes writes them to `%LOCALAPPDATA%\hermes\memories\USER.md` in its own format. That's safer than editing the file by hand.
-2. **Private bot.** Tell it anything personal (health, finances) directly, and only there.
-3. **Check (Done when).** Ask each bot "what do you know about me?". The default bot lists only the cloud-OK facts, and the private bot knows only what you told it.
+1. **Default bot.** Copy `config/templates/USER.default.md` **outside the repo**, fill in only cloud-OK facts, and run `scripts/seed-user-memory.ps1 -FromFile <your copy>` elevated (type the `hermes` password). It writes `USER.md` into the profile's memories folder; `-Force` replaces an existing one (the old one is kept as a backup). Don't rely on telling the bot "remember this": a cloud model claimed to save memory and wrote nothing (docs/LESSONS.md, Hermes).
+2. **Local bot.** Tell it anything personal (health, finances) directly, and only there.
+3. **Check (Done when).** `USER.md` exists in `%LOCALAPPDATA%\hermes\memories` (as `hermes`). Ask each bot "what do you know about me?": the default bot lists only the cloud-OK facts; the local bot knows only what you told it.
 
 ## backup
 
-PLAN.md P1.7. `installer/steps/09-backup.ps1` (elevated) sets up the nightly encrypted backup: `Agent_Backup` runs `C:\agent\bin\backup.ps1` as hermes at 03:30 and writes `D:\backups\hermes-<time>.7z`, keeping 14 days. The log is `C:\agent\shared\logs\backup.log`.
+PLAN.md P1.7. `installer/steps/09-backup.ps1` (elevated) sets up `Agent_Backup`: `C:\agent\bin\backup.ps1` runs as `hermes` at 03:30, writes `D:\backups\hermes-<time>.7z` encrypted, and keeps 14 days. Log: `C:\agent\shared\logs\backup.log`.
 
-- **The passphrase.** You choose it at a hidden prompt; 12 or more characters, no double quotes. Keep a copy in the password manager. It's stored on the machine in `C:\agent\bin\backup-passphrase.txt`, readable by hermes and admins only, because the unattended task needs it. Losing it means the backups can't be opened. `-NewPassphrase` replaces it, and older archives keep the old one.
+- **The passphrase.** Choose it at the hidden prompt: 12+ characters, no double quotes. Keep a copy in your password manager; losing it means the backups can't be opened. The unattended task reads it from `C:\agent\bin\backup-passphrase.txt` (hermes and admins only). `-NewPassphrase` replaces it; older archives keep the old one.
 - **Restore.**
   1. Open the `.7z` with 7-Zip and the passphrase.
-  2. `hermes import hermes-<time>.zip` (as hermes) restores Hermes, both profiles included.
-  3. Copy `workspace`, `private` and `shared` back to `C:\agent`.
+  2. As `hermes`, `hermes import hermes-<time>.zip` restores Hermes, both profiles included.
+  3. Copy `workspace`, `local` and `shared` back to `C:\agent`.
 - **Check.** `verify/checks/p1-7-backup.ps1` (elevated) proves the newest archive is locked without the passphrase and complete with it.

@@ -3,9 +3,9 @@
 # scripts/invoke-as-hermes.ps1 (the owner types the password, unless -Password is passed in).
 # Makes one `hermes chat` call in the given profile, then checks the new line(s) in
 # C:\agent\shared\logs\usage-<profile>.jsonl: profile, model, a local base_url, tokens and duration.
-# The Telegram half of P1.5's Done-when (per-bot profile; no "local": false in usage-private) is
+# The Telegram half of P1.5's Done-when (per-bot profile; no "local": false in usage-local) is
 # checked during P1.3/P1.4. Re-runnable.
-param([securestring]$Password, [ValidateSet('default', 'private')][string]$Profile = 'default')
+param([securestring]$Password, [ValidateSet('default', 'local')][string]$Profile = 'default')
 $ErrorActionPreference = 'Continue'
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
@@ -47,6 +47,6 @@ if ($c) {
   Record 'base-url' $(if ($Profile -eq 'default') { $c.local -eq $false } else { $isLocal }) "base_url=$($c.base_url) local=$($c.local)"
   Record 'tokens-and-duration' ($null -ne $c.tokens.total -and $null -ne $c.duration) "tokens in=$($c.tokens.input) out=$($c.tokens.output) total=$($c.tokens.total) cache_read=$($c.tokens.cache_read) unaccounted=$($c.tokens.unaccounted) keys=$($c.tokens.usage_keys -join ',') duration=$($c.duration) platform=$($c.platform)"
 } else { Record 'call-line' $false 'no line with event=call' }
-Record 'no-cloud-in-private' (($Profile -ne 'private') -or -not (Select-String -Path $log -Pattern '"local": false' -Quiet)) "profile=$Profile"
+Record 'no-cloud-in-local' (($Profile -ne 'local') -or -not (Select-String -Path $log -Pattern '"local": false' -Quiet)) "profile=$Profile"
 
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }

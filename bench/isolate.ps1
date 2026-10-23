@@ -55,6 +55,6 @@ if ($On) {
   # than a benchmark run lasts. Both bots: each one's Telegram polling was blocked.
   $repo = Split-Path $PSScriptRoot
   & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile default
-  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile private
+  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile local
   Write-Host "NOT ISOLATED: rules removed; sandbox network back to default." -ForegroundColor Green
 }

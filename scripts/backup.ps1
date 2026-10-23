@@ -1,7 +1,7 @@
 # scripts/backup.ps1 -- PLAN.md P1.7: nightly encrypted backup. Installed to C:\agent\bin\backup.ps1 by
 # installer/steps/09-backup.ps1 and run AS hermes by the Agent_Backup task (daily 03:30).
 #   1. `hermes backup` (covers every profile, S4) into C:\agent\backup-stage\<ts>\ on the system drive;
-#   2. 7-Zip packs that zip plus C:\agent\workspace, C:\agent\private and C:\agent\shared into
+#   2. 7-Zip packs that zip plus C:\agent\workspace, C:\agent\local and C:\agent\shared into
 #      D:\backups\hermes-<ts>.7z, AES-256 with encrypted file names (-mhe=on); -ssw reads files other
 #      processes hold open (the usage logs);
 #   3. deletes the stage, and .7z files older than 14 days.
@@ -24,7 +24,7 @@ try {
 
   $pw = (Get-Content 'C:\agent\bin\backup-passphrase.txt' -Raw -Encoding UTF8).Trim()
   if (-not $pw) { throw "empty passphrase file" }
-  $sources = @("$stage\hermes-$ts.zip") + @('C:\agent\workspace', 'C:\agent\private', 'C:\agent\shared' | Where-Object { Test-Path $_ })
+  $sources = @("$stage\hermes-$ts.zip") + @('C:\agent\workspace', 'C:\agent\local', 'C:\agent\shared' | Where-Object { Test-Path $_ })
   & $sevenZip a -t7z -mhe=on -ssw -bso0 -bsp0 "-p$pw" $dest @sources
   $rc = $LASTEXITCODE; $pw = $null
   # 7-Zip: 0 ok, 1 warning (e.g. a file changed while read), 2+ error

@@ -8,7 +8,7 @@ $cmd = @'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8; $env:NO_COLOR = '1'; $env:PYTHONIOENCODING = 'utf-8'; $env:COLUMNS = '200'
 $h = Join-Path $env:LOCALAPPDATA 'hermes\bin\hermes.exe'
 function Herm { & $h @args 2>&1 | Where-Object { "$_" -notmatch '^System\.Management\.Automation' -and "$_" -notmatch 'sk-or-|\d{6,12}:[A-Za-z0-9_-]{30,}' } }
-foreach ($a in @('cron','--help'), @('cron','create','--help'), @('cron','run','--help'), @('cron','runs','--help'), @('cron','remove','--help'), @('cron','list'), @('-p','private','cron','list'), @('cron','status'), @('config','get','cron'), @('config','get','providers')) {
+foreach ($a in @('cron','--help'), @('cron','create','--help'), @('cron','run','--help'), @('cron','runs','--help'), @('cron','remove','--help'), @('cron','list'), @('-p','local','cron','list'), @('cron','status'), @('config','get','cron'), @('config','get','providers')) {
   "##### $($a -join ' ')"; Herm @a | Select-Object -First 70
 }
 '@

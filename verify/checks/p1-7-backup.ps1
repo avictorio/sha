@@ -1,5 +1,5 @@
 # verify/checks/p1-7-backup.ps1 -- PLAN.md P1.7 Done when: an encrypted .7z exists in D:\backups; it won't list
-# or extract without the passphrase; with it, it shows config.yaml, state.db and the private profile's files.
+# or extract without the passphrase; with it, it shows config.yaml, state.db and the local profile's files.
 # Run in the `operator` account, ELEVATED (reads the passphrase file). The inner hermes zip is extracted to
 # operator's temp folder, listed by name only, and deleted. Prints PASS/FAIL per check; never prints the passphrase.
 $ErrorActionPreference = 'Continue'
@@ -27,14 +27,14 @@ try {
   $paths = @($list | Where-Object { $_ -match '^Path = ' } | ForEach-Object { $_ -replace '^Path = ', '' } | Select-Object -Skip 1)
   $inner = $paths | Where-Object { $_ -match '^hermes-.*\.zip$' } | Select-Object -First 1
   Record 'lists-with-passphrase' ($LASTEXITCODE -eq 0 -and $inner) "$($paths.Count) entries; inner: $inner"
-  foreach ($d in 'workspace', 'private', 'shared') { Record "has-agent-$d" ([bool]($paths | Where-Object { $_ -eq $d -or $_ -like "$d\*" })) '' }
+  foreach ($d in 'workspace', 'local', 'shared') { Record "has-agent-$d" ([bool]($paths | Where-Object { $_ -eq $d -or $_ -like "$d\*" })) '' }
   New-Item -ItemType Directory $t | Out-Null
   try {
     & $sevenZip e "-p$pw" "-o$t" $a.FullName $inner -y 2>&1 | Out-Null
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $z = [IO.Compression.ZipFile]::OpenRead((Join-Path $t $inner))
     try { $names = @($z.Entries | ForEach-Object { $_.FullName -replace '\\', '/' }) } finally { $z.Dispose() }
-    foreach ($n in 'config.yaml', 'state.db', 'profiles/private/config.yaml', 'profiles/private/state.db', 'memories/USER.md') {
+    foreach ($n in 'config.yaml', 'state.db', 'profiles/local/config.yaml', 'profiles/local/state.db', 'memories/USER.md') {
       Record "inner-has-$n" ($names -contains $n) ''
     }
   } finally { Remove-Item -Recurse -Force $t -ErrorAction SilentlyContinue }

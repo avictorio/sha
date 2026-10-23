@@ -1,5 +1,5 @@
 # installer/steps/07-cloud.ps1 -- PLAN.md P1.4: OpenRouter for the default profile only, cloud-first (D2 revised
-# per §9, D9), falling back to the local model.
+# per PLAN section 9, D9), falling back to the local model.
 # Run from the `operator` account in an ELEVATED Windows PowerShell, in a visible window. The owner types:
 # the OpenRouter key (hidden), then the hermes password.
 #   1. the key goes from the hidden prompt to OpenRouter's GET /api/v1/key (to read its limit back) and
@@ -21,12 +21,12 @@ if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:
 $p = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw "Run this elevated (Run as administrator)." }
 $hermesRoot = 'C:\Users\hermes\AppData\Local\hermes'
-$defEnv = "$hermesRoot\.env"; $privEnv = "$hermesRoot\profiles\private\.env"
+$defEnv = "$hermesRoot\.env"; $localEnv = "$hermesRoot\profiles\local\.env"
 $tpl = Join-Path $repo 'config\templates\default.cloud.yaml'
 if (-not (Select-String -Path $tpl -SimpleMatch "default: $($lock.cloud_model_default)" -Quiet)) { throw "default.cloud.yaml doesn't name versions.lock cloud_model_default ($($lock.cloud_model_default))." }
 if (-not (Test-Path $defEnv)) { throw "$defEnv not found (P0.6 done?)" }
-# Credentials never go to the private profile (D3, P1.3).
-if (Select-String -Path $privEnv -Pattern '^\s*OPENROUTER' -Quiet -ErrorAction SilentlyContinue) { throw "The PRIVATE .env has an OPENROUTER entry. Stop: tell the owner." }
+# Credentials never go to the local profile (D3, P1.3).
+if (Select-String -Path $localEnv -Pattern '^\s*OPENROUTER' -Quiet -ErrorAction SilentlyContinue) { throw "The LOCAL .env has an OPENROUTER entry. Stop: tell the owner." }
 
 function Set-EnvLine([string]$path, [string]$key, [string]$value) {
   $lines = [Collections.Generic.List[string]]([IO.File]::ReadAllLines($path))

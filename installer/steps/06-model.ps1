@@ -37,7 +37,7 @@ try {
 
   Step "Restart the Telegram gateways cleanly (both profiles use model_default)"
   & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile default
-  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile private
+  & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile local
 
   Step "Check (verify/checks/p1-2-model.ps1)"
   & (Join-Path $repo 'verify\checks\p1-2-model.ps1') -Password $pw

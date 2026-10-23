@@ -37,7 +37,7 @@ function Cap([string]`$argline, [int]`$sec = 90) {
   Get-Content `$o, `$e -Encoding UTF8 | Where-Object { "`$_" -notmatch 'sk-or-|\d{6,12}:[A-Za-z0-9_-]{30,}' }
   Remove-Item `$o, `$e, `$i -Force -ErrorAction SilentlyContinue
 }
-foreach (`$prof in 'default', 'private') {
+foreach (`$prof in 'default', 'local') {
   `$p = if (`$prof -eq 'default') { '' } else { "-p `$prof " }
   "##### `${prof}: providers.ollama"
   Cap "`${p}config set providers.ollama.base_url http://localhost:11434/v1" 60 | Select-Object -Last 1

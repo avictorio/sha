@@ -28,6 +28,13 @@ if (-not $Password) {
   $Password = Read-Host -AsSecureString "hermes password"
 }
 
+# A run that was killed mid-way leaves its task (with the stored credential) and folder behind: remove them.
+Get-ScheduledTask -TaskName 'hermes-oneshot-*' -ErrorAction SilentlyContinue | ForEach-Object {
+  Write-Host "removing a leftover one-shot task: $($_.TaskName)" -ForegroundColor Yellow
+  Unregister-ScheduledTask -TaskName $_.TaskName -Confirm:$false -ErrorAction SilentlyContinue
+}
+Get-ChildItem $env:PUBLIC -Directory -Filter 'hermes-oneshot-*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
 $id   = [guid]::NewGuid().ToString('N')
 $task = "hermes-oneshot-$id"
 $dir  = Join-Path $env:PUBLIC "hermes-oneshot-$id"
@@ -43,6 +50,13 @@ try {
 } catch { "`$_" | Out-File -Append -Encoding utf8 '$dir\out.txt'; `$rc = 1 }
 "`$rc" | Out-File -Encoding ascii '$dir\rc.txt'
 "@
+# A command that doesn't parse (e.g. "$name:" in a string) would otherwise end the task with no result.
+$parseErrors = $null
+[Management.Automation.Language.Parser]::ParseInput($wrapper, [ref]$null, [ref]$parseErrors) | Out-Null
+if ($parseErrors) {
+  Remove-Item $dir -Recurse -Force -ErrorAction SilentlyContinue
+  throw ("the command doesn't parse: " + (($parseErrors | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Message)" }) -join '; '))
+}
 Set-Content -Path "$dir\run.ps1" -Value $wrapper -Encoding UTF8
 
 $bstr = [IntPtr]::Zero
@@ -85,7 +99,8 @@ try {
   $info = Get-ScheduledTaskInfo -TaskName $task
   [pscustomobject]@{
     ExitCode   = if ($done) { [int](Get-Content "$dir\rc.txt" | Select-Object -First 1) } else { $null }
-    Output     = if (Test-Path "$dir\out.txt") { Get-Content "$dir\out.txt" } else { @() }
+    # Secrets never reach the caller's log: OpenRouter keys, Telegram bot tokens.
+    Output     = if (Test-Path "$dir\out.txt") { Get-Content "$dir\out.txt" | ForEach-Object { $_ -replace 'sk-or-[A-Za-z0-9_-]+|\d{6,12}:[A-Za-z0-9_-]{30,}', '<redacted>' } } else { @() }
     TimedOut   = -not $done
     TaskResult = $info.LastTaskResult
   }

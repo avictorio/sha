@@ -5,7 +5,7 @@
 #      telegram, and read the result back;
 #   2. restart the default gateway;
 #   3. verify/checks/p1-5-usage-log.ps1 (one fresh cloud chat) and compare its input tokens with -Baseline.
-# Re-runnable. The private profile is local-only and unchanged.
+# Re-runnable. The local profile is local-only and unchanged.
 param([string]$LogPath, [securestring]$Password, [int]$Baseline = 13034)   # baseline: P1.9, 2026-10-22
 
 $ErrorActionPreference = 'Stop'

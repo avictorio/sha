@@ -1,4 +1,6 @@
 > Copy of the verification notes used to write PLAN.md (2026-10-22). Source URLs and VERIFIED / INFERRED / NOT FOUND tags are unchanged. One edit: the example cloud model identifier in the `fallback_providers` snippet (item 4) is replaced with `<cloud-model-id>`.
+>
+> **As built.** The notes were checked against Hermes `main` @ `275c211` and stable tag `v2026.9.24`. The machine runs **Hermes Agent v0.22.4** (as installed). Behaviour found on the machine is recorded in [docs/LESSONS.md](LESSONS.md) and PLAN.md Appendix A; **they win where they differ from these notes**. Short "As built:" lines below flag the known differences. Paths not taken are kept intact in the final section, "Archive: paths not taken (D4)"; every note ID still resolves.
 
 # Hermes hybrid agent plan: verification against primary sources
 
@@ -154,6 +156,7 @@ Confidence tags:
   - 429 and 500/502/503, after retries.
   - 401/403 and 404, immediately.
   - Malformed or empty responses that keep repeating.
+  - As built (P1.4): an unknown OpenRouter model returns 400, not 404, and Hermes still falls back to the local model at once (docs/LESSONS.md).
 - **How it behaves.**
   - **Turn-scoped**: "each new user message starts with the primary model restored." It switches at most once per turn.
   - It works in the CLI, the gateway (Telegram), subagents and unpinned cron jobs.
@@ -252,6 +255,7 @@ Confidence tags:
 ### 8. Built-in cron syntax and Telegram delivery
 - **Answer.** Cron runs **inside the gateway process**, which ticks every 60 s. No gateway means no cron.
 - **Jobs** are stored in `~/.hermes/cron/jobs.json`, with output in `cron/output/`.
+  - As built (v0.22.4): jobs live in a database, not `cron/jobs.json` (PLAN.md Appendix A, S3).
 - **Schedule formats**:
   - One-shot delays: `in 30m`.
   - Intervals: `every 2h`, `30m`.
@@ -557,6 +561,7 @@ Confidence tags:
   - An exhausted key returns 402 with `limit_source: openrouter_key_limit`. One OpenRouter guide says 403 "Key limit exceeded"; the docs disagree.
   - Hermes' fallback treats 401/403 as an immediate switch; 402 counts as a capacity error for auxiliary tasks.
   - BYOK usage only counts toward the limit if `include_byok_in_limit` is enabled.
+- **As built (P1.4):** `GET /api/v1/key` returns `limit` but no `limit_reset` (`hermes usage --provider openrouter` does show "resets monthly"). An unknown model returns 400, which still triggers Hermes' fallback (docs/LESSONS.md).
 - **Sources** (via search index; pages not fetchable from the sandbox)
   - https://openrouter.ai/docs/api_reference/limits
   - https://openrouter.ai/docs/api/api-reference/api-keys/create-a-new-api-key
@@ -575,42 +580,9 @@ Confidence tags:
 For the user's use case (receipts, travel confirmations, OTP codes, auto-forwards), the gateway is the **wrong tool**. Its code silently drops automated mail: `noreply@`, `notifications@`, `List-Unsubscribe`, `Auto-Submitted`, `Precedence: bulk`. That covers most receipts, confirmations and OTP mail. Use a skill polled by cron, or AgentMail's webhook/WebSocket events.
 
 ### 19. Hermes email as a gateway platform
-- **Protocol.** Plain **IMAP (poll) + SMTP**, using Python's `imaplib` and `smtplib`.
-  - It works with any IMAP/SMTP provider; there is no provider-specific API.
-  - Authentication is **username + password only**. The code calls `imap.login()` / `smtp.login()`, and no XOAUTH2 path was found. For Gmail, that means an app password.
-  - Docs: "Hermes can receive and reply to emails using standard IMAP and SMTP protocols."
-- **Config.** Run `hermes gateway setup` and choose Email, or put this in `.env`:
-  ```dotenv
-  EMAIL_ADDRESS=agent@example.com
-  EMAIL_PASSWORD=<app password>
-  EMAIL_IMAP_HOST=imap.gmail.com
-  EMAIL_SMTP_HOST=smtp.gmail.com
-  EMAIL_ALLOWED_USERS=you@example.com            # whole-address allowlist
-  EMAIL_AUTHSERV_ID=mx.google.com                # REQUIRED while sender auth is on (token before first ';' of topmost Authentication-Results)
-  # optional: EMAIL_IMAP_PORT=993  EMAIL_SMTP_PORT=587  EMAIL_POLL_INTERVAL=15  EMAIL_HOME_ADDRESS=you@example.com
-  # NOT recommended: EMAIL_ALLOW_ALL_USERS=true ; opt-out of DMARC check: EMAIL_TRUST_FROM_HEADER=true
-  ```
-  Related `config.yaml` keys:
-  - `platforms.email.unauthorized_dm_behavior: pair|decline`
-  - `platforms.email.require_authenticated_sender`
-  - `platforms.email.authserv_id`
-- **Allowlist: yes.** `EMAIL_ALLOWED_USERS` (or `GATEWAY_ALLOWED_USERS`) admits only the listed addresses.
-  - With no allowlist, unknown senders are ignored silently. Pairing is opt-in.
-  - On top of the allowlist, the `From:` domain must pass DMARC (or aligned SPF/DKIM) according to your server's `Authentication-Results`. Allowlisted mail that fails authentication is dropped. That includes "a forwarder that breaks alignment."
-- **One turn per email, replies by email: yes.**
-  - The gateway polls for UNSEEN messages every 15 s, and each new email becomes an agent turn. The subject is included as context. Attachments are cached (images go to vision).
-  - Replies go over SMTP in the same thread (`In-Reply-To` / `References`, `Re:` subject). They are plain text, and `MEDIA:/path` attaches files.
-  - At startup it marks every existing message as seen.
-  - Cron can deliver results to `EMAIL_HOME_ADDRESS`.
-- **Caveats for this use case.**
-  - Automated senders are silently ignored. `_NOREPLY_PATTERNS` covers `noreply`, `no-reply`, `donotreply`, `mailer-daemon`, `postmaster`, `bounce`, `notifications@`, `automated@`, `auto-confirm`, `auto-reply`, `automailer`. `_AUTOMATED_HEADERS` covers `Auto-Submitted` (other than `no`), `Precedence: bulk/list/junk`, `X-Auto-Response-Suppress` and `List-Unsubscribe`.
-  - Gmail filter auto-forwards are INFERRED to keep the original `From:` and headers. They would then fail both the allowlist and the automated-sender filter.
-  - A manual forward from the user (From = the user) should pass (INFERRED).
-  - The doc's line "For Gmail, enable it in Settings → Forwarding and POP/IMAP" is stale. See §22: personal Gmail IMAP can no longer be turned off.
-- **Sources**
-  - https://hermes-agent.nousresearch.com/docs/user-guide/messaging/email
-  - Code: `plugins/platforms/email/adapter.py` (lines 40–46, 205–210, 536, 591)
-- **VERIFIED**. The forwarding behaviour is INFERRED.
+- **Why it doesn't fit.** It's IMAP/SMTP with a password only, and it silently drops automated mail (`noreply@`, `List-Unsubscribe`, `Auto-Submitted`, `Precedence: bulk`), which covers most receipts, confirmations and OTP mail. Possible later use: chat-by-email (PLAN.md §14).
+- **Still relevant (S7):** Gmail filter auto-forwards are INFERRED to keep the original `From:` and headers; a manual forward from the user has From = the user (INFERRED).
+- Full detail (config, allowlist, sender authentication, caveats): Archive, "#19 Hermes email gateway".
 
 ### 20. Other ways to ingest a mailbox; AgentMail
 - **Options in the Hermes docs**:
@@ -622,8 +594,7 @@ For the user's use case (receipts, travel confirmations, OTP codes, auto-forward
     - **VERIFIED**
   - **Google Workspace skill** (`skills/productivity/google-workspace/`). Uses the Gmail API with OAuth2 and needs your own Google Cloud project. Example search command: `$GAPI gmail search "is:unread"`. The docs suggest Himalaya instead for email-only use. https://hermes-agent.nousresearch.com/docs/user-guide/skills/google-workspace. **VERIFIED**
   - **Hosted "gmail" connector** through the Nous tool gateway. Needs a Nous Portal sign-in; set up with `hermes connectors connect gmail [--alias NAME]`. https://hermes-agent.nousresearch.com/docs/reference/cli-commands (section `hermes connectors`). **VERIFIED**
-  - **Google-hosted Gmail MCP.** The MCP docs mention "Google-hosted servers (Gmail, Calendar)": Hermes adds `access_type=offline` so the connection survives restarts and works under `hermes gateway`. The docs give **no Gmail MCP URL**. `gmailmcp.googleapis.com/mcp/v1` appears only in a Hermes test file, so it is unverified. Google servers may reject dynamic client registration, in which case you supply your own OAuth client (the docs show this for Drive). https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp. Mention VERIFIED; URL **NOT FOUND** in docs.
-  - **Community plugin catalog entry `gmail`** (guberm/hermes-gmail-desktop-plugin, tier: community). It is a Desktop UI, not an ingestion path.
+  - **Google-hosted MCP servers (Gmail, Calendar)** are mentioned in the MCP docs, with no URL; they may need your own OAuth client (relevant to S9). Gmail MCP and the community `gmail` plugin: Archive, "#20 Gmail MCP and community plugin".
   - A widely used generic IMAP MCP server documented by Hermes: **NOT FOUND**.
 - **AgentMail** (agentmail.to). An official Hermes **optional skill**: `optional-skills/email/agentmail`, authored by AgentMail, platforms linux/macos/windows. Its stated purpose: "AgentMail gives an agent its own email inbox for sending mail, receiving replies, completing email OTP flows…" (VERIFIED from the skill files).
   - **Setup**: `npm install -g agentmail-cli@latest`, put `AGENTMAIL_API_KEY=am_...` in `.env`, then check with `agentmail inboxes list --format json`. The skill install command is INFERRED by analogy: `hermes skills install official/email/agentmail`.
@@ -636,7 +607,7 @@ For the user's use case (receipts, travel confirmations, OTP codes, auto-forward
     - The docs recommend a subdomain (e.g. `agents.yourdomain.com`) so your root MX isn't replaced.
     - Optional `subdomains_enabled` with a wildcard MX allows inboxes on any subdomain.
     - VERIFIED via the search index of https://docs.agentmail.to/knowledge-base/custom-domain-setup and https://www.agentmail.to/docs/custom-domains.
-  - **Pricing** (vendor blog via search index; INFERRED, so check the pricing page):
+  - **Pricing** (vendor blog via search index; INFERRED; superseded by AM1, which reads the pricing page):
     - **Free**: 3 inboxes, about 3,000 emails/month, 100/day, webhooks and WebSockets included, **no custom domains**.
     - **Developer**: $20/month for 10 inboxes, 10,000 emails/month, custom domains (10).
     - **Startup**: $200/month. Enterprise: custom pricing.
@@ -653,15 +624,7 @@ For the user's use case (receipts, travel confirmations, OTP codes, auto-forward
 - **Gmail plus-addressing: yes.** Mail to `you+anything@gmail.com` arrives in the same inbox, and Google suggests filtering on it.
   - The Workspace Learning Center page covers the same feature for Workspace users.
   - Sources: https://support.google.com/a/users/answer/9308648 and https://support.google.com/mail/answer/7436150 (dots). **VERIFIED** (search index).
-- **Google Workspace (custom domain)**:
-  - Plus-addressing: yes (same Gmail behaviour).
-  - Up to **30 aliases per user** at no extra cost.
-  - **Catch-all**: the Admin console route under Apps → Google Workspace → Gmail → **Routing**, using "Change envelope recipient" for unrecognized/catch-all addresses. The target can be a user or a Group. Default routing is an alternative.
-  - Sources: https://support.google.com/a/answer/33327, https://support.google.com/a/answer/12943537, https://support.google.com/a/answer/2368153. **VERIFIED** (search index).
-- **Fastmail**:
-  - Plus-addressing works on any alias with no setup, and **subdomain addressing** (`anything@user.domain`) is also supported.
-  - Wildcard catch-all aliases: add the alias `*@yourdomain.tld` under Settings → My email addresses. Specific aliases take priority over the catch-all.
-  - Sources: https://www.fastmail.help/hc/en-us/articles/360060591053-Plus-addressing-and-subdomain-addressing and https://www.fastmail.help/hc/en-us/articles/1500000277942-Catch-all-wildcard-aliases. **VERIFIED** (search index).
+- **Google Workspace and Fastmail** (aliases, catch-all, subdomain addressing): Archive, "#21 Google Workspace and Fastmail".
 - **AgentMail**:
   - Plus-addressing: **NOT FOUND** in the docs.
   - Catch-all: **not offered**, according to an AgentMail vendor blog (INFERRED).
@@ -669,21 +632,7 @@ For the user's use case (receipts, travel confirmations, OTP codes, auto-forward
   - https://www.agentmail.to/docs/custom-domains
 
 ### 22. Gmail/Workspace bot mailbox: IMAP + app password vs OAuth
-- **Personal Gmail.** App passwords still work, but only with **2-Step Verification on**.
-  - Google: app passwords "aren't recommended and are unnecessary in most cases."
-  - App passwords are **revoked when the account password changes**.
-  - "Less secure apps" (plain account password over IMAP/SMTP) is gone.
-  - IMAP can no longer be turned off for personal Gmail: "Starting January 2025, the option to choose Enable IMAP or Disable IMAP won't be available."
-  - Sources: https://support.google.com/mail/answer/185833, https://support.google.com/mail/answer/7126229. **VERIFIED** (search index).
-- **Google Workspace.** From **May 1, 2025**, Workspace accounts no longer support less secure apps, third-party apps or devices that sign in with just a username and password. App passwords are the stated exception.
-  - Google's guidance is OAuth for apps. App passwords are mentioned for devices such as scanners.
-  - Admins control IMAP and can **restrict IMAP to OAuth-based clients only**, which would block app-password IMAP. Admins can also disable app passwords (INFERRED from the admin controls described).
-  - Google says there is "currently no impact on applications using app passwords with 2-Step Verification" and that it will announce changes.
-  - Sources: https://support.google.com/a/answer/14114704, https://knowledge.workspace.google.com/admin/sync/transition-from-less-secure-apps-to-oauth, https://workspaceupdates.googleblog.com/2023/09/winding-down-google-sync-and-less-secure-apps-support.html, https://support.google.com/a/answer/105694. **VERIFIED** (search index).
-- **What this means for Hermes.**
-  - The email gateway and Himalaya-with-password both depend on an app password, so they need 2SV and are vulnerable to revocation on password change.
-  - The OAuth paths are the Google Workspace skill (your own Cloud project), the hosted `gmail` connector (Nous Portal), or a Google MCP server.
-  - AgentMail avoids Google auth entirely.
+- Not taken: the agent's mailbox is AgentMail (D4), which avoids Google auth. Full section: Archive, "#22 Gmail app passwords vs OAuth".
 
 ---
 
@@ -696,23 +645,24 @@ Same sources as above: Hermes `main` @ `275c211` docs and code, plus `plivo-dev/
 - **How it works.** The profile boundary is the `HERMES_HOME` environment variable. The wrapper sets `HERMES_HOME=~/.hermes/profiles/<name>`.
 - **Commands**
   ```bash
-  hermes profile create private            # blank profile (no --clone, so no keys/memory copied)
-  hermes -p private setup                  # or: private setup   (auto-created alias)
-  hermes --profile=private doctor          # -p / --profile works in any position
-  hermes -p private gateway install        # Windows task name: Hermes_Gateway_<profile>
+  hermes profile create local              # blank profile (no --clone, so no keys/memory copied)
+  hermes -p local setup                    # or: local setup   (auto-created alias)
+  hermes --profile=local doctor            # -p / --profile works in any position
+  hermes -p local gateway install          # Windows task name: Hermes_Gateway_<profile>
   ```
   - `--clone` copies `config.yaml`, `.env`, `SOUL.md`, skills and MEMORY.md/USER.md.
   - `--clone-all` copies everything except history and cron jobs.
-  - **For a private instance, use neither.**
+  - **For the local (no cloud keys) profile, use neither.**
 - **Gateway: one process by default.**
   - `hermes update` folds profile gateways into **one multiplexed host gateway** (`gateway.multiplex_profiles`).
   - Each turn still resolves "the routed profile's config, skills, memory, SOUL, **and provider keys** — credentials are never shared across profiles."
   - A missing key stays unresolved: "never the default profile's value."
   - Allowlists, approvals and MCP connections are also per profile.
   - For a separate OS process instead, set `gateway.standalone: true` in that profile.
+  - **As built (v0.22.4):** the default gateway multiplexes every profile regardless, and ignores `multiplex_profiles: false`. `gateway.standalone: true` is required for a profile to get its own process and bot; `hermes config get` calls it unrecognized, but the gateway log confirms it (docs/LESSONS.md, Hermes).
 - **Bot tokens.** Each profile needs its own bot token. Two profiles using the same token are blocked by "token locks."
 - **Risks for a "no cloud keys" profile** (INFERRED):
-  1. **OAuth logins.** Anthropic, Codex and xAI OAuth logins are shared through the root `~/.hermes/auth.json` for clones ("the new profile keeps reading the login from the root"). Check with `hermes -p private auth list`.
+  1. **OAuth logins.** Anthropic, Codex and xAI OAuth logins are shared through the root `~/.hermes/auth.json` for clones ("the new profile keeps reading the login from the root"). Check with `hermes -p local auth list`. **As built (v0.22.4, P1.10):** every profile lists the root credential pool, including the cloud profile's `env:`-sourced OpenRouter key, even with its own empty `auth.json`; from local it isn't usable (`/model openrouter:…` still goes to `localhost:11434`, 400). An OAuth login in the root would be the real risk.
   2. **Fallback.** Set `model.provider: custom` and no `fallback_providers`. The built-in auxiliary discovery chain (OpenRouter → Nous → …) runs "only when no main provider is selected."
   3. **Windows environment.** Don't put cloud keys in Windows User environment variables.
   4. **External CLIs.** `HOME` stays shared by default. Use `terminal.home_mode: profile` for strict per-profile tool configuration.
@@ -730,7 +680,7 @@ Same sources as above: Hermes `main` @ `275c211` docs and code, plus `plivo-dev/
   - `session_search` recall is on demand (a tool call). Its results go into the conversation, and so to whatever model is active.
 - **Implication.** A `/model <cloud> --once` escalation, or any fallback, sends the memory snapshot plus the whole session history to the cloud provider (INFERRED, but it follows directly from the above).
 - **Mitigations**
-  - A separate private profile (F1).
+  - A separate local-only profile (F1).
   - `memory.memory_enabled: false` / `memory.user_profile_enabled: false` in the cloud-capable profile.
   - `/new` before escalating. This still includes the memory snapshot.
 - **Sources**
@@ -825,6 +775,7 @@ Same sources as above: Hermes `main` @ `275c211` docs and code, plus `plivo-dev/
   - `--provider`: the provider paired with `--model`.
   - A pinned job does **not** use `fallback_providers`.
   - There is no `--base-url` flag. Whether a named entry from the `providers:` section can be used as `--provider` for local Ollama is INFERRED, not tested.
+  - **As built (PLAN.md Appendix A, S3):** answered. `--provider ollama` with `providers.ollama.base_url` runs locally. In the default profile, `--provider custom` goes to the CLOUD, because `custom` takes `model.base_url` (OpenRouter).
   - A config-level default is `cron.model` / `cron.model_provider`.
 - **Minimum interval.** No documented minimum. The scheduler "ticks … every 60 seconds," so about 1 minute is the effective floor (INFERRED).
 - **Skills: yes.** Use `--skill <name>`, repeatable, plus `--add-skill` / `--remove-skill` on `edit`. In chat: `/cron add "every 1h" "..." --skill blogwatcher`.
@@ -1055,3 +1006,79 @@ Tags:
 
 ### AM14. Server-side forwarding
 - **Automatic forwarding:** NOT FOUND. The API has no rules or auto-forward resource; the only forward is the per-message one, which is a send. VERIFIED (source) that the API surface has none.
+
+---
+
+## Archive: paths not taken (D4)
+
+D4 chose AgentMail for the agent's mailbox. These checks cover the options it replaced. They are kept intact, with their sources and tags, in case D4 is revisited or chat-by-email is added (PLAN.md §14).
+
+### #19 Hermes email gateway
+- **Protocol.** Plain **IMAP (poll) + SMTP**, using Python's `imaplib` and `smtplib`.
+  - It works with any IMAP/SMTP provider; there is no provider-specific API.
+  - Authentication is **username + password only**. The code calls `imap.login()` / `smtp.login()`, and no XOAUTH2 path was found. For Gmail, that means an app password.
+  - Docs: "Hermes can receive and reply to emails using standard IMAP and SMTP protocols."
+- **Config.** Run `hermes gateway setup` and choose Email, or put this in `.env`:
+  ```dotenv
+  EMAIL_ADDRESS=agent@example.com
+  EMAIL_PASSWORD=<app password>
+  EMAIL_IMAP_HOST=imap.gmail.com
+  EMAIL_SMTP_HOST=smtp.gmail.com
+  EMAIL_ALLOWED_USERS=you@example.com            # whole-address allowlist
+  EMAIL_AUTHSERV_ID=mx.google.com                # REQUIRED while sender auth is on (token before first ';' of topmost Authentication-Results)
+  # optional: EMAIL_IMAP_PORT=993  EMAIL_SMTP_PORT=587  EMAIL_POLL_INTERVAL=15  EMAIL_HOME_ADDRESS=you@example.com
+  # NOT recommended: EMAIL_ALLOW_ALL_USERS=true ; opt-out of DMARC check: EMAIL_TRUST_FROM_HEADER=true
+  ```
+  Related `config.yaml` keys:
+  - `platforms.email.unauthorized_dm_behavior: pair|decline`
+  - `platforms.email.require_authenticated_sender`
+  - `platforms.email.authserv_id`
+- **Allowlist: yes.** `EMAIL_ALLOWED_USERS` (or `GATEWAY_ALLOWED_USERS`) admits only the listed addresses.
+  - With no allowlist, unknown senders are ignored silently. Pairing is opt-in.
+  - On top of the allowlist, the `From:` domain must pass DMARC (or aligned SPF/DKIM) according to your server's `Authentication-Results`. Allowlisted mail that fails authentication is dropped. That includes "a forwarder that breaks alignment."
+- **One turn per email, replies by email: yes.**
+  - The gateway polls for UNSEEN messages every 15 s, and each new email becomes an agent turn. The subject is included as context. Attachments are cached (images go to vision).
+  - Replies go over SMTP in the same thread (`In-Reply-To` / `References`, `Re:` subject). They are plain text, and `MEDIA:/path` attaches files.
+  - At startup it marks every existing message as seen.
+  - Cron can deliver results to `EMAIL_HOME_ADDRESS`.
+- **Caveats for this use case.**
+  - Automated senders are silently ignored. `_NOREPLY_PATTERNS` covers `noreply`, `no-reply`, `donotreply`, `mailer-daemon`, `postmaster`, `bounce`, `notifications@`, `automated@`, `auto-confirm`, `auto-reply`, `automailer`. `_AUTOMATED_HEADERS` covers `Auto-Submitted` (other than `no`), `Precedence: bulk/list/junk`, `X-Auto-Response-Suppress` and `List-Unsubscribe`.
+  - Gmail filter auto-forwards are INFERRED to keep the original `From:` and headers. They would then fail both the allowlist and the automated-sender filter.
+  - A manual forward from the user (From = the user) should pass (INFERRED).
+  - The doc's line "For Gmail, enable it in Settings → Forwarding and POP/IMAP" is stale. See §22: personal Gmail IMAP can no longer be turned off.
+- **Sources**
+  - https://hermes-agent.nousresearch.com/docs/user-guide/messaging/email
+  - Code: `plugins/platforms/email/adapter.py` (lines 40–46, 205–210, 536, 591)
+- **VERIFIED**. The forwarding behaviour is INFERRED.
+
+### #20 Gmail MCP and community plugin
+- **Google-hosted Gmail MCP.** The MCP docs mention "Google-hosted servers (Gmail, Calendar)": Hermes adds `access_type=offline` so the connection survives restarts and works under `hermes gateway`. The docs give **no Gmail MCP URL**. `gmailmcp.googleapis.com/mcp/v1` appears only in a Hermes test file, so it is unverified. Google servers may reject dynamic client registration, in which case you supply your own OAuth client (the docs show this for Drive). https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp. Mention VERIFIED; URL **NOT FOUND** in docs.
+- **Community plugin catalog entry `gmail`** (guberm/hermes-gmail-desktop-plugin, tier: community). It is a Desktop UI, not an ingestion path.
+
+### #21 Google Workspace and Fastmail
+- **Google Workspace (custom domain)**:
+  - Plus-addressing: yes (same Gmail behaviour).
+  - Up to **30 aliases per user** at no extra cost.
+  - **Catch-all**: the Admin console route under Apps → Google Workspace → Gmail → **Routing**, using "Change envelope recipient" for unrecognized/catch-all addresses. The target can be a user or a Group. Default routing is an alternative.
+  - Sources: https://support.google.com/a/answer/33327, https://support.google.com/a/answer/12943537, https://support.google.com/a/answer/2368153. **VERIFIED** (search index).
+- **Fastmail**:
+  - Plus-addressing works on any alias with no setup, and **subdomain addressing** (`anything@user.domain`) is also supported.
+  - Wildcard catch-all aliases: add the alias `*@yourdomain.tld` under Settings → My email addresses. Specific aliases take priority over the catch-all.
+  - Sources: https://www.fastmail.help/hc/en-us/articles/360060591053-Plus-addressing-and-subdomain-addressing and https://www.fastmail.help/hc/en-us/articles/1500000277942-Catch-all-wildcard-aliases. **VERIFIED** (search index).
+
+### #22 Gmail app passwords vs OAuth
+- **Personal Gmail.** App passwords still work, but only with **2-Step Verification on**.
+  - Google: app passwords "aren't recommended and are unnecessary in most cases."
+  - App passwords are **revoked when the account password changes**.
+  - "Less secure apps" (plain account password over IMAP/SMTP) is gone.
+  - IMAP can no longer be turned off for personal Gmail: "Starting January 2025, the option to choose Enable IMAP or Disable IMAP won't be available."
+  - Sources: https://support.google.com/mail/answer/185833, https://support.google.com/mail/answer/7126229. **VERIFIED** (search index).
+- **Google Workspace.** From **May 1, 2025**, Workspace accounts no longer support less secure apps, third-party apps or devices that sign in with just a username and password. App passwords are the stated exception.
+  - Google's guidance is OAuth for apps. App passwords are mentioned for devices such as scanners.
+  - Admins control IMAP and can **restrict IMAP to OAuth-based clients only**, which would block app-password IMAP. Admins can also disable app passwords (INFERRED from the admin controls described).
+  - Google says there is "currently no impact on applications using app passwords with 2-Step Verification" and that it will announce changes.
+  - Sources: https://support.google.com/a/answer/14114704, https://knowledge.workspace.google.com/admin/sync/transition-from-less-secure-apps-to-oauth, https://workspaceupdates.googleblog.com/2023/09/winding-down-google-sync-and-less-secure-apps-support.html, https://support.google.com/a/answer/105694. **VERIFIED** (search index).
+- **What this means for Hermes.**
+  - The email gateway and Himalaya-with-password both depend on an app password, so they need 2SV and are vulnerable to revocation on password change.
+  - The OAuth paths are the Google Workspace skill (your own Cloud project), the hosted `gmail` connector (Nous Portal), or a Google MCP server.
+  - AgentMail avoids Google auth entirely.

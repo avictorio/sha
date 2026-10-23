@@ -1,13 +1,10 @@
 # Status notes: appended to STATUS.md by scripts/publish-status.ps1. Facts about the build only; no secrets or personal data.
-- Local model: qwen3-coder:30b through Ollama on the RTX 4080 Laptop GPU (12 GB), 64K context. Chosen by the owner for the proof of concept (D2): the best benchmark score among the fast models. To revisit with better hardware.
-- Benchmark (P1.1, done): no local model met the bar of 6 of 7 tasks. Tasks passed: qwen3-instruct 2, gpt-oss 3, qwen3-coder 4, muse-glimmer 5 (but 2–3 minutes per reply). All four struggled with the calendar question.
-- muse-glimmer:30b is installed but not in use. It is the most capable model tested but too slow on this laptop; a candidate for faster hardware or slow background jobs.
+- Progress: Phase 1 is complete (2026-10-22) except one follow-up check in the token diet (P1.9): seeing a background task run on the local model in real use. Next: Phase 2 (the approval policy, email, calendar, morning brief), the daily-usable MVP, starting with P2.1.
+- Telegram: two bots, each allow-listed to the owner and each with its own gateway. The cloud bot ("Hermes Cloud", profile `default`) is cloud-first: Meta Muse Wonder through OpenRouter, under a $50/month key cap, falling back to the local model if the cloud fails. The local bot ("Hermes Local", profile `local`, formerly `private`; renamed 2026-10-22) is local-only: no cloud keys, no fallback, web, browser and image tools off; tested to refuse a cloud model.
+- Local model: qwen3-coder:30b through Ollama on the RTX 4080 Laptop GPU (12 GB), 64K context. Chosen by the owner for the proof of concept (D2) after the benchmark (P1.1), where no local model met the bar; to revisit with better hardware. muse-glimmer:30b is installed but not in use (capable, too slow on this laptop). Details: bench/README.md.
 - Terminal sandbox: Docker, nousresearch/hermes-sandbox:desktop, 8 CPUs and 16 GB.
-- Usage log (P1.5): every model call in both profiles is logged on the laptop (model, local or cloud, tokens, time).
-- Telegram: two bots, both allow-listed to the owner. The default bot is cloud-first (P1.4, done): Meta Muse Wonder through OpenRouter, under a $50/month key cap, falling back to the local model if the cloud fails. The private bot (P1.3, done) is local-only: no cloud keys, no fallback, web, browser and image tools off. Tested: it refuses a cloud model, and with the local model stopped it replies with an error rather than going to the cloud.
-- Daily ping (P1.8, done): each bot sends a "pong" at 12:00 from the local model. Tested after an unattended restart: both bots came back by themselves and both pings arrived.
-- Phase 1 is complete (2026-10-22). Next: Phase 2 (the approval policy, email, calendar, morning brief), the daily-usable MVP.
-- Cost: about 4–9 cents per simple message to the default bot (about 10,000 tokens of context for a fresh chat, more as a conversation grows; /new starts fresh). Token diet (P1.9, in progress): background tasks run on the local model, unused tools and 38 of 51 skills are off, and long or idle conversations are compacted sooner. Spend shows at openrouter.ai/activity.
-- Email (Phase 2): one inbox per bot, plus one for login codes.
-- Backups (P1.7, done): nightly at 03:30, encrypted with the owner's passphrase, to the laptop's second drive, 14 days kept. Offsite copy deferred until after the MVP.
-- Not set up yet: email (Phase 2), calendar (P2.5), browser (Phase 3), phone (Phase 4).
+- Usage log: every model call in both profiles is logged on the laptop (model, local or cloud, tokens, time).
+- Cost: about 4–9 cents per simple message to the cloud bot. Token diet (P1.9): background tasks run on the local model, unused tools and 38 of 51 skills are off, and long or idle conversations are compacted sooner; input tokens per message fell 23% (target 20%). Spend shows at openrouter.ai/activity.
+- Daily ping: each bot sends a "pong" at 12:00 from the local model, and both came back by themselves after an unattended restart.
+- Backups: nightly at 03:30, encrypted, to the laptop's second drive, 14 days kept. Offsite copy deferred until after the MVP.
+- Not set up yet: email (Phase 2: two inboxes, one for each bot), calendar (P2.5), browser (Phase 3), phone (Phase 4).

@@ -3,7 +3,7 @@
 # Run from the `operator` account in an ELEVATED Windows PowerShell, in a visible window; the owner types the
 # hermes password. Only cloud-OK facts go into the default profile (F2). Refuses to overwrite an existing
 # USER.md unless -Force (the old one is kept as USER.md.bak-<time>).
-param([Parameter(Mandatory)][string]$FromFile, [ValidateSet('default', 'private')][string]$Profile = 'default', [switch]$Force,
+param([Parameter(Mandatory)][string]$FromFile, [ValidateSet('default', 'local')][string]$Profile = 'default', [switch]$Force,
       [string]$LogPath)
 $ErrorActionPreference = 'Stop'
 if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }

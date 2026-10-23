@@ -83,8 +83,8 @@ Write-Host "standby/hibernate on AC: never; lid on AC: do nothing"
 
 # --- Folders, restricted to hermes + Administrators + SYSTEM -------------------
 Step "Agent folders"
-New-Item -ItemType Directory -Force C:\agent\workspace\calls\briefs, C:\agent\private\workspace, `
-  C:\agent\private\config, C:\agent\shared\travel, C:\agent\shared\logs, C:\agent\chrome, C:\agent\bin, `
+New-Item -ItemType Directory -Force C:\agent\workspace\calls\briefs, C:\agent\local\workspace, `
+  C:\agent\local\config, C:\agent\shared\travel, C:\agent\shared\logs, C:\agent\chrome, C:\agent\bin, `
   D:\ollama\models, D:\backups | Out-Null
 icacls C:\agent /inheritance:r /grant:r "hermes:(OI)(CI)F" "Administrators:(OI)(CI)F" "SYSTEM:(OI)(CI)F"
 if ($LASTEXITCODE -ne 0) { throw "icacls failed" }
