@@ -4,8 +4,12 @@
 # AS hermes through scripts/invoke-as-hermes.ps1 (the owner types the password once).
 #   -Prepare: online pre-checks only.
 #   -Run:     bench/isolate.ps1 -On, every run, then -Off (always, in finally).
+#   -Run -Cloud: the cloud model (versions.lock cloud_model_default) instead of the local candidates, for
+#             comparison only (not a D2 candidate). Hermes must reach OpenRouter, so only the sandbox is cut
+#             off (isolate.ps1 -SandboxOnly) and each turn runs without the web and browser toolsets; the
+#             runner checks both, logs the key's spend per run, and flags any run that fell back to local.
 # Results: C:\agent\bench-results\<stamp>\ (not mounted into the sandbox). Score them with the answer keys.
-param([switch]$Prepare, [switch]$Run, [Parameter(Mandatory)][string]$Doc, [string]$LogPath,
+param([switch]$Prepare, [switch]$Run, [switch]$Cloud, [Parameter(Mandatory)][string]$Doc, [string]$LogPath,
       [string[]]$Tasks = @('B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7'), [int]$Runs = 3,
       [string]$ResumeFlag = '--resume',   # a default: PS reads "-ResumeFlag --resume" on the command line as a missing value
       [string]$Models,                     # comma-separated tags; default: model_candidates in versions.lock
@@ -26,7 +30,8 @@ if ([Bench.Con]::GetConsoleMode($in, [ref]$mode)) { [void][Bench.Con]::SetConsol
 if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
 $repo = Split-Path $PSScriptRoot
 $lock = ConvertFrom-StringData ((Get-Content (Join-Path $repo 'versions.lock') | Where-Object { $_ -notmatch '^\s*#' }) -join "`n")
-$candidates = if ($Models) { $Models -split ',' } else { $lock.model_candidates -split ',' }
+if ($Cloud -and $Prepare) { throw "-Cloud goes with -Run only." }
+$candidates = if ($Models) { $Models -split ',' } elseif ($Cloud) { @($lock.cloud_model_default) } else { $lock.model_candidates -split ',' }
 function Say($m) { Write-Host "$(Get-Date -Format HH:mm:ss) $m" -ForegroundColor Cyan }
 Say "P1.1 benchmark, $(if ($Prepare) { 'pre-checks' } else { 'full run' }); candidates: $($candidates -join ', ')"
 Get-ChildItem $env:PUBLIC -Directory -Filter 'hermes-bench-*' -ErrorAction SilentlyContinue |
@@ -47,11 +52,13 @@ try {
   Copy-Item (Join-Path $repo 'bench\answer_keys\b2_holdout_*') "$stage\holdout\"   # used only after the turn, via docker cp
   Copy-Item (Join-Path $repo 'bench\runner.ps1') "$stage\runner.ps1"
 
-  if ($Run) { Say "isolating Hermes from the network"; & (Join-Path $repo 'bench\isolate.ps1') -On }
+  if ($Run -and $Cloud) { Say "cutting the sandbox off from the network (Hermes keeps OpenRouter)"; & (Join-Path $repo 'bench\isolate.ps1') -On -SandboxOnly }
+  elseif ($Run) { Say "isolating Hermes from the network"; & (Join-Path $repo 'bench\isolate.ps1') -On }
   try {
     $mode = if ($Prepare) { 'Prepare' } else { 'Run' }
     $cmd = "& '$stage\runner.ps1' -Mode $mode -Stage '$stage' -Results '$results' -Candidates '$($candidates -join "','")' " +
-           "-Tasks '$($Tasks -join "','")' -Runs $Runs -ChatTimeoutSec $ChatTimeoutSec" + $(if ($ResumeFlag) { " -ResumeFlag '$ResumeFlag'" } else { '' })
+           "-Tasks '$($Tasks -join "','")' -Runs $Runs -ChatTimeoutSec $ChatTimeoutSec" + $(if ($ResumeFlag) { " -ResumeFlag '$ResumeFlag'" } else { '' }) +
+           $(if ($Cloud) { ' -Cloud' } else { '' })
     Say "results will be in $results"
     Say "starting the runner as hermes: type the hermes password at the prompt below. Then this window stays quiet while it works ($(if ($Prepare) { 'about 5 minutes' } else { 'several hours' })); don't close it."
     $r =& (Join-Path $repo 'scripts\invoke-as-hermes.ps1') -Command $cmd -TimeoutSeconds $TimeoutSeconds
