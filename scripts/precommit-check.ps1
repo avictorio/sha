@@ -4,7 +4,7 @@
 #     and instance data by folder or name (vault, memories, sessions, calls, travel, receipts, brief queue);
 #   - secret patterns in added lines: OpenRouter keys, Telegram bot tokens, private keys;
 #   - .ps1 files that don't parse, or hold non-ASCII without a BOM (PowerShell 5.1 misreads them);
-#   - a Markdown file where one long line repeats many times (the PLAN.md 1,371-line incident);
+#   - a Markdown file where one long line repeats many times (a sign of a runaway edit);
 #   - unusually large changes, so the diff size gets a second look (-AllowLarge to accept).
 param([switch]$AllowLarge, [int]$LargeLines = 400)
 $ErrorActionPreference = 'Stop'

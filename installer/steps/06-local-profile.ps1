@@ -7,8 +7,7 @@
 #                  print what the Bot phase and the checks need. Re-runnable.
 #   -Phase Bot     the second bot: added after Create (PLAN.md P1.3 step 4).
 #   -Phase Tasks   re-copy start-gateway.ps1 and (re-)register Hermes_Gateway_local with its 45 s logon delay
-#                  (P1.8 boot race). Used by scripts/migrate-private-to-local.ps1 (P1.10).
-#                  No password needed.
+#                  (P1.8 boot race). No password needed.
 param([Parameter(Mandatory)][ValidateSet('Create', 'Bot', 'Tasks')][string]$Phase, [string]$LogPath)
 
 $ErrorActionPreference = 'Stop'

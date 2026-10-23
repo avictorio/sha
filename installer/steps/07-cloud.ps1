@@ -1,5 +1,5 @@
-# installer/steps/07-cloud.ps1 -- PLAN.md P1.4: OpenRouter for the default profile only, cloud-first (D2 revised
-# per PLAN section 9, D9), falling back to the local model.
+# installer/steps/07-cloud.ps1 -- PLAN.md P1.4: OpenRouter for the default profile only, cloud-first (D2,
+# PLAN section 8, D9), falling back to the local model.
 # Run from the `operator` account in an ELEVATED Windows PowerShell, in a visible window. The owner types:
 # the OpenRouter key (hidden), then the hermes password.
 #   1. the key goes from the hidden prompt to OpenRouter's GET /api/v1/key (to read its limit back) and

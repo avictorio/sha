@@ -3,7 +3,7 @@
 # It checks that Git for Windows and Claude Code are on PATH (the owner installs
 # both in P0.0a; this script installs nothing), then creates the repo deploy key
 # and the github-sha SSH alias, and prints the PUBLIC key. Idempotent: safe to re-run.
-# The privacy settings (step 2) were applied through Windows Settings; see
+# The privacy settings (step 2) are applied through Windows Settings; see
 # docs/SETUP-GUIDE.md#operator-account.
 
 $ErrorActionPreference = 'Stop'

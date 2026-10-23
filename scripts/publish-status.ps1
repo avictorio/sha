@@ -19,7 +19,7 @@ foreach ($l in $plan) {
   if ($l -match '^## ') { $cur = $null; continue }
   if (-not $cur) { continue }
   if ($l -match '^Order: (.+)$') { $cur.Order = $Matches[1] }
-  # A note may sit between the title and the tag: **P1.3 Local profile** (was: private) [Claude + you]
+  # A note may sit between the title and the tag: **P1.3 Local profile** (a note) [Claude + you]
   if ($l -match '^- \[( |x)\] \*\*(\S+) (.+?)\*\*[^\[]* \[([^\]]+)\](.*)$') {
     $cur.Tasks.Add([pscustomobject]@{ Done = $Matches[1] -eq 'x'; Id = $Matches[2]; Title = $Matches[3]; Tag = $Matches[4]; You = $null })
   } elseif ($cur.Tasks.Count -and $l -match '^  - You: (.+)$' -and -not $cur.Tasks[-1].You) {

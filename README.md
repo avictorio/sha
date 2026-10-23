@@ -5,10 +5,9 @@ This repo holds the build plan, and the start of a distributable package, for a 
 - [PLAN.md](PLAN.md): the actionable runbook, with decisions, phased tasks, Done-when checks, spikes and autonomy tags. Start here.
 - [CLAUDE.md](CLAUDE.md): rules for the Claude agent that sets the machine up.
 - [docs/verification-notes.md](docs/verification-notes.md): the source checks behind every command and config key.
-- [docs/LESSONS.md](docs/LESSONS.md): what the machine taught us; wins over the notes where they differ.
+- [docs/LESSONS.md](docs/LESSONS.md): rules for running things on this machine; they win over the notes where they differ.
 - [docs/SETUP-GUIDE.md](docs/SETUP-GUIDE.md): the steps that can't be scripted.
 - [docs/status-notes.md](docs/status-notes.md): plain-language build facts appended to the agent's STATUS.md.
-- [docs/original/](docs/original/hermes_hybrid_agent_plan.html): the original Slack-shared plan, unchanged.
 - [templates/](templates/): the call brief, inbox-triage prompt and email allowlist, until their tasks move them into `config/templates/`.
 - [plugins/](plugins/): `usage-log` (the per-call usage log) and `approval-policy` (the approval gate). [config/templates/](config/templates/): the profile config templates and the standing rules (`SOUL.md`).
 - [bench/](bench/README.md): the local-model benchmark, with tasks, synthetic fixtures, answer keys and a scoring sheet.
