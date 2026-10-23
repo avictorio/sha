@@ -1,6 +1,9 @@
 # verify/checks/s6-model-context.ps1 -- PLAN.md S6: each D2 candidate's native context is >= 64K
 # and matches what versions.lock records. Run in `operator`, unelevated. Re-runnable.
+param([string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -19,3 +22,6 @@ foreach ($tag in ($lock.model_candidates -split ',')) {
   Record "ctx:$tag" ($ctx -ge 65536 -and $ctx -eq $pinned[$tag]) "native=$ctx pinned=$($pinned[$tag])"
 }
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-50} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

@@ -4,9 +4,11 @@
 # The docker commands run AS hermes via scripts/invoke-as-hermes.ps1: the owner types
 # hermes's password at its hidden prompt (CLAUDE.md rule 1). Prints PASS/FAIL per check.
 # -SandboxImage: the image from `hermes config get terminal.docker_image` (known after P0.6).
-param([string]$SandboxImage)
+param([string]$SandboxImage, [string]$LogPath)
 
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Step($m) { Write-Host "`n== $m" -ForegroundColor Cyan }
 function Record($name, $ok, $detail) {
@@ -59,3 +61,6 @@ try {
 
 Step "Summary"
 $results.GetEnumerator() | ForEach-Object { "{0,-38} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

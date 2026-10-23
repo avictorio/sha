@@ -2,7 +2,10 @@
 # Run in the `operator` account, in an ELEVATED Windows PowerShell, in a visible window:
 # everything below runs AS hermes via scripts/invoke-as-hermes.ps1 (the owner types the password).
 # Prints PASS/FAIL per check. Re-runnable; removes the hello.txt it asks the agent to create.
+param([string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Step($m) { Write-Host "`n== $m" -ForegroundColor Cyan }
 function Record($name, $ok, $detail) {
@@ -121,3 +124,6 @@ Remove-Item 'C:\agent\workspace\dd-whole', 'C:\agent\workspace\dd-chained' -Forc
 
 Step "Summary"
 $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

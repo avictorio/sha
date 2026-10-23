@@ -2,8 +2,10 @@
 # Run in the `operator` account, ELEVATED, in a visible window; the owner types the hermes password.
 # As hermes: makes a test archive in C:\agent\backup-stage, lists what's in it (names only), then DELETES it
 # (it holds .env and auth.json). Prints the exit code and whether profiles\local\ and the key files are inside.
-param([securestring]$Password)
+param([securestring]$Password, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
 $repo = Split-Path (Split-Path $PSScriptRoot)
 $cmd = @'
@@ -38,3 +40,6 @@ $args_ = @{ Command = $cmd; TimeoutSeconds = 900 }
 if ($Password) { $args_.Password = $Password }
 $r = & (Join-Path $repo 'scripts\invoke-as-hermes.ps1') @args_
 $r.Output | Where-Object { $_ -notmatch 'sk-or-|\d{6,12}:[A-Za-z0-9_-]{30,}' } | ForEach-Object { Write-Host "  $_" }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

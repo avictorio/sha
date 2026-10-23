@@ -3,8 +3,10 @@
 #   Right after installer/steps/10-cron.ps1 (it passes its start time): the "run now" pings.
 #   The day after an unattended reboot: -Since '<that day> 11:59' checks the 12:00 pings fired by themselves.
 # Prints PASS/FAIL per check, plus the last boot time (for the reboot half of the Done when).
-param([datetime]$Since = (Get-Date).Date)
+param([datetime]$Since = (Get-Date).Date, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -23,3 +25,6 @@ foreach ($k in 'default', 'local') {
   Record "$k-ping-local" ($cron.Count -ge 1 -and -not ($cron | Where-Object { $_.local -ne $true -or $_.model -ne $lock.model_default })) "model=$($last.model) base_url=$($last.base_url)"
 }
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-24} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

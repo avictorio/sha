@@ -1,6 +1,7 @@
 # scripts/precommit-check.ps1 -- run before every commit (CLAUDE.md, Finishing a task). Unelevated is fine.
 # Checks the STAGED content, and exits 1 on any problem:
-#   - forbidden files (CLAUDE.md "Never commit"): .env, auth.json, state.db, instance.yaml, backups, logs, passphrases;
+#   - forbidden files (CLAUDE.md "Never commit"): .env, auth.json, state.db, instance.yaml, backups, logs, passphrases,
+#     and instance data by folder or name (vault, memories, sessions, calls, travel, receipts, brief queue);
 #   - secret patterns in added lines: OpenRouter keys, Telegram bot tokens, private keys;
 #   - .ps1 files that don't parse, or hold non-ASCII without a BOM (PowerShell 5.1 misreads them);
 #   - a Markdown file where one long line repeats many times (the PLAN.md 1,371-line incident);
@@ -16,7 +17,11 @@ if (-not $files) { Write-Host "nothing staged"; exit 0 }
 
 foreach ($f in $files) {
   $leaf = Split-Path $f -Leaf
-  if ($leaf -match '^\.env|^auth\.json$|^state\.db|^instance\.yaml$|passphrase|\.(7z|bak|log|jsonl)$') { Bad "forbidden file staged: $f" }
+  if ($leaf -match '\.example$') { continue }   # templates (.env.example), placeholders only
+  if ($leaf -match '^\.env|\.env$|^auth\.json$|^state\.db|^instance\.yaml$|passphrase|\.(7z|bak|log|jsonl)$') { Bad "forbidden file staged: $f" }
+  # Instance data by folder or name (CLAUDE.md "Never commit"; mirrors .gitignore)
+  if ($f -match '(^|/)(vault|memories|sessions|calls|backups|backup-stage|restore-stage|restore-test|logs|travel)/' -or
+      $leaf -cmatch '^(receipts\.csv|brief-queue\.md|triage-state\.json|MEMORY\.md|USER\.md)$') { Bad "instance data staged: $f" }
 }
 
 $added = @(git diff --cached -U0 | Where-Object { $_ -match '^\+[^+]' })

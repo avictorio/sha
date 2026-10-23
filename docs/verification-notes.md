@@ -296,6 +296,7 @@ Confidence tags:
   - A hardline blocklist always applies and can't be overridden.
 - **Critical caveat.** "Container bypass: When running in `docker`, `singularity`, `modal`, `daytona`, or `vercel_sandbox` backends, dangerous command checks are **skipped**."
 - **Custom approval gate: native plugin hook** `pre_tool_call`. It fires before every tool, built-in or plugin.
+  - As built (P2.1, 2026-10-22): `approvals.deny` is enforced before plugin hooks, so a denied command never reaches the plugin and leaves no `policy-*.jsonl` line (docs/LESSONS.md, Hermes).
   ```python
   # ~/.hermes/plugins/call-gate/__init__.py  (+ plugin.yaml with name/version/description)
   def gate(tool_name, args, task_id, **kwargs):

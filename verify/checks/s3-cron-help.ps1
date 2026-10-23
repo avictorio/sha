@@ -1,7 +1,9 @@
 # verify/checks/s3-cron-help.ps1 -- PLAN.md S3, step 0: print `hermes cron` help and each profile's jobs, so the
 # spike uses real flags. Read-only. Run in the `operator` account, ELEVATED; the owner types the hermes password.
-param([securestring]$Password)
+param([securestring]$Password, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
 $repo = Split-Path (Split-Path $PSScriptRoot)
 $cmd = @'
@@ -16,3 +18,6 @@ $args_ = @{ Command = $cmd; TimeoutSeconds = 600 }
 if ($Password) { $args_.Password = $Password }
 $r = & (Join-Path $repo 'scripts\invoke-as-hermes.ps1') @args_
 $r.Output | ForEach-Object { Write-Host "  $_" }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

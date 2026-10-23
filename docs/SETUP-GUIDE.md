@@ -156,7 +156,7 @@ PLAN.md P0.7. Scripted in `installer/steps/05-telegram.ps1` (elevated, visible w
 
 ### The owner's steps, on the phone
 
-1. **Create the bot.** In Telegram, open **@BotFather** (blue verified tick), send `/newbot`, and give a display name (e.g. "Hermes") and a username ending in `bot`. Save the token in your password manager as "Hermes Telegram bot token". Never paste it into chat.
+1. **Create the bot.** In Telegram, open **@BotFather** (blue verified tick), send `/newbot`, and give a display name (e.g. "Hermes Cloud"; the second bot is "Hermes Local") and a username ending in `bot`. Save the token in your password manager as "Hermes Telegram bot token". Never paste it into chat.
 2. **Get your numeric ID** from **@userinfobot**. It's personal, not secret: it goes into `instance.yaml`/`.env`, never the repo.
 3. **Open a chat with your bot** (`t.me/<username>`) and press **Start**.
 
@@ -213,7 +213,7 @@ PLAN.md P1.4, D9. The cloud profile (`default`) is **cloud-first**: `meta/muse-w
 
 ### Costs to watch
 
-After the P1.9 token diet, a fresh chat sends about 10,000 tokens of context, costing Muse Wonder about 4–9¢ per message. Side tasks (titles, compression, vision) run on the local model, and the delegation toolset (subagents) is off. Long chats grow: send `/new` to start fresh. Check spend at openrouter.ai/activity; the key's $50 monthly cap is the hard stop.
+After the P1.9 token diet, a fresh chat sends about 10,000 tokens of context, costing Muse Wonder about 4–9¢ per message. Side tasks (titles, compression) run on the local model (vision stays on its automatic setting), and the delegation toolset (subagents) is off. Long chats grow: send `/new` to start fresh. Check spend at openrouter.ai/activity; the key's $50 monthly cap is the hard stop.
 
 ## seed-memory
 

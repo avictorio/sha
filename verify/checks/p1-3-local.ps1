@@ -4,8 +4,10 @@
 # The Done-when itself is manual, in Telegram (docs/SETUP-GUIDE.md#local-bot, "Tests in Telegram"):
 #   /model openrouter:<any> fails in the local chat; with Ollama stopped the local bot errors.
 # Prints PASS/FAIL per check. Re-runnable. Never prints .env values.
-param([securestring]$Password)
+param([securestring]$Password, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -79,3 +81,6 @@ $cloud = Select-String -Path 'C:\agent\shared\logs\usage-local.jsonl' -Pattern '
 Record 'usage-local-all-local' (-not $cloud) "$(@($cloud).Count) non-local line(s)"
 
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

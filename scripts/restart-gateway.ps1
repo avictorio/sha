@@ -5,8 +5,10 @@
 # gateway processes all read "gateway run --quiet": a profile's processes are found as the descendants of
 # its start-gateway.ps1 launcher. Temporary gateways that `hermes chat` auto-starts (--idle-exit) are
 # stopped too: they hold the profile's gateway lock, so a fresh start would exit 1 (P1.3).
-param([ValidatePattern('^[a-z0-9]+$')][string]$Profile = 'default', [switch]$StopOnly)
+param([ValidatePattern('^[a-z0-9]+$')][string]$Profile = 'default', [switch]$StopOnly, [string]$LogPath)
 $ErrorActionPreference = 'Stop'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $task = if ($Profile -eq 'default') { 'Hermes_Gateway' } else { "Hermes_Gateway_$Profile" }
 if (-not (Get-ScheduledTask -TaskName $task -ErrorAction SilentlyContinue)) { Write-Host "no $task task; nothing to restart"; return }
 
@@ -29,3 +31,6 @@ if ($StopOnly) { return }
 Start-Sleep 3
 Start-ScheduledTask -TaskName $task
 Write-Host "restarted $task"
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

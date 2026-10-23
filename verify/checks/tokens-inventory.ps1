@@ -2,8 +2,10 @@
 # Read-only. Run in the `operator` account, ELEVATED; the owner types the hermes password (unless -Password).
 # Prints: enabled tools per platform, installed skills, auxiliary routing, compression, session reset and
 # prompt-caching settings, plus the commands' help where the setting names aren't known yet.
-param([securestring]$Password)
+param([securestring]$Password, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
 $repo = Split-Path (Split-Path $PSScriptRoot)
 $cmd = @'
@@ -31,3 +33,6 @@ if ($Password) { $args_.Password = $Password }
 $r = & (Join-Path $repo 'scripts\invoke-as-hermes.ps1') @args_
 Write-Host "hermes step: TimedOut=$($r.TimedOut) ExitCode=$($r.ExitCode)"
 $r.Output | ForEach-Object { Write-Host "  $_" }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

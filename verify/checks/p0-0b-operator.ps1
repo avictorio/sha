@@ -4,9 +4,12 @@
 param(
   [string]$CloneDir    = "$HOME\sha",
   [string]$CommitName  = "Claude (Legion operator)",
-  [string]$CommitEmail = "1481051+avictorio@users.noreply.github.com"   # GitHub noreply address
+  [string]$CommitEmail = "1481051+avictorio@users.noreply.github.com",   # GitHub noreply address
+  [string]$LogPath
 )
 $ErrorActionPreference = 'Continue'   # native tools write to stderr; judge by exit codes
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Step($m) { Write-Host "`n== $m" -ForegroundColor Cyan }
 function Record($name, $ok, $detail) {
@@ -142,3 +145,6 @@ Record 'claude-code-installed' ([bool]$cc) $(if ($cc) { (claude --version) } els
 Step "Summary"
 $results.GetEnumerator() | ForEach-Object { "{0,-28} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
 Write-Host "`nManual check left: run 'claude' in $CloneDir and ask it to summarise CLAUDE.md."
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

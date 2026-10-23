@@ -35,13 +35,13 @@ The build plan and the future distributable package for a hybrid local/cloud per
 
 ## Operating rules
 1. **Accounts.** Work only in the `operator` account (local admin, with nothing of the owner's linked). Never work in the owner's account or in `hermes`. Steps that must run as `hermes` go through `scripts/invoke-as-hermes.ps1` (elevated): the owner types the `hermes` password at its hidden prompt, and it runs the step as a one-shot scheduled task that is deleted afterwards (`Start-Process -Credential` and `runas` don't work here).
-   - Allowed in `operator`: admin sign-ins for the agent's own infrastructure accounts (registrar, mail provider, OpenRouter, Plivo, the Tailscale device login), in `operator`'s browser profile. The owner types the password or 2FA; ask the owner to sign out when the task is done.
+   - Allowed in `operator`: admin sign-ins for the agent's own infrastructure accounts (registrar only if a custom domain is added (PLAN.md §14), mail provider, OpenRouter, Plivo, the Tailscale device login), in `operator`'s browser profile. The owner types the password or 2FA; ask the owner to sign out when the task is done.
    - Never in `operator` (personal): the owner's everyday accounts, such as personal email, banking, social media, the owner's GitHub and Telegram, or a personal browser profile or password manager. If you find one signed in there, stop and tell the owner. The agents may use the owner's travel accounts (PLAN.md D15), but the owner signs them in; you never do.
    - GitHub access is only via this repo's deploy key (PLAN.md P0.0b).
    - P0.0a is the owner's job. If `operator` doesn't exist, you aren't running where you should be: stop and tell the owner.
 2. **Secrets.** The owner types secrets straight into their destination: the password manager, a web form, or a hidden `Read-Host -AsSecureString` prompt in a script that writes the value to the profile's `.env` (never onto a command line). Never ask for a secret in chat, and never echo or log one.
 3. **Stops.** Stop at CAPTCHAs, identity checks and payments. Hand over, and wait.
-4. **The gate.** Never edit the approval-policy plugin or `approvals.deny` to get past a block you hit. Make only the edits a task calls for (P2.1 step 3, S12), and commit them with that task's ID.
+4. **The gate.** Never edit the approval-policy plugin or `approvals.deny` to get past a block you hit. Make only the edits a task calls for (P2.1 step 3, P2.1b, the known-list additions in P2.2/P2.5, S12, P4.3), and commit them with that task's ID.
 5. **Never approve a Hermes approval.** One agent approving another defeats the gate.
    - If an approval prompt appears in a terminal you're driving, answer no and tell the owner.
    - Don't use or keep a Telegram session for the owner's account on this machine.
