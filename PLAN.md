@@ -10,7 +10,7 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 - "notes #N", "F#" and "AM#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position (2026-10-22).**
-- Phase 0 and Phase 1 are done, including the cloud/local rename (P1.10). **Next: Phase 2, starting with P2.1.**
+- Phase 0 and Phase 1 are done, including the cloud/local rename (P1.10). **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review a day of tool-call logging, then switch it off) is left, on 2026-10-23. Next meanwhile: S8.
 - Still open: **P1.9** (one check left: a side task seen running on the local model in real use) and **P0.0a** (owner: the desktop-app check; revisit when computer use or a browser is first needed).
 
 ## 1. Summary
@@ -238,6 +238,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 Order: P2.1, S8, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7, P2.8.
 
 - [ ] **P2.1 Approval-policy plugin (both profiles)** [Claude + you] — Install, tune, and add standing rules.
+  - Progress 2026-10-22: steps 1, 2 and 4 done (both profiles, via `08-plugins.ps1`; `SOULRULES=5`). Done-when passed: the Telegram approval came up and your deny stopped it (gateway log `choice=deny`); `p2-1-policy.ps1` passes in both profiles (AgentMail send blocked with a `block` line; force push refused by `approvals.deny`, which runs before plugins). Tool name `terminal`, key `command` (already configured). Left: step 3 on 2026-10-23, after a day of logging.
   - You: answer the test approval on your phone.
   1. `git mv templates/plugins/approval-policy plugins/approval-policy`. Review its CONFIG block, install it in both profiles with `08-plugins.ps1` (as in P1.5), then `scripts/restart-gateway.ps1 -Profile default` and `-Profile local`. The plugin template still says `private`; rename it to `local` when it's installed here.
   2. Set `LOG_ALL_TOOL_CALLS = True` for one day.
@@ -805,7 +806,7 @@ paths: { agent_root: 'C:\agent', models: 'D:\ollama\models', backups: 'D:\backup
 |---|---|
 | `installer/steps/*.ps1` | Exist: `00-operator` (Claude-assisted installs only), `01-host`, `02-ollama`, `03-docker`, `04-hermes`, `05-telegram`, `06-model`, `06-local-profile`, `07-cloud`, `08-plugins`, `09-backup`, `10-cron`, `11-token-diet`. Planned: `12-mail`, `13-calendar`, `14-browser`, `15-secrets`, `16-phone`. |
 | `installer/install.ps1`, `installer/preflight.ps1` | Planned (P6.1, P6.2): the idempotent step-based installer, and hardware/OS qualification |
-| `config/templates/` | Exist: `default.config.yaml`, `default.cloud.yaml`, `default.token-diet.yaml`, `local.config.yaml`, `USER.default.md`. Planned: `SOUL.md` (P2.1), `agentmail-mcp.yaml` (S2), `email-allowlist.yaml` (P2.2), `inbox-triage-prompt.md` (P2.3), `call-brief.yaml` (P4.3), `instance.example.yaml` (P6.1) |
+| `config/templates/` | Exist: `default.config.yaml`, `default.cloud.yaml`, `default.token-diet.yaml`, `local.config.yaml`, `USER.default.md`, `SOUL.md` (the standing rules). Planned: `agentmail-mcp.yaml` (S2), `email-allowlist.yaml` (P2.2), `inbox-triage-prompt.md` (P2.3), `call-brief.yaml` (P4.3), `instance.example.yaml` (P6.1) |
 | `plugins/` | `usage-log/`; `approval-policy/` (P2.1) |
 | `templates/` | Holding area: each file moves (`git mv`) into `plugins/` or `config/templates/` in the task that first installs it (P2.1, P2.2, P2.3, P4.3) |
 | `skills/` | `call-wrapup/` (S5, P4.4) and any later skills |
