@@ -662,7 +662,7 @@ Same sources as above: Hermes `main` @ `275c211` docs and code, plus `plivo-dev/
   - **As built (v0.22.4):** the default gateway multiplexes every profile regardless, and ignores `multiplex_profiles: false`. `gateway.standalone: true` is required for a profile to get its own process and bot; `hermes config get` calls it unrecognized, but the gateway log confirms it (docs/LESSONS.md, Hermes).
 - **Bot tokens.** Each profile needs its own bot token. Two profiles using the same token are blocked by "token locks."
 - **Risks for a "no cloud keys" profile** (INFERRED):
-  1. **OAuth logins.** Anthropic, Codex and xAI OAuth logins are shared through the root `~/.hermes/auth.json` for clones ("the new profile keeps reading the login from the root"). Check with `hermes -p local auth list`.
+  1. **OAuth logins.** Anthropic, Codex and xAI OAuth logins are shared through the root `~/.hermes/auth.json` for clones ("the new profile keeps reading the login from the root"). Check with `hermes -p local auth list`. **As built (v0.22.4, P1.10):** every profile lists the root credential pool, including the cloud profile's `env:`-sourced OpenRouter key, even with its own empty `auth.json`; from local it isn't usable (`/model openrouter:…` still goes to `localhost:11434`, 400). An OAuth login in the root would be the real risk.
   2. **Fallback.** Set `model.provider: custom` and no `fallback_providers`. The built-in auxiliary discovery chain (OpenRouter → Nous → …) runs "only when no main provider is selected."
   3. **Windows environment.** Don't put cloud keys in Windows User environment variables.
   4. **External CLIs.** `HOME` stays shared by default. Use `terminal.home_mode: profile` for strict per-profile tool configuration.

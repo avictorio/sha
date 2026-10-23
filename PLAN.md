@@ -10,7 +10,7 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 - "notes #N", "F#" and "AM#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position (2026-10-22).**
-- Phase 0 is done; Phase 1 is done except the cloud/local rename (D3). **Next: finish P1.10.** The rename has run on the machine (`scripts/migrate-private-to-local.ps1`; pings, p1-5, p1-7 pass), but `p1-3-local` `no-auth` fails: `hermes -p local auth list` shows an `OPENROUTER_API_KEY` credential (likely since P1.4). Find its source and remove it, then the bot renames. Then Phase 2, starting with P2.1.
+- Phase 0 and Phase 1 are done, including the cloud/local rename (P1.10). **Next: Phase 2, starting with P2.1.**
 - Still open: **P1.9** (one check left: a side task seen running on the local model in real use) and **P0.0a** (owner: the desktop-app check; revisit when computer use or a browser is first needed).
 
 ## 1. Summary
@@ -36,7 +36,7 @@ See git history, the [original plan](docs/original/hermes_hybrid_agent_plan.html
 |---|---|---|---|
 | D1 | Host account | **Three Windows accounts:** yours, `operator` (Claude) and `hermes` (the agent; auto-logon, then lock) (owner, 2026-10-21). §5. | P0.0a, P0.3 |
 | D2 | Local model | **`qwen3-coder:30b`** (owner, 2026-10-22). No candidate passed P1.1's go rule; it scored best within the speed rule. Revisit with better hardware. [bench/README.md](bench/README.md), §9. | P1.2 |
-| D3 | Privacy model | **Cloud vs local** (owner, 2026-10-22): two equally capable agents that differ in where the model runs; you pick per task. **Cloud** = the cloud-first profile (Hermes's base profile `default`); **local** = the local-only profile, now `private`, renamed to `local` in P1.10. Local means a local model and the local browser; web search stays off (queries go to a cloud service). Memories stay separate per profile. | P1.3, P1.10 |
+| D3 | Privacy model | **Cloud vs local** (owner, 2026-10-22): two equally capable agents that differ in where the model runs; you pick per task. **Cloud** = the cloud-first profile (Hermes's base profile `default`, display name `cloud`); **local** = the local-only profile (`local`, formerly `private`; renamed in P1.10). Local means a local model and the local browser; web search stays off (queries go to a cloud service). Memories stay separate per profile. | P1.3, P1.10 |
 | D4 | Email provider | **AgentMail Free,** on `@agentmail.to`, no custom domain (owner, 2026-10-21). §7; notes #20. | P0.2 |
 | D5 | Email inboxes and designations | **Two inboxes, one per profile** (owner, 2026-10-22). Each is read only by its own profile. No otp inbox: login codes go to your own email and you paste them into the chosen bot (D15). Designation by sender domain and subject tags; the lists are settled in P2.2. §7. | P2.2 |
 | D6 | Agent sends email? | *Open.* Recommended: no, receive-only in the MVP, with four layers: inbox-scoped keys with no send permissions, each profile inbox's send allowlist holding only your address, the policy plugin's blocks and `approvals.deny` (§7). Later: approve-first sending (§14). | P2.2 |
@@ -57,7 +57,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 
 **Your steps, batched** (remaining work only):
 1. **Decisions** when their task comes up: D6 (P2.2), D11 (P3.3), D7 (P3.4), D8 (P4.1), D12–D14 (Phase 6).
-2. **Accounts:** rename the bots in @BotFather (P1.10); sign each agent into your travel accounts and type their passwords (P3.2); Plivo account, number and identity check (P4.1).
+2. **Accounts:** sign each agent into your travel accounts and type their passwords (P3.2); Plivo account, number and identity check (P4.1).
 3. **Secrets**, typed into their destination, never a chat: the `hermes` password at each `scripts/invoke-as-hermes.ps1` prompt; the full AgentMail key for admin calls (S8, S7, P2.2, P2.8); vault logins and card (P3.3); the secret manager and rotated key (P3.4); the Plivo auth token (P4.2).
 4. **On your own device:** your personal Gmail (S7, P2.4); calendar OAuth consent (P2.5); the secret manager (P3.4).
 5. **Phone in hand:** approval taps (P2.1, P3.3, P3.5, P4.3, P4.5); test calls (S5, P4.2, P4.5); pasting login codes from your email into the bot's chat (P3.2, P3.5); test emails (S8, S7, P2.8); reading the brief (P2.8).
@@ -229,16 +229,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 
 - [x] **S15 Spike — Can Hermes rename a profile in place?** [Claude] — Done 2026-10-22: yes, `hermes profile rename <old> <new>`; for `default` it only sets a display name → Appendix A. Files: `verify/checks/s15-profile-rename.ps1`.
 
-- [ ] **P1.10 Cloud/local rename** [Claude + you] — D3, before Phase 2 creates inboxes and configs under the old name. Take a backup first (`scripts/backup.ps1`) and stop the private gateway.
-  - You: in @BotFather, `/setname` the bots to "Hermes Cloud" and "Hermes Local"; send each a test message.
-  1. `hermes profile rename private local` (S15; it also migrates the profile's session and routing identity; if that step fails, `hermes profile migrate-identity` retries it). `hermes profile rename default cloud` sets the cloud profile's display name; its id stays `default`.
-  2. Scheduled task `Hermes_Gateway_private` → `Hermes_Gateway_local`, keeping the 45 s logon delay and the `TELEGRAM_ALLOWED_USERS` guard.
-  3. Folders `C:\agent\private\*` → `C:\agent\local\*`, and the mounts in `config/templates/local.config.yaml` (renamed from `private.config.yaml`).
-  4. Usage log `usage-private.jsonl` → `usage-local.jsonl`, keeping its history.
-  5. Repo: every script, check, template, cron file and the usage-log plugin say `local` (`ValidateSet('default', 'local')`; `06-private-profile.ps1` → `06-local-profile.ps1`; `p1-3-private.ps1` → `p1-3-local.ps1`); the docs say "cloud agent" and "local agent". `default` stays `default` internally (S15).
-  - Done when: `hermes profile list` shows `default` (display name `cloud`) and `local`, and no `private`; `p1-3-local.ps1`, `p1-5-usage-log.ps1 -Profile local`, `p1-7-backup.ps1` and `p1-8-ping.ps1` pass; `usage-local.jsonl` has no `"local": false` line; both bots answer under their new names; and `git grep -i private` shows only intended uses (the word, not the profile id).
-  - Needs: S15, P1.3
-  - Automate: `installer/steps/06-local-profile.ps1`; `config/templates/local.config.yaml`; the renamed checks
+- [x] **P1.10 Cloud/local rename** [Claude + you] — Done 2026-10-22 (D3): one elevated run of `scripts/migrate-private-to-local.ps1` (backup first; `hermes profile rename private local`; `default` display name `cloud`; workspace mount re-merged; stale sandbox removed; `C:\agent\local`, `usage-local.jsonl` with its history; `Hermes_Gateway_local` with the 45 s delay and guard). Repo and docs say local; `templates/` keep `private` until P2.1–P2.3 install them. Bots renamed "Hermes Cloud" / "Hermes Local" (owner). Found: every profile lists the root credential pool, so local's `auth list` shows the cloud OpenRouter key; it's unusable from local (`/model openrouter:…` went to `localhost:11434`, 400), so `no-auth` now fails only on OAuth or stored credentials (docs/LESSONS.md, Hermes). Checked: `profile list` shows `cloud (default)` and `local`; `p1-3-local` 15/15, `p1-5 -Profile local` 8/8, `p1-7` pass, `p1-8` 4/4; no `"local": false` line; both bots answered after the rename (gateway logs). Files: `scripts/migrate-private-to-local.ps1`, `installer/steps/06-local-profile.ps1`, `config/templates/local.config.yaml`, `verify/checks/p1-3-local.ps1`.
 
 **Phase 1 exit state:** two bots on your hardware. Default is cloud-first on OpenRouter under the $50 cap, with local fallback, local side tasks and local cron; local is provably local-only. Every model call is logged; backups run nightly; both profiles ping daily.
 

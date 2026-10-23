@@ -43,7 +43,13 @@ $m = Section 'model'
 Record 'model-local' (($m -match "default:\s*$([regex]::Escape($lock.model_default))") -and ($m -match 'base_url:\s*http://localhost:11434/v1')) (($m -split "`n" | Select-Object -First 3) -join ' ')
 Record 'no-fallback' ((Section 'fallback') -match 'No fallback providers') ''
 Record 'no-delegation-fallback' ((Section 'delegation') -match '^\[\]$') (Section 'delegation')
-Record 'no-auth' ([string]::IsNullOrWhiteSpace((Section 'auth'))) (Section 'auth')
+# Every profile lists the root auth.json's credential pool (the cloud profile is the root; P1.10). An env-sourced
+# API key there is unusable here: local has no such env var, and its custom localhost provider keeps
+# `/model openrouter:...` on Ollama (seen 2026-10-22: request to localhost:11434, 400). An OAuth login or a
+# stored secret would be usable, so those fail.
+$creds = @((Section 'auth') -split "`n" | Where-Object { $_ -match '^\s*#\d+' })
+$usable = @($creds | Where-Object { $_ -notmatch '\bapi_key\b.*\benv:[A-Z_]+' })
+Record 'no-auth' ($usable.Count -eq 0) $(if ($usable) { $usable -join ' | ' } elseif ($creds) { "only root env-sourced keys listed ($($creds.Count)); not usable here" } else { 'none' })
 $aux = Section 'aux'
 Record 'aux-auto-or-local' (-not ($aux -split "`n" | Where-Object { ($_ -match 'provider:' -and $_ -notmatch 'provider:\s*(auto|custom)\s*$') -or ($_ -match "base_url:\s*'?http" -and $_ -notmatch 'localhost|127\.0\.0\.1') })) 'auto = the main (local) model first'
 Record 'honcho-off' ((Section 'honcho') -match '^\{\}$') (Section 'honcho')
