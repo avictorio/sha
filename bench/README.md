@@ -1,6 +1,6 @@
 # Local-model benchmark (PLAN.md P1.1)
 
-This benchmark decides **D2**, the single local model both profiles use. It runs through Hermes itself on the Legion, with Hermes cut off from the network, so it measures what you'll actually get: the model, the 64K context and the Docker sandbox together. It ships in the package too: preflight plus this benchmark is how a buyer qualifies their own machine (PLAN.md §11).
+This benchmark picks **D2**, the local model: the private profile's only model and the default profile's fallback (D2 revised). It runs through Hermes itself on the Legion, with Hermes cut off from the network, so it measures what you'll actually get: the model, the 64K context and the Docker sandbox together. It ships in the package too: preflight plus this benchmark is how a buyer qualifies their own machine (PLAN.md §11).
 
 - `fixtures/`: synthetic inputs, copied into the default profile's workspace. No real personal data; email domains are `example.com` / `.test`.
 - `answer_keys/`: expected results. **Never copy these into the workspace**, because the agent would find them.
@@ -8,7 +8,7 @@ This benchmark decides **D2**, the single local model both profiles use. It runs
 
 ## Setup (once per candidate)
 
-1. **Context check (Spike S6).** For each D2 candidate, run `ollama show <tag>` and note the context length. Drop any candidate whose native context is below 65,536 (a tag listed at 40K would only reach 64K by overriding `num_ctx`, which is a quality risk). If `ollama show` doesn't show it, check the tag's page in the Ollama library.
+1. **Context check (Spike S6; done for the P1.1 candidates, see PLAN.md Appendix A).** For each new candidate, run `ollama show <tag>` and note the context length. Drop any candidate whose native context is below 65,536 (a tag listed at 40K would only reach 64K by overriding `num_ctx`, which is a quality risk). If `ollama show` doesn't show it, check the tag's page in the Ollama library.
 2. **While still online:**
    - Make sure the candidates are pulled (P0.4) and the sandbox image is pre-pulled (P0.5).
    - In `hermes chat`, ask the agent to run `python3 --version` in the sandbox. B2 needs Python 3 in the container. If it's missing, note that, and score B2 as "not runnable" rather than as a model failure.
@@ -31,8 +31,8 @@ This benchmark decides **D2**, the single local model both profiles use. It runs
    bench\isolate.ps1 -On     # before the first run
    bench\isolate.ps1 -Off    # after the last run (also restarts the Telegram gateway)
    ```
-   `-On` adds outbound firewall block rules (group `hermes-bench`) on every program Hermes runs as. The real worker is `%LOCALAPPDATA%\hermes\tools\python-<ver>\python.exe`; `hermes.exe` is only a launcher. `-On` also sets `TERMINAL_DOCKER_NETWORK=false` in `hermes`'s `.env` and removes the sandbox, so it comes back with `--network=none`. Loopback is unaffected, so Hermes still reaches Ollama on `127.0.0.1`. `hermes chat` runs through the gateway process, which can't reach Telegram while isolated, so Telegram is down for the whole run. `verify/checks/s14-isolation.ps1` proves all of this end to end and ends with `-Off`. **Fallback, if the check ever fails:** you turn Wi-Fi off, unplug Ethernet, and run the suite yourself at the Legion's keyboard.
-5. **Select the candidate.** Run `hermes config set model.default <tag>`, then open `hermes chat`. In a second window, run `ollama ps`: CONTEXT should be 65536. Note the PROCESSOR split (CPU/GPU %) in `notes`.
+   `-On` adds outbound firewall block rules (group `hermes-bench`) on every program Hermes runs as. The real worker is `%LOCALAPPDATA%\hermes\tools\python-<ver>\python.exe`; `hermes.exe` is only a launcher. `-On` also sets `TERMINAL_DOCKER_NETWORK=false` in `hermes`'s `.env` and removes the sandbox, so it comes back with `--network=none`. Loopback is unaffected, so Hermes still reaches Ollama on `127.0.0.1`. `hermes chat` runs through the gateway process, which can't reach Telegram while isolated, so Telegram is down for the whole run. `verify/checks/s14-isolation.ps1` proves all of this end to end and ends with `-Off`. This replaces the old Wi-Fi-off setup (S14). Only if that check ever fails: you turn Wi-Fi off, unplug Ethernet, and run the suite yourself at the Legion's keyboard.
+5. **Select the candidate.** Run `hermes config set model.default <tag>`, then open `hermes chat`. In a second window, run `ollama ps`: CONTEXT should be 65536. Note the PROCESSOR split (CPU/GPU %) in `notes`. The default profile is cloud-first since P1.4, so set `model.default` back after the last run.
 6. **Each run:**
    - Start a fresh session (`/new`, or exit and reopen `hermes chat`) and paste the prompt exactly.
    - Time it from sending the prompt to the final answer, using a stopwatch or timestamps.
@@ -131,7 +131,7 @@ For each .eml file in /workspace/work/bench/fixtures/emails, extract the flight 
 - Fill in `pass` as `1` or `0`, `wall_clock_s` in whole seconds, and anything notable in `notes`: tool-call count, PROCESSOR split, the way it failed.
 - A task **passes** for a candidate when at least 2 of its 3 runs pass.
 
-## Go / no-go rule (proposed defaults; adjust before your first run, not after)
+## Go / no-go rule (used for P1.1; change it only before a new round, not after)
 
 A candidate is **GO** if all three hold:
 1. At least **6 of 7** tasks pass.
@@ -158,7 +158,7 @@ Full rows in `scores.csv`. B2 and B6 come from a re-run with LF fixtures (see `.
 
 - What failed: B5 (calendar) for all four, with the recurring standup and the UTC-stored call most often missed. B3's first line or file set for the qwen models. B2 for all but Glimmer. B6's "say which file you used" for most.
 - B4: the three fast models read only the start of the document (their summaries cover the opening pages). Glimmer summarized the whole story but half-answered two-part questions.
-- D2: the owner chose `qwen3-coder:30b` for the proof of concept and will revisit with better hardware. Glimmer's quality is close to the bar; on a GPU that holds it entirely in VRAM it may pass.
+- D2: no candidate was GO, so the revised D2 applies: the default profile runs cloud-first (P1.4). The owner chose `qwen3-coder:30b` as the private profile's model and the default's fallback for the proof of concept, to revisit with better hardware. Glimmer's quality is close to the bar; on a GPU that holds it entirely in VRAM it may pass.
 
 ## Screening a new model first: `speed-probe.ps1`
 
@@ -177,4 +177,4 @@ Results on the Legion (RTX 4080 Laptop GPU, 12 GB; 64 GB RAM; Ollama 0.40.8; 64K
 | `qwen3:30b-a3b-instruct-2507-q4_K_M` (MoE, ~3B active) | 262144 | 53%/47% | 27.3 | 458 | 3/3 | Full run in P1.1: 2/7 |
 | `muse-glimmer:30b` (Meta, dense, Q4_K_M, 18 GB) | 131072 | 48%/52% | 4.7 | 131 | 3/3 | **Screened out**, then given a full run anyway (see Results: 5/7, too slow). About 6x slower: a 300-word reply takes about 1.5 min, so it can't meet the 30 s go rule on 12 GB of VRAM. Worth re-testing on a 24 GB+ GPU, where it fits entirely in VRAM. |
 
-`muse-glimmer:30b` stays pulled (18 GB on D:). The owner may use it later in a hybrid setup: qwen3 by default, Glimmer for a few tasks where its quality is worth the wait. The two models don't fit in VRAM together, so switching evicts the other model (about 10 s to reload). That makes Glimmer a better fit for slow, non-interactive work, such as cron jobs or overnight runs, than for chat replies. Benchmark it on those tasks first.
+`muse-glimmer:30b` stays pulled (18 GB on D:) for a possible hybrid: the local default model for most work, Glimmer for a few tasks where its quality is worth the wait. The two don't fit in VRAM together, so switching evicts the other (about 10 s to reload). That suits slow, non-interactive work (cron jobs, overnight runs) better than chat replies; benchmark it on those tasks first.
