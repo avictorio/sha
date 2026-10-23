@@ -7,4 +7,4 @@
 - Cost: about 4–9 cents per simple message to the default bot. Token diet (P1.9): background tasks run on the local model, unused tools and 38 of 51 skills are off, and long or idle conversations are compacted sooner; input tokens per message fell 23% (target 20%). Spend shows at openrouter.ai/activity.
 - Daily ping: each bot sends a "pong" at 12:00 from the local model, and both came back by themselves after an unattended restart.
 - Backups: nightly at 03:30, encrypted, to the laptop's second drive, 14 days kept. Offsite copy deferred until after the MVP.
-- Not set up yet: email (Phase 2: three inboxes, one for each bot plus one for login codes), calendar (P2.5), browser (Phase 3), phone (Phase 4).
+- Not set up yet: email (Phase 2: two inboxes, one for each bot), calendar (P2.5), browser (Phase 3), phone (Phase 4).

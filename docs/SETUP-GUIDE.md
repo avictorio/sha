@@ -74,10 +74,10 @@ git config core.sshCommand '"C:/Users/operator/AppData/Local/Programs/Git/usr/bi
 
 ## domain-and-mailbox
 
-PLAN.md P0.2, D4 and D5. No custom domain and no DNS (D4): AgentMail Free on `agentmail.to`. Three inboxes (D5): the private profile's, the default profile's, and `otp` for login codes. Everything here is in the AgentMail web console; nothing to script.
+PLAN.md P0.2, D4 and D5. No custom domain and no DNS (D4): AgentMail Free on `agentmail.to`. Two inboxes (D5), one per profile. Login codes for your accounts come to your own email (D15). Everything here is in the AgentMail web console; nothing to script.
 
 1. Sign up at agentmail.to on the Free plan.
-2. Create the first inbox, `<name>@agentmail.to`. This is the **private profile's** inbox (older text calls it "main"). The default profile's inbox and `otp` follow in P2.2.
+2. Create the first inbox, `<name>@agentmail.to`. This is the **private profile's** inbox (older text calls it "main"). The default profile's inbox follows in P2.2.
 3. Create an API key and store it in your password manager. This full key never goes into Hermes: Claude uses it only at a hidden prompt for admin calls (S8, P2.2). Each profile gets its own scoped, receive-only key (PLAN.md §7).
 4. From your personal address, send the inbox a test message and check it appears in the console.
 
