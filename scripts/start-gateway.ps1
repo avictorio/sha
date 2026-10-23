@@ -1,8 +1,8 @@
-# scripts/start-gateway.ps1 -- run by the Hermes_Gateway[_private] logon tasks, as hermes (PLAN.md P0.7, P1.3).
-# Installed to C:\agent\bin by installer/steps/05-telegram.ps1 and 06-private-profile.ps1.
+# scripts/start-gateway.ps1 -- run by the Hermes_Gateway[_local] logon tasks, as hermes (PLAN.md P0.7, P1.3).
+# Installed to C:\agent\bin by installer/steps/05-telegram.ps1 and 06-local-profile.ps1.
 # Safety default (CLAUDE.md): the gateway never starts without TELEGRAM_ALLOWED_USERS.
 # The profile is always named (-p), so a sticky `hermes profile use` can't change what a task runs.
-param([ValidateSet('default', 'private')][string]$Profile = 'default')
+param([ValidatePattern('^[a-z0-9]+$')][string]$Profile = 'default')
 $root = Join-Path $env:LOCALAPPDATA 'hermes'
 $home_ = if ($Profile -eq 'default') { $root } else { Join-Path $root "profiles\$Profile" }
 $envFile = Join-Path $home_ '.env'
@@ -16,13 +16,13 @@ if ($allowed -notmatch '^\s*\d') {
   Log "REFUSED: TELEGRAM_ALLOWED_USERS is not set in $envFile; gateway not started."
   exit 2
 }
-# A non-default profile must stay out of the default gateway (config/templates/private.config.yaml).
+# A non-default profile must stay out of the default gateway (config/templates/local.config.yaml).
 if ($Profile -ne 'default' -and -not (Select-String -Path (Join-Path $home_ 'config.yaml') -Pattern '^\s+standalone:\s*true\b' -Quiet)) {
   Log "REFUSED: gateway.standalone is not true in $home_\config.yaml; gateway not started."
   exit 3
 }
 # At logon both tasks start together. A gateway that starts while another is still starting up exits 75
-# ("Refusing to start a second gateway on this host … profiles: unknown"), and Task Scheduler doesn't restart
+# ("Refusing to start a second gateway on this host ... profiles: unknown"), and Task Scheduler doesn't restart
 # a task for a non-zero exit. So a quick exit 75 is retried, up to 6 times, 30 s apart (P1.8 reboot test).
 for ($try = 1; $try -le 6; $try++) {
   Log "starting gateway (allowed users set)$(if ($try -gt 1) { "; retry $try" })"

@@ -645,14 +645,14 @@ Same sources as above: Hermes `main` @ `275c211` docs and code, plus `plivo-dev/
 - **How it works.** The profile boundary is the `HERMES_HOME` environment variable. The wrapper sets `HERMES_HOME=~/.hermes/profiles/<name>`.
 - **Commands**
   ```bash
-  hermes profile create private            # blank profile (no --clone, so no keys/memory copied)
-  hermes -p private setup                  # or: private setup   (auto-created alias)
-  hermes --profile=private doctor          # -p / --profile works in any position
-  hermes -p private gateway install        # Windows task name: Hermes_Gateway_<profile>
+  hermes profile create local              # blank profile (no --clone, so no keys/memory copied)
+  hermes -p local setup                    # or: local setup   (auto-created alias)
+  hermes --profile=local doctor            # -p / --profile works in any position
+  hermes -p local gateway install          # Windows task name: Hermes_Gateway_<profile>
   ```
   - `--clone` copies `config.yaml`, `.env`, `SOUL.md`, skills and MEMORY.md/USER.md.
   - `--clone-all` copies everything except history and cron jobs.
-  - **For a private instance, use neither.**
+  - **For the local (no cloud keys) profile, use neither.**
 - **Gateway: one process by default.**
   - `hermes update` folds profile gateways into **one multiplexed host gateway** (`gateway.multiplex_profiles`).
   - Each turn still resolves "the routed profile's config, skills, memory, SOUL, **and provider keys** — credentials are never shared across profiles."
@@ -662,7 +662,7 @@ Same sources as above: Hermes `main` @ `275c211` docs and code, plus `plivo-dev/
   - **As built (v0.22.4):** the default gateway multiplexes every profile regardless, and ignores `multiplex_profiles: false`. `gateway.standalone: true` is required for a profile to get its own process and bot; `hermes config get` calls it unrecognized, but the gateway log confirms it (docs/LESSONS.md, Hermes).
 - **Bot tokens.** Each profile needs its own bot token. Two profiles using the same token are blocked by "token locks."
 - **Risks for a "no cloud keys" profile** (INFERRED):
-  1. **OAuth logins.** Anthropic, Codex and xAI OAuth logins are shared through the root `~/.hermes/auth.json` for clones ("the new profile keeps reading the login from the root"). Check with `hermes -p private auth list`.
+  1. **OAuth logins.** Anthropic, Codex and xAI OAuth logins are shared through the root `~/.hermes/auth.json` for clones ("the new profile keeps reading the login from the root"). Check with `hermes -p local auth list`.
   2. **Fallback.** Set `model.provider: custom` and no `fallback_providers`. The built-in auxiliary discovery chain (OpenRouter → Nous → …) runs "only when no main provider is selected."
   3. **Windows environment.** Don't put cloud keys in Windows User environment variables.
   4. **External CLIs.** `HOME` stays shared by default. Use `terminal.home_mode: profile` for strict per-profile tool configuration.
@@ -680,7 +680,7 @@ Same sources as above: Hermes `main` @ `275c211` docs and code, plus `plivo-dev/
   - `session_search` recall is on demand (a tool call). Its results go into the conversation, and so to whatever model is active.
 - **Implication.** A `/model <cloud> --once` escalation, or any fallback, sends the memory snapshot plus the whole session history to the cloud provider (INFERRED, but it follows directly from the above).
 - **Mitigations**
-  - A separate private profile (F1).
+  - A separate local-only profile (F1).
   - `memory.memory_enabled: false` / `memory.user_profile_enabled: false` in the cloud-capable profile.
   - `/new` before escalating. This still includes the memory snapshot.
 - **Sources**

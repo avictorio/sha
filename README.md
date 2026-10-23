@@ -1,6 +1,6 @@
 # Hermes hybrid agent
 
-This repo holds the build plan, and the start of a distributable package, for a personal agent built on Hermes Agent, running on a Windows 11 laptop. The default profile is cloud-first through OpenRouter under a capped key, falling back to a local Ollama model; the private profile is local-only. Every model call is logged.
+This repo holds the build plan, and the start of a distributable package, for a personal agent built on Hermes Agent, running on a Windows 11 laptop. The cloud agent (profile `default`) is cloud-first through OpenRouter under a capped key, falling back to a local Ollama model; the local agent (profile `local`) is local-only. Every model call is logged.
 
 - [PLAN.md](PLAN.md): the actionable runbook, with decisions, phased tasks, Done-when checks, spikes and autonomy tags. Start here.
 - [CLAUDE.md](CLAUDE.md): rules for the Claude agent that sets the machine up.

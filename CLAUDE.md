@@ -60,7 +60,7 @@ The build plan and the future distributable package for a hybrid local/cloud per
 Templates hold placeholders only, such as `<your name>` and `<your number>`. `.gitignore` and `scripts/precommit-check.ps1` catch the common cases; still check what's staged.
 
 ## Safety defaults to preserve
-- The private profile has no cloud keys and no fallback.
+- The local profile has no cloud keys and no fallback.
 - Email is receive-only.
 - The phone stays off until the owner opts in with an allowed-destinations list.
 - The approval-policy plugin stays enabled, and spend caps stay set.

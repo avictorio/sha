@@ -77,7 +77,7 @@ git config core.sshCommand '"C:/Users/operator/AppData/Local/Programs/Git/usr/bi
 PLAN.md P0.2, D4 and D5. No custom domain and no DNS (D4): AgentMail Free on `agentmail.to`. Two inboxes (D5), one per profile. Login codes for your accounts come to your own email (D15). Everything here is in the AgentMail web console; nothing to script.
 
 1. Sign up at agentmail.to on the Free plan.
-2. Create the first inbox, `<name>@agentmail.to`. This is the **private profile's** inbox (older text calls it "main"). The default profile's inbox follows in P2.2.
+2. Create the first inbox, `<name>@agentmail.to`. This is the **local profile's** inbox (older text calls it "main"). The default profile's inbox follows in P2.2.
 3. Create an API key and store it in your password manager. This full key never goes into Hermes: Claude uses it only at a hidden prompt for admin calls (S8, P2.2). Each profile gets its own scoped, receive-only key (PLAN.md §7).
 4. From your personal address, send the inbox a test message and check it appears in the console.
 
@@ -171,31 +171,31 @@ Type three things at its prompts: your numeric ID; the bot token (hidden prompt,
 - **On the phone:** the bot answers you. A second Telegram account gets no reply, and `gateway.log` shows `[Telegram] Blocked unauthorized user <id>`.
 - **After an unattended reboot:** `p0-7-telegram.ps1` passes and the bot answers. Messages sent while the gateway was down are dropped: send a new one.
 
-## private-bot
+## local-bot
 
-PLAN.md P1.3. The private profile uses only the laptop's model, with its own bot ("Hermes Private") and its own guarded task, `Hermes_Gateway_private`. Scripted in `installer/steps/06-private-profile.ps1` (elevated, visible window), checked by `verify/checks/p1-3-private.ps1`.
+PLAN.md P1.3 and P1.10. The local profile (`local`, formerly `private`) uses only the laptop's model, with its own bot ("Hermes Local") and its own guarded task, `Hermes_Gateway_local`. Scripted in `installer/steps/06-local-profile.ps1` (elevated, visible window), checked by `verify/checks/p1-3-local.ps1`.
 
-The rule: **if you wouldn't send it to a cloud provider, tell it to the private bot.**
+The rule: **if you wouldn't send it to a cloud provider, tell it to the local bot.**
 
 ### The owner's steps
 
-1. **Create the bot** as in [telegram-bots](#telegram-bots), named e.g. "Hermes Private". Save the token as "Hermes Private Telegram bot token", open a chat and press **Start**.
-2. **Run `06-private-profile.ps1 -Phase Create`** and type the `hermes` password.
-3. **Run `06-private-profile.ps1 -Phase Bot`.** Type the `hermes` password, then paste the token at the hidden prompt. Your Telegram ID is copied from the default profile.
+1. **Create the bot** as in [telegram-bots](#telegram-bots), named e.g. "Hermes Local". Save the token as "Hermes Local Telegram bot token", open a chat and press **Start**.
+2. **Run `06-local-profile.ps1 -Phase Create`** and type the `hermes` password.
+3. **Run `06-local-profile.ps1 -Phase Bot`.** Type the `hermes` password, then paste the token at the hidden prompt. Your Telegram ID is copied from the default profile.
 
 ### Why `gateway.standalone: true`
 
-It gives the private profile its own gateway; without it, v0.22.4's default gateway would also serve the private bot (docs/LESSONS.md, Hermes). `start-gateway.ps1 -Profile private` refuses to start without it. Recheck after every `hermes update` (P5.2).
+It gives the local profile its own gateway; without it, v0.22.4's default gateway would also serve the local bot (docs/LESSONS.md, Hermes). `start-gateway.ps1 -Profile local` refuses to start without it. Recheck after every `hermes update` (P5.2).
 
 ### Tests in Telegram (P1.3 Done when)
 
-1. **It answers.** Send "hello". It replies, and `C:\agent\shared\logs\usage-private.jsonl` gets a line with `"platform": "telegram"` and `"local": true`.
+1. **It answers.** Send "hello". It replies, and `C:\agent\shared\logs\usage-local.jsonl` gets a line with `"platform": "telegram"` and `"local": true`.
 2. **It can't switch to a cloud model.** `/model openrouter:openai/gpt-4o-mini` must fail or refuse, and the next reply still comes from the local model.
-3. **It doesn't fall back to the cloud.** Run `verify/checks/p1-3-ollama-stop-test.ps1` elevated; it stops Ollama. Ask the private bot something: it must reply with an error. Press Enter to restart Ollama (it restarts by itself after 10 minutes).
+3. **It doesn't fall back to the cloud.** Run `verify/checks/p1-3-ollama-stop-test.ps1` elevated; it stops Ollama. Ask the local bot something: it must reply with an error. Press Enter to restart Ollama (it restarts by itself after 10 minutes).
 
 ## openrouter
 
-PLAN.md P1.4, D9. The default profile is **cloud-first**: `meta/muse-wonder` through OpenRouter, falling back to the local `qwen3-coder:30b` on cloud errors. The private profile never gets the key. Scripted in `installer/steps/07-cloud.ps1` (elevated, visible window), checked by `verify/checks/p1-4-cloud.ps1`.
+PLAN.md P1.4, D9. The cloud profile (`default`) is **cloud-first**: `meta/muse-wonder` through OpenRouter, falling back to the local `qwen3-coder:30b` on cloud errors. The local profile never gets the key. Scripted in `installer/steps/07-cloud.ps1` (elevated, visible window), checked by `verify/checks/p1-4-cloud.ps1`.
 
 ### The owner's steps
 
@@ -217,11 +217,11 @@ After the P1.9 token diet, a fresh chat sends about 10,000 tokens of context, co
 
 ## seed-memory
 
-PLAN.md P1.6. The default bot is cloud-first, so its memory goes to OpenRouter with every message. The rule from [private-bot](#private-bot) applies.
+PLAN.md P1.6. The default bot is cloud-first, so its memory goes to OpenRouter with every message. The rule from [local-bot](#local-bot) applies.
 
 1. **Default bot.** Copy `config/templates/USER.default.md` **outside the repo**, fill in only cloud-OK facts, and run `scripts/seed-user-memory.ps1 -FromFile <your copy>` elevated (type the `hermes` password). It writes `USER.md` into the profile's memories folder; `-Force` replaces an existing one (the old one is kept as a backup). Don't rely on telling the bot "remember this": a cloud model claimed to save memory and wrote nothing (docs/LESSONS.md, Hermes).
-2. **Private bot.** Tell it anything personal (health, finances) directly, and only there.
-3. **Check (Done when).** `USER.md` exists in `%LOCALAPPDATA%\hermes\memories` (as `hermes`). Ask each bot "what do you know about me?": the default bot lists only the cloud-OK facts; the private bot knows only what you told it.
+2. **Local bot.** Tell it anything personal (health, finances) directly, and only there.
+3. **Check (Done when).** `USER.md` exists in `%LOCALAPPDATA%\hermes\memories` (as `hermes`). Ask each bot "what do you know about me?": the default bot lists only the cloud-OK facts; the local bot knows only what you told it.
 
 ## backup
 
@@ -231,5 +231,5 @@ PLAN.md P1.7. `installer/steps/09-backup.ps1` (elevated) sets up `Agent_Backup`:
 - **Restore.**
   1. Open the `.7z` with 7-Zip and the passphrase.
   2. As `hermes`, `hermes import hermes-<time>.zip` restores Hermes, both profiles included.
-  3. Copy `workspace`, `private` and `shared` back to `C:\agent`.
+  3. Copy `workspace`, `local` and `shared` back to `C:\agent`.
 - **Check.** `verify/checks/p1-7-backup.ps1` (elevated) proves the newest archive is locked without the passphrase and complete with it.

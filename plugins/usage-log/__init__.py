@@ -11,7 +11,7 @@ logged when LOG_ERRORS is True; its argument names are not in the notes, so
 every simple keyword it passes is recorded.
 
 Each model call becomes one JSON line in LOG_PATH, e.g.
-  {"ts": "...", "profile": "private", "model": "...", "provider": "custom",
+  {"ts": "...", "profile": "local", "model": "...", "provider": "custom",
    "base_url": "http://localhost:11434/v1", "local": true, "tokens": {...}, ...}
 `local` is true only when the base_url host is localhost, 127.0.0.1 or ::1.
 A missing base_url counts as NOT local, so gaps show up in the privacy check.
@@ -20,10 +20,10 @@ This plugin only observes; it never blocks and never raises.
 
 Install (Windows native). Plugin folders per F9; the profile path follows F1 (verify):
   default profile:  %LOCALAPPDATA%\hermes\plugins\usage-log\
-  private profile:  %LOCALAPPDATA%\hermes\profiles\private\plugins\usage-log\
+  local profile:  %LOCALAPPDATA%\hermes\profiles\local\plugins\usage-log\
 Plugins are off until enabled. Enable, then restart the gateway:
   hermes plugins enable usage-log
-  hermes -p private plugins enable usage-log
+  hermes -p local plugins enable usage-log
   hermes gateway restart
 """
 
@@ -37,7 +37,7 @@ from urllib.parse import urlparse
 # CONFIG
 # ============================================================================
 
-# Set to "default" / "private" to override the automatic profile detection.
+# Set to "default" / "local" to override the automatic profile detection.
 # Automatic detection reads this file's path, then HERMES_HOME (F1). In a
 # multiplexed gateway (F1) HERMES_HOME may not identify the profile; the
 # hermes_home field in each line shows what was seen (verify in P1.5).

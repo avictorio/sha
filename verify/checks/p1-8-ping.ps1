@@ -14,7 +14,7 @@ function Record($name, $ok, $detail) {
 $repo = Split-Path (Split-Path $PSScriptRoot)
 $lock = ConvertFrom-StringData ((Get-Content (Join-Path $repo 'versions.lock') | Where-Object { $_ -notmatch '^\s*#' }) -join "`n")
 Write-Host "since $Since; last boot $((Get-CimInstance Win32_OperatingSystem).LastBootUpTime)"
-foreach ($k in 'default', 'private') {
+foreach ($k in 'default', 'local') {
   $f = "C:\agent\shared\logs\usage-$k.jsonl"
   $cron = @(Get-Content $f -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { try { $_ | ConvertFrom-Json } catch { } } |
     Where-Object { $_.event -eq 'call' -and $_.platform -eq 'cron' -and [datetime]$_.ts -ge $Since })

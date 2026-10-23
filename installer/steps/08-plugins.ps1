@@ -3,9 +3,9 @@
 # Run from the `operator` account in an ELEVATED Windows PowerShell, in a visible window: the owner
 # types the hermes password once, at the hidden prompt. Re-runnable (the copy is overwritten).
 #   -Profile default  now (PLAN.md Phase 1 order: before P1.3)
-#   -Profile private  right after P1.3 step 1 creates the private profile
+#   -Profile local  right after P1.3 step 1 creates the local profile
 # The approval-policy plugin joins this step in P2.1.
-param([ValidateSet('default', 'private')][string]$Profile = 'default', [string]$LogPath,
+param([ValidateSet('default', 'local')][string]$Profile = 'default', [string]$LogPath,
       [securestring]$Password)   # from a calling step, so the owner types it once
 
 $ErrorActionPreference = 'Stop'
@@ -57,7 +57,7 @@ Copy-Item -Recurse '$stage\usage-log' "`$dest\usage-log"
 "@
   $r.Output | ForEach-Object { Write-Host "  $_" }
   if (-not ($r.Output -contains 'PYCOMPILE=0')) { throw "plugins/usage-log/__init__.py doesn't compile under Hermes's Python; gateway not restarted." }
-  if ($r.Output -contains 'NOPROFILE') { throw "Profile '$Profile' has no folder yet ($dest). For private, run P1.3 step 1 first." }
+  if ($r.Output -contains 'NOPROFILE') { throw "Profile '$Profile' has no folder yet ($dest). For local, run P1.3 step 1 first." }
   if (-not ($r.Output | Where-Object { $_ -like 'ENABLED=*usage-log*' })) { throw "usage-log isn't in plugins.enabled; gateway not restarted." }
 
   Step "Restart $gwTask cleanly"

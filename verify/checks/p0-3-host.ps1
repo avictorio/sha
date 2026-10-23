@@ -63,7 +63,7 @@ Record 'ac-lid-nothing' ($lid -eq 0) "lid=$lid"
 
 # --- Folders ---
 Step "Agent folders"
-$dirs = 'C:\agent\workspace\calls\briefs','C:\agent\private\workspace','C:\agent\private\config',
+$dirs = 'C:\agent\workspace\calls\briefs','C:\agent\local\workspace','C:\agent\local\config',
         'C:\agent\shared\travel','C:\agent\shared\logs','C:\agent\chrome','C:\agent\bin','D:\ollama\models','D:\backups'
 $missing = $dirs | Where-Object { -not (Test-Path $_) }
 Record 'folders-exist' (-not $missing) ($missing -join ', ')

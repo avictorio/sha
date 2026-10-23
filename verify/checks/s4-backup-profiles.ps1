@@ -1,7 +1,7 @@
 # verify/checks/s4-backup-profiles.ps1 -- PLAN.md S4: does `hermes backup` cover all profiles?
 # Run in the `operator` account, ELEVATED, in a visible window; the owner types the hermes password.
 # As hermes: makes a test archive in C:\agent\backup-stage, lists what's in it (names only), then DELETES it
-# (it holds .env and auth.json). Prints the exit code and whether profiles\private\ and the key files are inside.
+# (it holds .env and auth.json). Prints the exit code and whether profiles\local\ and the key files are inside.
 param([securestring]$Password)
 $ErrorActionPreference = 'Continue'
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
@@ -23,7 +23,7 @@ try {
       '##### top-level'
       $names | ForEach-Object { $p = ($_ -replace '\\', '/') -split '/'; if ($p.Count -gt 2) { "$($p[0])/$($p[1])/" } else { $_ -replace '\\', '/' } } | Sort-Object -Unique | Select-Object -First 60
       '##### checks'
-      foreach ($pat in 'profiles/private/', 'profiles/private/config.yaml', 'profiles/private/state.db', 'profiles/private/memories', 'config.yaml', 'state.db', 'memories/USER.md', '.env', 'auth.json', 'plugins/usage-log') {
+      foreach ($pat in 'profiles/local/', 'profiles/local/config.yaml', 'profiles/local/state.db', 'profiles/local/memories', 'config.yaml', 'state.db', 'memories/USER.md', '.env', 'auth.json', 'plugins/usage-log') {
         $hit = @($names | Where-Object { ($_ -replace '\\', '/') -match "(^|/)$([regex]::Escape($pat))" }).Count
         "HAS $pat = $hit"
       }

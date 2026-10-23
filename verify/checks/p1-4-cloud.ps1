@@ -1,11 +1,11 @@
 # verify/checks/p1-4-cloud.ps1 -- PLAN.md P1.4: the default profile is cloud-first (D9) and falls back to the
-# local model; the private profile still has no cloud credentials.
+# local model; the local profile still has no cloud credentials.
 # Run in the `operator` account, ELEVATED, in a visible window: the hermes part runs AS hermes via
 # scripts/invoke-as-hermes.ps1 (the owner types the password, unless -Password is passed in).
 #   - a cloud chat: answered, and logged with the cloud model and "local": false;
 #   - a forced cloud failure: model.default is set to a model that doesn't exist (404), a chat must still
 #     answer through the local fallback ("local": true); config.yaml is restored from its backup afterwards;
-#   - private: no OPENROUTER entry in its .env, no non-local line in usage-private.
+#   - local: no OPENROUTER entry in its .env, no non-local line in usage-local.
 # The Telegram half (the default bot answers from the cloud) is in docs/SETUP-GUIDE.md#openrouter.
 # Prints PASS/FAIL per check. Never prints .env values. Re-runnable.
 param([securestring]$Password)
@@ -69,8 +69,8 @@ Record 'logged-fallback-local' ($local.Count -ge 1) "$($local.Count) local line(
 $errs = @($new | ForEach-Object { try { $_ | ConvertFrom-Json } catch { } } | Where-Object event -ne 'call')
 if ($errs) { Write-Host "  non-call events: $(($errs | ForEach-Object { "$($_.event) model=$($_.model)" }) -join '; ')" }
 
-$privEnv = "$root\profiles\private\.env"
-Record 'private-no-openrouter' (-not (Select-String -Path $privEnv -Pattern 'OPENROUTER|sk-or-' -Quiet -ErrorAction SilentlyContinue)) ''
-Record 'private-all-local' (-not (Select-String -Path 'C:\agent\shared\logs\usage-private.jsonl' -Pattern '"local": false' -Quiet -ErrorAction SilentlyContinue)) ''
+$localEnv = "$root\profiles\local\.env"
+Record 'local-no-openrouter' (-not (Select-String -Path $localEnv -Pattern 'OPENROUTER|sk-or-' -Quiet -ErrorAction SilentlyContinue)) ''
+Record 'local-all-local' (-not (Select-String -Path 'C:\agent\shared\logs\usage-local.jsonl' -Pattern '"local": false' -Quiet -ErrorAction SilentlyContinue)) ''
 
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }

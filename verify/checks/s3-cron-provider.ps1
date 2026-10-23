@@ -6,12 +6,12 @@
 # Every hermes call runs with its own time cap and an empty stdin, so an unexpected prompt fails fast
 # (the first version stalled for 30 min with no output). Deliveries go to each profile's own bot ("pong").
 # -Profiles limits the run; -Step Create stops after creating the job (for diagnosis).
-param([securestring]$Password, [string[]]$Profiles = @('default', 'private'), [ValidateSet('All', 'Create')][string]$Step = 'All')
+param([securestring]$Password, [string[]]$Profiles = @('default', 'local'), [ValidateSet('All', 'Create')][string]$Step = 'All')
 $ErrorActionPreference = 'Continue'
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
 $repo = Split-Path (Split-Path $PSScriptRoot)
 $lock = ConvertFrom-StringData ((Get-Content (Join-Path $repo 'versions.lock') | Where-Object { $_ -notmatch '^\s*#' }) -join "`n")
-$logs = @{ default = 'C:\agent\shared\logs\usage-default.jsonl'; private = 'C:\agent\shared\logs\usage-private.jsonl' }
+$logs = @{ default = 'C:\agent\shared\logs\usage-default.jsonl'; local = 'C:\agent\shared\logs\usage-local.jsonl' }
 $before = @{}; foreach ($k in $logs.Keys) { $before[$k] = if (Test-Path $logs[$k]) { @(Get-Content $logs[$k]).Count } else { 0 } }
 
 $cmd = @"
