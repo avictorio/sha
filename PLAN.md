@@ -627,6 +627,13 @@ Order: S6, S14, P1.1, P1.2; then the usage log (P1.5) in the default profile, an
   4. Trim the skills index: `skills.disabled`.
   5. Shorter conversations: an earlier `compression.threshold` and `compression.idle_compact_after_seconds`.
   - Baseline (2026-10-22, `p1-5-usage-log.ps1 -Profile default`): a fresh CLI chat sent 13,034 input tokens, `cache_read` 0. Telegram turns: 22–24K. A background review was one 23K cloud call with no cache reads.
+  - Progress (2026-10-22): `11-token-diet.ps1` applied steps 2–5 to the default profile.
+    - Side tasks: `auxiliary.*` now resolve to `ollama` / `qwen3-coder:30b` / `http://localhost:11434/v1` (read back with `config get`). Source check: an explicit `base_url` wins over the provider, and a routed background review replays a compact digest, not the whole conversation.
+    - Toolsets: `computer_use image_gen tts code_execution delegation` are off on cli and telegram.
+    - Skills: 13 enabled, 38 disabled.
+    - Compression: `threshold 0.35`, `idle_compact_after_seconds 1800`.
+    - Fresh chat after: 10,064 input tokens, 23% under the baseline, short of the 30% target. The rest is mostly tool schemas (browser, web, terminal, file and others) plus Hermes's guidance text.
+    - Not yet seen: a side task running locally in real use.
   - Done when: the same fresh chat sends at least 30% fewer input tokens than the baseline; usage-log lines carry the cache fields; side tasks run on the local model (`"local": true` or the agent log); and both bots still answer on Telegram.
   - Needs: P1.4, P1.5
   - Automate: `installer/steps/11-token-diet.ps1`; `verify/checks/tokens-inventory.ps1`; `verify/checks/p1-5-usage-log.ps1`
