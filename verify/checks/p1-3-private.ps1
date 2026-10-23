@@ -1,7 +1,7 @@
 # verify/checks/p1-3-private.ps1 -- PLAN.md P1.3: the private profile is local-only and has its own bot.
 # Run in the `operator` account, ELEVATED, in a visible window: the hermes part runs AS hermes via
 # scripts/invoke-as-hermes.ps1 (the owner types the password, unless -Password is passed in).
-# The Done-when itself is manual, in Telegram (docs/SETUP-GUIDE.md#private-bot-tests):
+# The Done-when itself is manual, in Telegram (docs/SETUP-GUIDE.md#private-bot, "Tests in Telegram"):
 #   /model openrouter:<any> fails in the private chat; with Ollama stopped the private bot errors.
 # Prints PASS/FAIL per check. Re-runnable. Never prints .env values.
 param([securestring]$Password)
