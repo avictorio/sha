@@ -54,7 +54,7 @@ if ($On) {
   Set-EnvKey 'TERMINAL_DOCKER_NETWORK' -Remove
   Remove-Sandbox
   # Clean gateway restart: its Telegram polling gives up after 10 failed reconnects (40 s apart), fewer
-  # than a benchmark run lasts. Both bots: each one's Telegram polling was blocked.
+  # than a benchmark run lasts. Both bots, since isolation blocks each one's Telegram polling.
   $repo = Split-Path $PSScriptRoot
   & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile default
   & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile local

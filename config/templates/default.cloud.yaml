@@ -1,4 +1,4 @@
-# config/templates/default.cloud.yaml -- PLAN.md P1.4: the default profile runs cloud-first (D2 revised per §9, D9).
+# config/templates/default.cloud.yaml -- PLAN.md P1.4: the default profile runs cloud-first (D2, PLAN.md §8, D9).
 # installer/steps/07-cloud.ps1 deep-merges this into %LOCALAPPDATA%\hermes\config.yaml (as hermes), after
 # default.config.yaml (P0.6) and 06-model.ps1 (P1.2); lists here replace the lists there.
 # The OpenRouter key is NOT here: the owner types it into a hidden prompt, and it goes to the default .env only.

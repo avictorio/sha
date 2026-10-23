@@ -78,7 +78,7 @@ PLAN.md P0.2, D4 and D5. No custom domain and no DNS (D4): AgentMail Free on `ag
 
 1. Sign up at agentmail.to on the Free plan.
 2. Create the first inbox, `<name>@agentmail.to`. This is the **local profile's** inbox (older text calls it "main"). The default profile's inbox follows in P2.2.
-3. Create an API key and store it in your password manager. This full key never goes into Hermes: Claude uses it only at a hidden prompt for admin calls (S8, P2.2). Each profile gets its own scoped, receive-only key (PLAN.md §7).
+3. Create an API key and store it in your password manager. This full key never goes into Hermes: Claude uses it only at a hidden prompt for admin calls (S8, P2.2). Each profile gets its own scoped, receive-only key (PLAN.md §6).
 4. From your personal address, send the inbox a test message and check it appears in the console.
 
 ## host-prep
@@ -173,7 +173,7 @@ Type three things at its prompts: your numeric ID; the bot token (hidden prompt,
 
 ## local-bot
 
-PLAN.md P1.3 and P1.10. The local profile (`local`, formerly `private`) uses only the laptop's model, with its own bot ("Hermes Local") and its own guarded task, `Hermes_Gateway_local`. Scripted in `installer/steps/06-local-profile.ps1` (elevated, visible window), checked by `verify/checks/p1-3-local.ps1`.
+PLAN.md P1.3 and P1.10. The local profile (`local`) uses only the laptop's model, with its own bot ("Hermes Local") and its own guarded task, `Hermes_Gateway_local`. Scripted in `installer/steps/06-local-profile.ps1` (elevated, visible window), checked by `verify/checks/p1-3-local.ps1`.
 
 The rule: **if you wouldn't send it to a cloud provider, tell it to the local bot.**
 

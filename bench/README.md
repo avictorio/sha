@@ -1,6 +1,6 @@
 # Local-model benchmark (PLAN.md P1.1)
 
-This benchmark picks **D2**, the local model: the local profile's only model and the default profile's fallback (D2 revised). It runs through Hermes itself on the Legion, with Hermes cut off from the network, so it measures what you'll actually get: the model, the 64K context and the Docker sandbox together. It ships in the package too: preflight plus this benchmark is how a buyer qualifies their own machine (PLAN.md §11).
+This benchmark picks **D2**, the local model: the local profile's only model and the default profile's fallback. It runs through Hermes itself on the Legion, with Hermes cut off from the network, so it measures what you'll actually get: the model, the 64K context and the Docker sandbox together. It ships in the package too: preflight plus this benchmark is how a buyer qualifies their own machine (PLAN.md §10).
 
 - `fixtures/`: synthetic inputs, copied into the default profile's workspace. No real personal data; email domains are `example.com` / `.test`.
 - `answer_keys/`: expected results. **Never copy these into the workspace**, because the agent would find them.
@@ -158,7 +158,7 @@ Full rows in `scores.csv`. B2 and B6 come from a re-run with LF fixtures (see `.
 
 - What failed: B5 (calendar) for all four, with the recurring standup and the UTC-stored call most often missed. B3's first line or file set for the qwen models. B2 for all but Glimmer. B6's "say which file you used" for most.
 - B4: the three fast models read only the start of the document (their summaries cover the opening pages). Glimmer summarized the whole story but half-answered two-part questions.
-- D2: no candidate was GO, so the revised D2 applies: the default profile runs cloud-first (P1.4). The owner chose `qwen3-coder:30b` as the local profile's model and the default's fallback for the proof of concept, to revisit with better hardware. Glimmer's quality is close to the bar; on a GPU that holds it entirely in VRAM it may pass.
+- D2: no candidate was GO, so D2's no-GO branch applies: the default profile runs cloud-first (P1.4). The owner chose `qwen3-coder:30b` as the local profile's model and the default's fallback for the proof of concept, to revisit with better hardware. Glimmer's quality is close to the bar; on a GPU that holds it entirely in VRAM it may pass.
 
 ## Screening a new model first: `speed-probe.ps1`
 

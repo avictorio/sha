@@ -95,7 +95,7 @@ BLOCK = [
     # To also stop deletions, add "delete" to the second group.
     (r"\bhimalaya\b.*\b(message|template)\s+(send|reply|forward|write)\b",
      "The agent mailbox is receive-only (D6): Himalaya send/reply/forward/write is blocked."),
-    # PLAN.md §7: the OTP folder is yours only. --folder is documented (F7); -f is a guess.
+    # PLAN.md §6: the OTP folder is yours only. --folder is documented (F7); -f is a guess.
     (r"\bhimalaya\b.*(--folder|-f)[\s=]+[\"']?OTP\b",
      "The OTP folder is never read by the agent."),
     # Other ways to send mail from a shell (defence in depth for D6).
@@ -121,7 +121,7 @@ BLOCK = [
 
 # --- BLOCK: MCP tools that send or schedule mail (D6) ------------------------
 # Server-native names from AgentMail's MCP manifest (AM8). The relay's --tools filter and the
-# scoped key's permissions already keep these out; this is the third layer (PLAN.md §7).
+# scoped key's permissions already keep these out; this is the third layer (PLAN.md §6).
 # Hermes registers MCP tools as mcp__<server>__<tool> (code: tools/mcp_tool_schema.py), while
 # its feature docs show mcp_<server>_<tool>, so both prefix forms match, for any server name.
 MAIL_SEND_MCP_TOOLS = {

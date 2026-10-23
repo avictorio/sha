@@ -11,11 +11,11 @@ model_candidates = qwen3:30b-a3b-instruct-2507-q4_K_M,gpt-oss:20b,qwen3-coder:30
 # S6 (2026-10-22): native context from `ollama show`, as tag@tokens. P1.1 needs at least 65536.
 # Dropped: qwen3:32b@40960 (below 64K; dense, so about half of it would sit in RAM on 12 GB of VRAM).
 model_native_context = qwen3:30b-a3b-instruct-2507-q4_K_M@262144,gpt-oss:20b@131072,qwen3-coder:30b@262144
-# D2 (P1.1, 2026-10-22): no candidate passed the go rule; for the proof of concept the owner chose the
+# D2 (P1.1): no candidate passed the go rule; for the proof of concept the owner chose the
 # best scorer that meets the speed rule (4/7). Read by installer/steps/06-model.ps1 (P1.2).
 model_default = qwen3-coder:30b
-# D9 (P1.4, 2026-10-22): the default profile is cloud-first on this OpenRouter model and falls back to
-# model_default; the key's monthly limit (USD) that 07-cloud.ps1 requires. Private stays on model_default.
+# D9 (P1.4): the default profile is cloud-first on this OpenRouter model and falls back to
+# model_default; the key's monthly limit (USD) that 07-cloud.ps1 requires. The local profile stays on model_default.
 cloud_model_default = meta/muse-wonder
 cloud_key_limit_usd = 50
 # P1.7 (2026-10-22): 7-Zip for the encrypted nightly backup (winget id 7zip.7zip, publisher Igor Pavlov).

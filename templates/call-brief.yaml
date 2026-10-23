@@ -1,4 +1,4 @@
-# Call brief (template). See PLAN.md §8 (Phone) and P4.3.
+# Call brief (template). See PLAN.md §7 (Phone) and P4.3.
 #
 # The agent fills in a copy BEFORE asking to place any call and saves it as
 #   /workspace/work/calls/briefs/<yyyymmdd-hhmm>-<callee-slug>.yaml
