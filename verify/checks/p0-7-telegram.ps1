@@ -3,7 +3,10 @@
 # unattended reboot. Reads hermes's logs as admin; `hermes gateway status` runs AS hermes via
 # scripts/invoke-as-hermes.ps1 (the owner types the password). Never prints the bot token.
 # Manual parts (owner, on the phone): the bot answers; a second account gets no reply.
+param([string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Step($m) { Write-Host "`n== $m" -ForegroundColor Cyan }
 function Record($name, $ok, $detail) {
@@ -45,7 +48,7 @@ try {
 [Console]::OutputEncoding = [Text.Encoding]::UTF8; $env:NO_COLOR = '1'; $env:PYTHONIOENCODING = 'utf-8'
 & (Join-Path $env:LOCALAPPDATA 'hermes\bin\hermes.exe') gateway status 2>&1
 '@
-  # v0.22.4 prints "✓ Gateway process running (PID: n)". It also flags our task as predating its template
+  # v0.22.4 prints "(check mark) Gateway process running (PID: n)". It also flags our task as predating its template
   # and suggests `hermes gateway start|install` as a repair: don't. That would replace the guarded task.
   $line = $r.Output | Where-Object { $_ -match 'Gateway process running' } | Select-Object -First 1
   Record 'gateway-status-running' ([bool]$line) $(if ($line) { "$line".Trim() } else { ($r.Output -join ' | ') })
@@ -56,3 +59,6 @@ try {
 Step "Summary"
 $results.GetEnumerator() | ForEach-Object { "{0,-32} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
 Write-Host "`nManual (owner, phone): the bot answers you; a second Telegram account gets no reply."
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

@@ -6,9 +6,11 @@
 #   2. The sandbox: TERMINAL_DOCKER_NETWORK=false in hermes's .env (= terminal.docker_network: false,
 #      --network=none), and the sandbox container removed so Hermes recreates it without a network.
 # While isolated, the Telegram gateway can't reach Telegram either; it resumes after -Off.
-param([switch]$On, [switch]$Off)
+param([switch]$On, [switch]$Off, [string]$LogPath)
 
 $ErrorActionPreference = 'Stop'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 if ($On -eq $Off) { throw "Use exactly one of -On or -Off." }
 $p = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw "Run this elevated." }
@@ -57,4 +59,7 @@ if ($On) {
   & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile default
   & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile local
   Write-Host "NOT ISOLATED: rules removed; sandbox network back to default." -ForegroundColor Green
+}
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
 }

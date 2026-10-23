@@ -19,10 +19,11 @@ foreach ($l in $plan) {
   if ($l -match '^## ') { $cur = $null; continue }
   if (-not $cur) { continue }
   if ($l -match '^Order: (.+)$') { $cur.Order = $Matches[1] }
-  if ($l -match '^- \[( |x)\] \*\*(\S+) (.+?)\*\* \[([^\]]+)\](.*)$') {
-    $m = $Matches.Clone()   # the -match below overwrites $Matches
-    $you = if ($m[5] -match ('^\s*\(you: (.+?)\)\s+' + [char]0x2014)) { $Matches[1] } else { $null }
-    $cur.Tasks.Add([pscustomobject]@{ Done = $m[1] -eq 'x'; Id = $m[2]; Title = $m[3]; Tag = $m[4]; You = $you })
+  # A note may sit between the title and the tag: **P1.3 Local profile** (was: private) [Claude + you]
+  if ($l -match '^- \[( |x)\] \*\*(\S+) (.+?)\*\*[^\[]* \[([^\]]+)\](.*)$') {
+    $cur.Tasks.Add([pscustomobject]@{ Done = $Matches[1] -eq 'x'; Id = $Matches[2]; Title = $Matches[3]; Tag = $Matches[4]; You = $null })
+  } elseif ($cur.Tasks.Count -and $l -match '^  - You: (.+)$' -and -not $cur.Tasks[-1].You) {
+    $cur.Tasks[-1].You = $Matches[1]   # the owner's part, from the task's "- You:" bullet
   }
 }
 
@@ -34,7 +35,11 @@ function DoneCommit($id) {
 $head = (git -C $repo log -1 --format='%h %ad' --date=short 2>$null)
 
 $all = $phases | ForEach-Object { $_.Tasks }
-$active = $phases | Where-Object { $_.Tasks | Where-Object { -not $_.Done -and $_.Tag -ne 'You' } } | Select-Object -First 1
+# The current phase is the one "Current position" names ("**Now: Phase 2.**"): an earlier phase can
+# keep one open task (P1.9) after work has moved on. Without that line, the first phase with open work.
+$now = $plan | Where-Object { $_ -match '\*\*Now: Phase (\d+)\b' } | Select-Object -First 1
+$active = if ($now -match '\*\*Now: Phase (\d+)\b') { $n = [int]$Matches[1]; $phases | Where-Object N -eq $n | Select-Object -First 1 }
+if (-not $active) { $active = $phases | Where-Object { $_.Tasks | Where-Object { -not $_.Done -and $_.Tag -ne 'You' } } | Select-Object -First 1 }
 
 $o = [Collections.Generic.List[string]]::new()
 $o.Add('# Hermes build status')
@@ -59,6 +64,12 @@ if ($active) {
     $o.Add('')
     $o.Add("## Needs the owner (Phase $($active.N))")
     foreach ($t in $waiting) { $o.Add("- $($t.Id) $($t.Title): $(if ($t.You) { $t.You } else { 'owner task' })") }
+  }
+  $earlier = @($phases | Where-Object { $_.N -lt $active.N } | ForEach-Object { $_.Tasks } | Where-Object { -not $_.Done })
+  if ($earlier) {
+    $o.Add('')
+    $o.Add('## Still open in earlier phases')
+    foreach ($t in $earlier) { $o.Add("- $($t.Id) $($t.Title) [$($t.Tag)]") }
   }
 }
 $o.Add('')

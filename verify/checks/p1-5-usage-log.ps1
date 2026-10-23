@@ -5,8 +5,10 @@
 # C:\agent\shared\logs\usage-<profile>.jsonl: profile, model, a local base_url, tokens and duration.
 # The Telegram half of P1.5's Done-when (per-bot profile; no "local": false in usage-local) is
 # checked during P1.3/P1.4. Re-runnable.
-param([securestring]$Password, [ValidateSet('default', 'local')][string]$Profile = 'default')
+param([securestring]$Password, [ValidateSet('default', 'local')][string]$Profile = 'default', [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -50,3 +52,6 @@ if ($c) {
 Record 'no-cloud-in-local' (($Profile -ne 'local') -or -not (Select-String -Path $log -Pattern '"local": false' -Quiet)) "profile=$Profile"
 
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

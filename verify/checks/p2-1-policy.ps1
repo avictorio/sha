@@ -6,8 +6,10 @@
 #   - git push --force: no marker file, and Hermes's "deny rule" text in the chat (approvals.deny runs before plugins);
 #   - echo approval-selftest: a new `approve` line (a CLI chat has no one to say yes, so it fails closed); a
 #     marker file made afterwards by another tool is a WARN. The Telegram half (you answer `no`) is in P2.1's Done when.
-param([securestring]$Password, [ValidateSet('default', 'local')][string]$Profile = 'default')
+param([securestring]$Password, [ValidateSet('default', 'local')][string]$Profile = 'default', [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -92,3 +94,6 @@ foreach ($k in $keys) { Remove-Item (Join-Path $ws "p21-$k-$tag.txt") -Force -Er
 Remove-Item "$log.marks" -Force -ErrorAction SilentlyContinue
 Write-Host ""
 $results.GetEnumerator() | ForEach-Object { "{0,-26} {1}" -f $_.Key, $(if ($_.Value) { 'PASS' } else { 'FAIL' }) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

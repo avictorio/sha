@@ -1,7 +1,10 @@
 # verify/checks/s1-docker-backend.ps1 -- PLAN.md S1: does Hermes's Docker backend work on native Windows?
 # Run in the `operator` account, in an ELEVATED Windows PowerShell, in a visible window
 # (the owner types the hermes password; scripts/invoke-as-hermes.ps1). Needs P0.6's config applied.
+param([string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
 $repo = Split-Path (Split-Path $PSScriptRoot)
 
@@ -18,4 +21,7 @@ $mount = $out -match '(?m)\scalls\s*$'     # C:\agent\workspace\calls, created b
 foreach ($c in @(@('backend-docker', ($backend -eq 'docker'), $backend), @('container-is-linux', $linux, ''), @('workspace-mount-visible', $mount, 'expects calls/ from C:\agent\workspace'))) {
   $col = if ($c[1]) { 'Green' } else { 'Red' }
   Write-Host ("[{0}] {1}  {2}" -f ($(if ($c[1]) {'PASS'} else {'FAIL'})), $c[0], $c[2]) -ForegroundColor $col
+}
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
 }

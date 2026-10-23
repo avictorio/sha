@@ -3,7 +3,10 @@
 # hermes lock task are only visible to Administrators when elevated.
 # Run it after an untouched reboot: `hermes` should have signed in by itself and locked.
 # Prints PASS/FAIL per check. Re-runnable.
+param([string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Step($m) { Write-Host "`n== $m" -ForegroundColor Cyan }
 function Record($name, $ok, $detail) {
@@ -101,3 +104,6 @@ Write-Host "  active hours: $($ah.ActiveHoursStart):00-$($ah.ActiveHoursEnd):00"
 Step "Summary"
 $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
 Write-Host "`nManual checks left: Tailscale admin console shows the machine; recovery key listed online; DHCP reservation; battery conservation."
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

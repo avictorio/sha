@@ -2,7 +2,10 @@
 # or extract without the passphrase; with it, it shows config.yaml, state.db and the local profile's files.
 # Run in the `operator` account, ELEVATED (reads the passphrase file). The inner hermes zip is extracted to
 # operator's temp folder, listed by name only, and deleted. Prints PASS/FAIL per check; never prints the passphrase.
+param([string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -44,3 +47,6 @@ $task = Get-ScheduledTask -TaskName 'Agent_Backup' -ErrorAction SilentlyContinue
 Record 'task-daily-0330' ($task -and ($task.Triggers[0].StartBoundary -match 'T03:30')) "$($task.Triggers[0].StartBoundary) as $($task.Principal.UserId)"
 
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-34} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

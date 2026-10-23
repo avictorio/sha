@@ -1,8 +1,10 @@
 # verify/checks/s15-profile-rename.ps1 -- PLAN.md S15: can Hermes rename a profile in place? Read-only.
 # Run in the `operator` account, ELEVATED, in a visible window (the owner types the hermes password).
 # Prints `hermes profile --help`, the help of any rename-like subcommand, and `hermes profile list`.
-param([securestring]$Password)
+param([securestring]$Password, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
 $repo = Split-Path (Split-Path $PSScriptRoot)
 $cmd = @'
@@ -27,3 +29,6 @@ if ($Password) { $args_.Password = $Password }
 $r = & (Join-Path $repo 'scripts\invoke-as-hermes.ps1') @args_
 Write-Host "hermes step: TimedOut=$($r.TimedOut) ExitCode=$($r.ExitCode)"
 $r.Output | ForEach-Object { Write-Host "  $_" }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

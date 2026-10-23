@@ -119,4 +119,4 @@ Tracked in PLAN.md §14 (tech-debt row) unless noted:
 - One secret-pattern list shared by all scripts.
 - A cleanup check (elevated) that no `hermes-oneshot-*` task or `C:\Users\Public\hermes-oneshot-*` folder is left.
 - An elevation header and guard in every verify script.
-- NVIDIA/CUDA ≥ 12.8 preflight: belongs to the P6.1 preflight.
+- NVIDIA/CUDA ≥ 12.8 preflight: belongs to the P6.2 preflight.

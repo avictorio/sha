@@ -3,8 +3,10 @@
 # scripts/invoke-as-hermes.ps1 (the owner types the password, unless -Password is passed in).
 # Checks: model.default is the D2 tag; `hermes doctor` has no failures; `hermes chat` answers; and
 # Ollama serves the tag with a 65536 context. Prints PASS/FAIL per check. Re-runnable.
-param([securestring]$Password)
+param([securestring]$Password, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -47,3 +49,6 @@ try {
 } catch { Record 'ollama-ctx-65536' $false "api/ps failed: $($_.Exception.Message)" }
 
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

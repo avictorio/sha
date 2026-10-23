@@ -28,10 +28,16 @@ logs/
 state.db
 *.db-journal
 
-# Agent outputs that may hold personal data
+# Agent outputs and memory that may hold personal data
 calls/
 receipts.csv
 brief-queue.md
+triage-state.json
+memories/
+MEMORY.md
+USER.md
+sessions/
+travel/
 
 # Benchmark run outputs (fixtures and answer keys stay tracked)
 bench/out/

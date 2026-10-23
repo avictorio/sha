@@ -7,10 +7,10 @@ This plan replaces the Slack-shared "Hermes Hybrid Agent Plan" ([original, uncha
 - **Tags** after each title say who acts: `[Claude]`, `[Claude + you]`, `[You]`. Rules: [CLAUDE.md](CLAUDE.md). In `[Claude + you]` tasks, the **You:** line names your step.
 - **Needs** = what must be finished first. **Automate** = the package file (§11) the task produces.
 - **(verify)** = check it on the machine before relying on it.
-- "notes #N", "F#" and "AM#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
+- "notes #N", "F#", "AM#" and "MU#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position (2026-10-22).**
-- Phase 0 and Phase 1 are done, including the cloud/local rename (P1.10). **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review a day of tool-call logging, then switch it off) is left, on 2026-10-23. Then P2.1b (gate hardening), S8 and S16 (sandbox egress).
+- Phase 0 and Phase 1 are done except the two open items below, including the cloud/local rename (P1.10). **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review a day of tool-call logging, then switch it off) is left, on 2026-10-23. Then P2.1b (gate hardening), S8 and S16 (sandbox egress).
 - Still open: **P1.9** (one check left: a side task seen running on the local model in real use) and **P0.0a** (owner: the desktop-app check; revisit when computer use or a browser is first needed).
 
 ## 1. Summary
@@ -48,7 +48,7 @@ See git history, the [original plan](docs/original/hermes_hybrid_agent_plan.html
 | D12 | v1 platform scope | *Open.* Recommended: Windows 11 + an NVIDIA GPU at or above the benchmarked minimum (§11). | P6.2 |
 | D13 | How it's offered | *Open.* A free/open repo, a paid package, or a set-up service. This affects licensing and support. | P6.8 |
 | D14 | Docker for distribution | *Open.* Recommended: Docker Desktop for v1. Revisit if buyers are businesses, because of its subscription terms (verify). | P6.8 |
-| D15 | Travel and loyalty accounts | **The agents use your existing accounts** (owner, 2026-10-22), so loyalty status is kept; no agent-owned accounts. You sign each agent in yourself (passwords typed into its vault or browser profile, P3.2–P3.3); Claude never signs into them. Login codes come to your email, and you paste them into the bot's Telegram chat. Booking confirmations and points redemptions are approve-first, like payments (P2.1). | P2.1, P3.2 |
+| D15 | Travel and loyalty accounts | **The agents use your existing accounts** (owner, 2026-10-22), so loyalty status is kept; no agent-owned accounts. You type each password into that agent's vault (P3.3), and the agent then signs in from its vault (P3.2); Claude never signs into them. Login codes come to your email, and you paste them into the bot's Telegram chat. Booking confirmations and points redemptions are approve-first, like payments: by standing rule (P2.1), plus a tool-level gate if P3.5 finds one. | P2.1, P3.2 |
 ## 4. Who does what (Claude on the machine)
 
 A Claude agent runs on the Legion in its own `operator` account (§5), with three tools: a local Claude Code session for shell and PowerShell; a browser tool (Claude in Chrome, or the desktop app's built-in browser) for websites and web consoles; and computer use only for native Windows apps (Settings, Lenovo Vantage, Docker Desktop), because browsers are read-only to it and terminals click-only. Where a Done-when says "the bot" or "the local bot", Claude runs the check in `hermes chat` or `hermes -p local chat` and reads the logs, because it has no Telegram session. Checks that need Telegram itself, or your phone, are your step.
@@ -60,7 +60,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 2. **Accounts:** sign each agent into your travel accounts and type their passwords (P3.2); Plivo account, number and identity check (P4.1).
 3. **Secrets**, typed into their destination, never a chat: the `hermes` password at each `scripts/invoke-as-hermes.ps1` prompt; the full AgentMail key for admin calls (S8, S7, P2.2, P2.8); vault logins and card (P3.3); the secret manager and rotated key (P3.4); the Plivo auth token (P4.2).
 4. **On your own device:** your personal Gmail (S7, P2.4); calendar OAuth consent (P2.5); the secret manager (P3.4).
-5. **Phone in hand:** approval taps (P2.1, P3.3, P3.5, P4.3, P4.5); test calls (S5, P4.2, P4.5); pasting login codes from your email into the bot's chat (P3.2, P3.5); test emails (S8, S7, P2.8); reading the brief (P2.8).
+5. **Phone in hand:** approval taps (P2.1, P2.1b, P3.3, P3.5, P4.3, P4.5); test calls (S5, P4.2, P4.5); pasting login codes from your email into the bot's chat (P3.2, P3.5); test emails (S8, S7, P2.8); reading the brief (P2.8).
 6. **Judgment:** your real sending domains (P2.2); disclosure (P4.6); escalation decision (P5.3); kill-switch drill (P5.4); backlog review (P5.5); Phase 6 reviews and runs (P6.4, P6.6–P6.9).
 7. **At the Legion**, when Claude asks: approve app access and browser-tool site permissions; finish P0.0a's desktop-app check.
 
@@ -86,14 +86,14 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
  | plugins: usage-log; approval-     |   | plugins: usage-log; approval-     |
  |   policy (P2.1); Plivo (Phase 4)  |   |   policy (P2.1)                   |
  | mail: default inbox, read-only    |   | mail: local inbox, read-only      |
- | browser.cdp_url -> Chrome (Ph. 3) |   |   (P2.2)                          |
+ | browser.cdp_url -> Chrome (Ph. 3) |   | browser.cdp_url -> Chrome (Ph. 3) |
  +--+---------+---------+--------+---+   +------+-----------------+----------+
     |         |         |        |              |                 |
     v         v         v        v              v                 v
- OpenRouter  AgentMail  Plivo +  Chrome agent   AgentMail        Ollama (below)
- ($50 cap)   default    cloud-   profile, CDP   local inbox
-             inbox      flared   127.0.0.1:9222
-             (P2.2)     (Ph. 4)  (Phase 3)
+ OpenRouter  AgentMail  Plivo +  Chrome agent   AgentMail local  Ollama (below)
+ ($50 cap)   default    cloud-   profile, CDP   inbox (P2.2);
+             inbox      flared   127.0.0.1:9222 Chrome, CDP
+             (P2.2)     (Ph. 4)  (Phase 3)      127.0.0.1:9223 (Ph. 3)
  Default's fallback, side tasks and cron also use Ollama:
  +------------------------------------------------------------+
  | Ollama - Windows service (NSSM), 127.0.0.1:11434            |  <- the only thing
@@ -139,7 +139,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 |---|---|---|---|
 | Yours (existing) | Microsoft account, admin | Daily use; holds the Device-encryption recovery key (P0.3) | Everything personal. Claude never works here. |
 | `operator` (P0.0a) | Local account, admin | Where Claude runs during setup and maintenance | The Claude desktop app, Claude Code and a browser tool; this repo's deploy key. Nothing personal. |
-| `hermes` (P0.3) | Local account, standard | Runs the agent; auto-logon, then lock | Both Hermes gateways, Docker Desktop, the agent's Chrome profile; only agent-owned accounts |
+| `hermes` (P0.3) | Local account, standard | Runs the agent; auto-logon, then lock | Both Hermes gateways, Docker Desktop, the two agent Chromes (P3.1); the agents' infrastructure accounts, and the travel accounts you sign them into (D15) |
 
 **Host layout**
 
@@ -154,7 +154,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 | `C:\agent\shared\travel` | Itinerary summaries | Local (rw); default (ro) |
 | `C:\agent\shared\logs` | `usage-<profile>.jsonl` (with `cache_read`/`cache_write`), `policy-*.jsonl`, `openrouter-usage.json`, and `agentmail-counts.json` if S8 keeps the counts (P2.7) | Plugins and host tasks; local (ro) |
 | `C:\ProgramData\hermes-status` | `STATUS.md`, written by `scripts/publish-status.ps1` | `operator` writes; default (ro, `/workspace/status`) |
-| `C:\agent\chrome` | Chrome user-data-dir for the agent's browser profile (Phase 3) | Chrome |
+| `C:\agent\chrome-cloud`, `C:\agent\chrome-local` | Chrome user-data-dirs, one per agent (P3.1; CDP ports 9222 and 9223) | Chrome |
 | `C:\agent\bin` | `start-gateway.ps1`, `backup.ps1`, `backup-passphrase.txt` (hermes read, admins); later `kill-switch.ps1` (P5.4) | Installer |
 | `C:\agent\backup-stage` | Temporary staging for the nightly backup, on the encrypted system drive | The backup task |
 | `D:\ollama\models` | Model files | Ollama |
@@ -173,7 +173,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 
 - [x] **P0.0b Finish `operator`: tools, privacy, repo access** [Claude + you] — Done 2026-10-21: OneDrive uninstalled, settings sync off, diagnostic data "Required only", advertising ID off; deploy key `sha_deploy` through the SSH alias `github-sha`, with Git's OpenSSH pinned by `core.sshCommand` (SETUP-GUIDE, SSH client for GitHub); `main` requires a pull request. Checked: `ssh -T git@github-sha` greets the repo, a `legion/test` push and delete worked, a direct push to `main` was rejected; `verify/checks/p0-0b-operator.ps1`. Files: `installer/steps/00-operator.ps1`, `docs/SETUP-GUIDE.md#operator-account`.
 
-- [x] **P0.1 Fill in the decision table** [Claude + you] — Done 2026-10-21: D1, D2, D4 and D5 decided (§3). The open decisions are filled in by their "Needed by" task. Automate: `config/templates/instance.example.yaml` is deferred to P6.1; `docs/SETUP-GUIDE.md#decisions`.
+- [x] **P0.1 Fill in the decision table** [Claude + you] — Done 2026-10-21: D1, D2, D4 and D5 decided (§3). The open decisions are filled in by their "Needed by" task. Automate: `config/templates/instance.example.yaml` is deferred to P6.1; the decisions themselves live in §3.
 
 - [x] **P0.2 Mailbox** [Claude + you] — Done 2026-10-21: AgentMail Free, one inbox `<name>@agentmail.to` (now the **local inbox**, §7); the full API key is in your password manager, for admin calls only. Checked: a test message from your personal address appeared in the console. Files: `docs/SETUP-GUIDE.md#domain-and-mailbox`. The default inbox comes in P2.2.
 
@@ -183,7 +183,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 
 - [x] **P0.5 Docker Desktop** [Claude + you] — Done 2026-10-21: Docker Desktop 4.96.1 on WSL 2; `hermes` in `docker-users`; autostart at `hermes` sign-in (no pre-login option, notes #17); sandbox image pre-pulled. Checked: `docker ps` works as `hermes` after an unattended reboot; `verify/checks/p0-5-docker.ps1`. Files: `installer/steps/03-docker.ps1`, `docs/SETUP-GUIDE.md#docker-autostart`.
 
-- [x] **P0.6 Install Hermes (as `hermes`)** [Claude] — Done 2026-10-21: Hermes v0.22.4, stable (installer pinned by hash in `versions.lock`); Docker backend with one host mount and no current-directory mount; sandbox 8 CPUs, 16 GB. Approvals: `manual`, fail closed on timeout, `cron_mode` and `unattended_mode` `deny`, plus the `approvals.deny` globs in [default.config.yaml](config/templates/default.config.yaml) and [local.config.yaml](config/templates/local.config.yaml) (force-push, disk wipes, every Himalaya/AgentMail send path). The Docker backend skips dangerous-command approval, so the floor is `approvals.deny` plus the policy plugin (notes #3, #9). Checked: `hermes doctor`; `/workspace/work/hello.txt` lands in `C:\agent\workspace`; `C:\Users` and `/mnt/c` invisible; `verify/checks/p0-6-hermes.ps1`. Files: `installer/steps/04-hermes.ps1`, `config/templates/default.config.yaml`.
+- [x] **P0.6 Install Hermes (as `hermes`)** [Claude] — Done 2026-10-21: Hermes v0.22.4, stable (installer pinned by hash in `versions.lock`); Docker backend with one writable host mount (plus the read-only status mount, §5) and no current-directory mount; sandbox 8 CPUs, 16 GB. Approvals: `manual`, fail closed on timeout, `cron_mode` and `unattended_mode` `deny`, plus the `approvals.deny` globs in [default.config.yaml](config/templates/default.config.yaml) and [local.config.yaml](config/templates/local.config.yaml) (force-push, disk wipes, every Himalaya/AgentMail send path). The Docker backend skips dangerous-command approval, so the floor is `approvals.deny` plus the policy plugin (notes #3, #9). Checked: `hermes doctor`; `/workspace/work/hello.txt` lands in `C:\agent\workspace`; `C:\Users` and `/mnt/c` invisible; `verify/checks/p0-6-hermes.ps1`. Files: `installer/steps/04-hermes.ps1`, `config/templates/default.config.yaml`.
 
 - [x] **S1 Spike — Docker backend on native Windows** [Claude] — Done 2026-10-21: works → Appendix A. Files: `verify/checks/s1-docker-backend.ps1`.
 
@@ -214,7 +214,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 
 - [x] **P1.7 Nightly encrypted backup** [Claude + you] — Done 2026-10-22: `Agent_Backup` daily 03:30 as hermes → `D:\backups` (7-Zip, encrypted, 14 days; `hermes backup` plus `C:\agent`). Passphrase: `C:\agent\bin\backup-passphrase.txt` (hermes read) and your password manager. Checked: `verify/checks/p1-7-backup.ps1` 14/14. Files: `installer/steps/09-backup.ps1`, `scripts/backup.ps1`. Offsite copy: §14.
 
-- [x] **S3 Spike — Can cron `--provider` name the local Ollama provider?** [Claude] — Done 2026-10-22: use `--provider ollama` with `providers.ollama.base_url`; `--provider custom` in default goes to the cloud → Appendix A. Files: `verify/checks/s3-cron-provider.ps1`, `installer/steps/10-cron.ps1`.
+- [x] **S3 Spike — Can cron `--provider` name the local Ollama provider?** [Claude] — Done 2026-10-22: use `--provider ollama` with `providers.ollama.base_url`; `--provider custom` in default goes to the cloud → Appendix A. Files: `verify/checks/s3-cron-provider.ps1`, `verify/checks/s3-cron-help.ps1` (the `cron` subcommand flags), `installer/steps/10-cron.ps1`.
 
 - [x] **P1.8 Cron "ping" job per profile** [Claude] — Done 2026-10-22: `ping` daily at 12:00 in both profiles, `--provider ollama`, delivered to Telegram. Cron runs inside the gateway: no gateway, no cron. A logon race between the gateways was fixed with a retry on exit 75 (`start-gateway.ps1`) and a 45 s logon delay on `Hermes_Gateway_local`. Checked: both pongs arrived after an unattended reboot; `p1-8-ping.ps1` 4/4. Files: `cron/ping.yaml`, `installer/steps/10-cron.ps1`.
 
@@ -233,7 +233,7 @@ A Claude agent runs on the Legion in its own `operator` account (§5), with thre
 
 - [x] **P1.10 Cloud/local rename** [Claude + you] — Done 2026-10-22 (D3): one elevated run of `scripts/migrate-private-to-local.ps1` (backup first; `hermes profile rename private local`; `default` display name `cloud`; workspace mount re-merged; stale sandbox removed; `C:\agent\local`, `usage-local.jsonl` with its history; `Hermes_Gateway_local` with the 45 s delay and guard). Repo and docs say local; `templates/` keep `private` until P2.1–P2.3 install them. Bots renamed "Hermes Cloud" / "Hermes Local" (owner). Found: every profile lists the root credential pool, so local's `auth list` shows the cloud OpenRouter key; it's unusable from local (`/model openrouter:…` went to `localhost:11434`, 400), so `no-auth` now fails only on OAuth or stored credentials (docs/LESSONS.md, Hermes). Checked: `profile list` shows `cloud (default)` and `local`; `p1-3-local` 15/15, `p1-5 -Profile local` 8/8, `p1-7` pass, `p1-8` 4/4; no `"local": false` line; both bots answered after the rename (gateway logs). Files: `scripts/migrate-private-to-local.ps1`, `installer/steps/06-local-profile.ps1`, `config/templates/local.config.yaml`, `verify/checks/p1-3-local.ps1`.
 
-**Phase 1 exit state:** two bots on your hardware. Default is cloud-first on OpenRouter under the $50 cap, with local fallback, local side tasks and local cron; local is provably local-only. Every model call is logged; backups run nightly; both profiles ping daily.
+**Phase 1 exit state:** two bots on your hardware. Default is cloud-first on OpenRouter under the $50 cap, with local fallback, local side tasks (P1.9's last check pending) and local cron; local is provably local-only. Every model call is logged; backups run nightly; both profiles ping daily.
 
 ### Phase 2 — Policy, email, calendar, morning brief (Days 6–10) → daily-usable MVP
 
@@ -242,7 +242,7 @@ Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7
 - [ ] **P2.1 Approval-policy plugin (both profiles)** [Claude + you] — Install, tune, and add standing rules.
   - Progress 2026-10-22: steps 1, 2 and 4 done (both profiles, via `08-plugins.ps1`; `SOULRULES=5`). Done-when passed: the Telegram approval came up and your deny stopped it (gateway log `choice=deny`); `p2-1-policy.ps1` passes in both profiles (AgentMail send blocked with a `block` line; force push refused by `approvals.deny`, which runs before plugins). Tool name `terminal`, key `command` (already configured). Left: step 3 on 2026-10-23, after a day of logging.
   - You: answer the test approval on your phone.
-  1. `git mv templates/plugins/approval-policy plugins/approval-policy`. Review its CONFIG block, install it in both profiles with `08-plugins.ps1` (as in P1.5), then `scripts/restart-gateway.ps1 -Profile default` and `-Profile local`. The plugin template still says `private`; rename it to `local` when it's installed here.
+  1. (Done) Moved `templates/plugins/approval-policy` to `plugins/approval-policy` with `private` renamed to `local`; `08-plugins.ps1` installs it in both profiles and restarts each gateway.
   2. Set `LOG_ALL_TOOL_CALLS = True` for one day.
   3. Read `policy-default.jsonl`. Correct `TERMINAL_TOOLS` and `COMMAND_ARG_KEYS` to the real tool name and argument keys, then set logging back to `False`.
   4. Add standing rules to both `SOUL.md` files:
@@ -258,7 +258,7 @@ Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7
 - [ ] **P2.1b Gate hardening: deny-by-default and integrity** [Claude + you] — Prompt rules can be steered, and a block on terminal text can be routed around with another tool (docs/LESSONS.md, Hermes), so gate by tool name where possible and check that the gate hasn't changed. Adapted from Muse (notes MU1, MU5); the integrity check is ours.
   - You: answer one test approval on your phone.
   1. **Unknown tools ask first** (verify that the plugin can do this): the tool names seen in P2.1's day of logging become the plugin's known list; any other tool name (a new MCP write tool, a new toolset) gets `approve` until it's added to a list on purpose. Cron runs deny approvals (`cron_mode: deny`), so check that the cron jobs use only known tools.
-  2. **A sixth standing rule** in `config/templates/SOUL.md`: "No outbound action by default: never send, post, book, buy, change or delete anything outside this machine unless a rule above or an approval in this chat covers it." `08-plugins.ps1` then expects 6 rules.
+  2. **A sixth standing rule** in `config/templates/SOUL.md`: "No outbound action by default: never send, post, book, buy, change or delete anything outside this machine unless a rule above or an approval in this chat covers it." `08-plugins.ps1` then expects 6 rules, counted only between the standing-rules markers (today it counts matching lines in the whole file).
   3. **Integrity:** `p2-1-policy.ps1` hashes (SHA-256) each profile's installed `plugins\approval-policy\` and the standing-rules block of its `SOUL.md` (between the markers; the rest of the file may change), and fails if either differs from the repo's copy. Changes go through the repo and `08-plugins.ps1`, never by hand.
   - Done when: a tool not on the known list raises a Telegram approval; `SOULRULES=6` in both profiles; and `p2-1-policy.ps1` passes, then fails after a test edit to an installed copy, then passes again after `08-plugins.ps1`.
   - Needs: P2.1
@@ -315,12 +315,13 @@ Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7
 
 - [ ] **P2.2 Connect both profiles to AgentMail, read-only** [Claude + you] — `scripts/agentmail-setup.ps1` does the AgentMail side, with the full key in memory only (as in S8). Each profile gets its own inbox, its own scoped receive-only key and its own relay.
   - You: list your real sending domains; type the full key into the hidden prompt.
-  1. `git mv templates/email-allowlist.yaml config/templates/email-allowlist.yaml`; copy it to `C:\agent\local\config\` and fill in your addresses, each category's real sending domains (exact, from real confirmations' From lines; subdomains listed separately) and `unknown_senders` per S8. Settle D5's designations, including the default inbox's. The template still says `private` for the local inbox; rename it to `local` here.
+  1. `git mv templates/email-allowlist.yaml config/templates/email-allowlist.yaml`; copy it to `C:\agent\local\config\` and fill in your addresses, each category's real sending domains (exact, from real confirmations' From lines; subdomains listed separately) and `unknown_senders` per S8. Settle D5's designations, including the default inbox's. The template still says `private` and `main` for the local inbox, and `C:\agent\private\` for its folder; rename them to `local` and `C:\agent\local\` here.
   2. Create the default inbox (`POST /v0/inboxes`, AM4).
   3. Send allowlists: one entry per profile inbox, your address (`POST /v0/inboxes/{inbox_id}/lists/send/allow`, AM3); every other recipient is then refused.
   4. If S8 showed `blocked` labelling: each profile inbox's receive allowlist, from `my_addresses` plus its designated domains (`POST …/lists/receive/allow`). The script makes the lists match the file, deleting stale entries; re-run it whenever the file changes.
   5. Two scoped keys, one per profile inbox: `POST /v0/inboxes/{inbox_id}/api-keys` with `permissions: {inbox_read: true, message_read: true, message_update: true}` (+ `metrics_read: true` if S8 kept the counts); no send, draft, list, key, webhook or `label_*_read` permission. Before handing a key over, the script checks that a send and a draft are refused and that it can't list the other profile's inbox. Each goes into its own profile's `.env` as `AGENTMAIL_API_KEY` through a hidden prompt, as `hermes` via `scripts/invoke-as-hermes.ps1`, never printed. Delete the S8 test key.
   6. Register the access path S2 chose in both profiles: (A) the relay block from `config/templates/agentmail-mcp.yaml`, or (B) the CLI skill. Then `scripts/restart-gateway.ps1 -Profile default` and `-Profile local`.
+  7. Put the new mail tools on the approval-policy plugin's known list (P2.1b) with the decision each needs (reads and `update_message`: none), and reinstall it with `08-plugins.ps1`; otherwise they ask for approval, and cron runs deny every approval.
   - Done when: "list my newest mail" in each chat returns only its own inbox's messages through `list_messages`; the script's send, draft and cross-inbox checks on both keys come back refused; and each profile inbox's send allowlist lists only your address.
   - Needs: S8, S2, P2.1, D6
   - Automate: `scripts/agentmail-setup.ps1`; `installer/steps/12-mail.ps1`; `config/templates/agentmail-mcp.yaml`; `config/templates/email-allowlist.yaml`; `verify/checks/p2-2-agentmail.ps1`
@@ -334,7 +335,7 @@ Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7
   - Automate: `cron/inbox-triage.yaml` (delivery setting)
 
 - [ ] **P2.3 Triage cron on AgentMail labels** [Claude] — Install the prompt, set the mounts, create the job:
-  1. `git mv templates/inbox-triage-prompt.md config/templates/inbox-triage-prompt.md`, then copy it to `C:\agent\local\config\` (`email-allowlist.yaml` is already there, P2.2). The template still says `private` for the local profile; rename it to `local` here.
+  1. `git mv templates/inbox-triage-prompt.md config/templates/inbox-triage-prompt.md`, then copy it to `C:\agent\local\config\` (`email-allowlist.yaml` is already there, P2.2). The template still says `private` (and `main` for the local inbox); rename them to `local` here.
   2. Set the local profile's final mounts:
      ```yaml
      terminal:
@@ -353,7 +354,7 @@ Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7
      With S2's outcome B, add `--skill agentmail`. If multi-line arguments get mangled, use the one-line prompt "Follow the instructions in /workspace/config/inbox-triage-prompt.md exactly."
   - A run: `list_messages` on the local inbox, `after` = `last_seen` in `/workspace/work/triage-state.json`, oldest first; skip `processed`, `spam`, `unauthenticated`, `blocked`, `quarantine` and `trash`; categorize by sender domain or subject tag and act; add `processed` plus the category label (`update_message`); move `last_seen` on. (`unread` is an alternative marker if S8 showed it can be removed.)
   - Done when:
-    - `hermes -p local cron runs` shows a successful run;
+    - `hermes -p local cron runs` shows a successful run, and `policy-local.jsonl` has no `approve` line from it (every tool the job uses is on the known list, P2.1b);
     - a test message from an allowlisted travel domain, or a `[travel]` forward from you, gets the `processed` and `travel` labels and an itinerary file;
     - `triage-state.json` has moved on, and the next run leaves that message alone;
     - a message from an unlisted sender never reaches the agent, or with `unknown_senders: quarantine_label` it gets only `quarantine` and `processed`.
@@ -396,7 +397,7 @@ Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7
   - Needs: P1.3
   - Automate: `installer/steps/13-calendar.ps1` (connector choice)
 
-- [ ] **P2.5 Calendar connector** [Claude + you] — Install the S9 choice: read+write for local, read-only for default.
+- [ ] **P2.5 Calendar connector** [Claude + you] — Install the S9 choice: read+write for local, read-only for default. Put its tools on the approval-policy plugin's known list (P2.1b), so the brief cron can read the calendar.
   - You: give OAuth consent from your own device or account, not `operator`, because it signs in to your Google account (verify how the flow allows that).
   - Done when: the local bot creates and then deletes a test event; the default bot lists today's events; and a create request from the default bot fails or is blocked.
   - Needs: S9
@@ -471,9 +472,9 @@ Order: P3.1, P3.3, P3.2, P3.5; P3.4 any time after D7.
   - Needs: P2.6, P1.10
   - Automate: `installer/steps/14-browser.ps1`; `verify/checks/p3-1-chrome.ps1`
 
-- [ ] **P3.2 Your travel accounts** [Claude + you] — The agents sign into your existing accounts (airlines, hotels, travel sites), so loyalty status is kept (D15). No agent-owned accounts. Each agent signs in itself from its vault (P3.3) in its own Chrome (P3.1); you paste login codes from your email into that bot's chat. Bookings are recorded at checkout from the page, not from email.
+- [ ] **P3.2 Your travel accounts** [Claude + you] — The agents sign into your existing accounts (airlines, hotels, travel sites), so loyalty status is kept (D15). No agent-owned accounts. You type the passwords into each agent's vault (P3.3); the agent then signs in from it in its own Chrome (P3.1); you paste login codes from your email into that bot's chat. Bookings are recorded at checkout from the page, not from email.
   - You: choose which accounts each agent may use; type their passwords into the vault prompts; paste codes; handle CAPTCHAs. Claude never signs into your accounts and stops at any CAPTCHA.
-  - Saved cards and points: on these sites "Book" can charge a saved card or spend points with no card step. Booking confirmations, points redemptions and any change to account settings (email, password, payment, recovery) are approve-first (P2.1). Decide per account whether to remove saved cards (D11).
+  - Saved cards and points: on these sites "Book" can charge a saved card or spend points with no card step. Booking confirmations, points redemptions and any change to account settings (email, password, payment, recovery) are approve-first: by standing rule (P2.1), plus a tool-level gate if P3.5 finds one. Decide per account whether to remove saved cards (D11).
   - Done when: each chosen account is listed in `docs/SETUP-GUIDE.md#agent-accounts` (site, which agent, 2FA type; no passwords), and each agent has signed into one of its accounts with a code you pasted.
   - Needs: P3.1, P3.3
   - Automate: `docs/SETUP-GUIDE.md#agent-accounts`
@@ -559,7 +560,7 @@ Order: P4.1, S11, P4.2, S12, P4.3, S5, P4.6, P4.4, P4.5.
   - Needs: P4.2
   - Automate: `plugins/approval-policy/` (`NUMBER_ARG_KEYS`); `config/templates/call-brief.yaml`
 
-- [ ] **P4.3 Call brief and approval message** [Claude + you] — `git mv templates/call-brief.yaml config/templates/call-brief.yaml`. At runtime, Hermes drafts a copy into `calls/briefs/` for every call. The plugin blocks `make_call` unless there's a brief for the same number from the last 2 hours, and shows the brief's fields in the Telegram approval. For `send_sms`, it shows the destination and the text.
+- [ ] **P4.3 Call brief and approval message** [Claude + you] — `git mv templates/call-brief.yaml config/templates/call-brief.yaml`, and update the two plugin messages that name `templates/call-brief.yaml` to the path the sandbox sees. At runtime, Hermes drafts a copy into `calls/briefs/` for every call. The plugin blocks `make_call` unless there's a brief for the same number from the last 2 hours, and shows the brief's fields in the Telegram approval. For `send_sms`, it shows the destination and the text.
   - You: answer the approval prompts during the test.
   - Done when: `make_call` with no brief is blocked with "no call brief"; with a brief, the approval shows its fields; and answering `no` dials nothing.
   - Needs: P4.2, S12
@@ -657,6 +658,8 @@ Order: P5.1, S13, P5.2, P5.3, P5.4, P5.5.
 ### Phase 6 — Package v1 (Days 24–33, starting only after the dogfood gate)
 
 **Gate to start:** 14 consecutive days of daily use with no blocking issues, the benchmark re-run with no regression against `bench/scores.csv`, and the P5.1 restore drill passed. Then about 1.5–2 weeks of work.
+
+Order: P6.1; then P6.2, P6.3 and P6.4 in any order; P6.5, P6.6, P6.7, P6.9. P6.8 runs in parallel from the start (owner, calendar time).
 
 - [ ] **P6.1 Consolidate the scripts into `installer/`** [Claude] — (2 days) An idempotent, step-based `install.ps1` over the §11 layout; templates rendered from `instance.yaml`; secrets through hidden prompts into `.env` or the secret store, never `instance.yaml`. The shared script libraries (§14, tech debt) come first.
   - Done when: `install.ps1` re-run on the Legion changes nothing and reports every step as already done.
@@ -837,7 +840,7 @@ paths: { agent_root: 'C:\agent', models: 'D:\ollama\models', backups: 'D:\backup
 | `cron/` | `ping.yaml`; planned `inbox-triage.yaml`, `brief.yaml` |
 | `verify/` | `checks/*.ps1`, one per task or spike; planned `verify.ps1` and `acceptance/` (P6.3) |
 | `bench/` | The benchmark, including `isolate.ps1`, so buyers can qualify their own machine |
-| `scripts/` | Exist: `invoke-as-hermes`, `start-gateway`, `restart-gateway`, `backup`, `publish-status`, `seed-user-memory`, `precommit-check`. Planned: each task's named script (S8, P2.4, P2.7, P5.1–P5.4), and `collect-diagnostics` (a support bundle excluding `.env`, tokens, `auth.json` and the vault) |
+| `scripts/` | Exist: `invoke-as-hermes`, `start-gateway`, `restart-gateway`, `backup`, `publish-status`, `seed-user-memory`, `precommit-check`, `migrate-private-to-local` (P1.10, one-off). Planned: each task's named script (S8, P2.4, P2.7, P5.1–P5.4), and `collect-diagnostics` (a support bundle excluding `.env`, tokens, `auth.json` and the vault) |
 | `docs/` | `SETUP-GUIDE.md` (every `[You]` step, consents, calling rules, kill switch), `LESSONS.md`, `verification-notes.md`, `status-notes.md` |
 | `versions.lock` | Pinned Hermes installer, Ollama, Docker, 7-Zip, plugin and model versions |
 | `.claude/skills/setup/SKILL.md` | Planned (P6.5): lets a buyer's own Claude drive the install |
@@ -863,7 +866,7 @@ paths: { agent_root: 'C:\agent', models: 'D:\ollama\models', backups: 'D:\backup
 | Domain (only with a custom domain, §14) | Annual renewal with auto-renew on, so the agent's address can't lapse. Check current pricing. | Registrar |
 | OpenRouter | A per-key credit `limit` of $50 (D9) with `limit_reset: monthly`; a 402 response means the cap was hit | OpenRouter → Keys (notes #18) |
 | Plivo | A small prepaid balance with auto-recharge off; one number; `PLIVO_VOICE_MAX_CALL_SECONDS` and `PLIVO_VOICE_MAX_CONCURRENT_CALLS=1`. Check current pricing. | Plivo console; the default profile's `.env` |
-| AgentMail (D4) | Free, $0: 3 inboxes (all used), 3,000 emails/month, 100/day, 3 GB storage. Developer, $20/month, adds a custom domain. (verify; AM1) | AgentMail console |
+| AgentMail (D4) | Free, $0: 3 inboxes (2 used), 3,000 emails/month, 100/day, 3 GB storage. Developer, $20/month, adds a custom domain. (verify; AM1) | AgentMail console |
 
 ## 13. Risk register
 
@@ -905,7 +908,7 @@ paths: { agent_root: 'C:\agent', models: 'D:\ollama\models', backups: 'D:\backup
 | Faster login codes: an auto-forward rule for code emails into the chosen bot's inbox, read in real time (never by giving an agent your personal mailbox) | Pasting codes is a daily chore, and those sites lack TOTP |
 | **Post-MVP, to close:** a weekly offsite copy of the newest `D:\backups\*.7z` (D10): pick a target (USB drive or cloud folder; the archives are encrypted), then add it to `scripts/backup.ps1` or a weekly task | Once the MVP (Phase 2) is in daily use; at the latest before P5.5 |
 | **Post-MVP, to close:** self-diagnosis snapshot (owner, 2026-10-22): a per-profile, read-only `SELF.md` so each bot can diagnose its own setup and suggest fixes. Design and safeguards: Backlog notes, below. | Once the MVP is in daily use, or sooner if the bots' wrong answers about their setup cost time; at the latest before P5.5 |
-| **Tech debt: shared script libraries.** `scripts/lib/common.ps1` (Step, guards, `versions.lock`, `.env` helpers); `scripts/lib/hermes-session.ps1` (Cap with empty stdin + timeout, venv Python lookup, console encoding); `verify/lib.ps1` (Record, summary, anchored case-sensitive matching); one `merge_config.py`; `scripts/invoke-elevated.ps1`; one secret-pattern list; stale `hermes-oneshot` task cleanup in `invoke-as-hermes.ps1` | When a script is next changed, move its helpers; all done before P6.1 |
+| **Tech debt: shared script libraries.** `scripts/lib/common.ps1` (Step, guards, `versions.lock`, `.env` helpers); `scripts/lib/hermes-session.ps1` (Cap with empty stdin + timeout, venv Python lookup, console encoding); `verify/lib.ps1` (Record, summary, anchored case-sensitive matching); one `merge_config.py`; `scripts/invoke-elevated.ps1`; one secret-pattern list; stale `hermes-oneshot` task cleanup in `invoke-as-hermes.ps1`; an elevation header and guard in every verify script | When a script is next changed, move its helpers; all done before P6.1 |
 | Spend-cap auto-approval for purchases | A month of approve-first purchases with no rejections |
 | Cloud browser backend for parallel or throwaway sessions | Research needs several browsers at once |
 | Chat-by-email via the email gateway (`EMAIL_ALLOWED_USERS`) | You want to reach the agent from a device without Telegram |
@@ -933,7 +936,7 @@ Today the bots can't see their own setup: their tools run in Docker, which mount
 | S1 | Docker backend on native Windows | **Works.** Hermes v0.22.4, Docker Desktop 4.96.1 on WSL 2: the agent ran `uname -a` (Linux, WSL2 kernel) and saw the host folder at `/workspace/work`. The forward-slash host path `C:/agent/workspace` works. `verify/checks/s1-docker-backend.ps1`. | 2026-10-21 |
 | S2 | AgentMail MCP relay on native Windows with `--tools` | | |
 | S3 | Cron `--provider` for local Ollama | **Use `--provider ollama` with `providers.ollama.base_url: http://localhost:11434/v1`, in both profiles.** In default, `--provider custom` means `model.base_url`, which is OpenRouter since P1.4: it went to the CLOUD. In local, `custom` is local, but `ollama` is used there too for one form. `cron run` runs synchronously and refuses a paused job; jobs live in a database. While both gateways run, each profile's jobs run in its own gateway. `verify/checks/s3-cron-provider.ps1`. | 2026-10-22 |
-| S4 | Does `hermes backup` cover all profiles? | **Yes: one command is enough.** `hermes backup -o C:\agent\backup-stage\s4-test.zip` included `profiles/private/` (config, `state.db`, memories, plugins), the default config, `state.db`, memories, `.env` and `auth.json` (so encrypt it). `-k N` (default 3) prunes older backups in the output folder, so `backup.ps1` passes `-k 0`. `verify/checks/s4-backup-profiles.ps1`. | 2026-10-22 |
+| S4 | Does `hermes backup` cover all profiles? | **Yes: one command is enough.** `hermes backup -o C:\agent\backup-stage\s4-test.zip` included `profiles/private/` (now `profiles/local/`, P1.10) (config, `state.db`, memories, plugins), the default config, `state.db`, memories, `.env` and `auth.json` (so encrypt it). `-k N` (default 3) prunes older backups in the output folder, so `backup.ps1` passes `-k 0`. `verify/checks/s4-backup-profiles.ps1`. | 2026-10-22 |
 | S5 | Plivo transcript output | | |
 | S6 | Context length of each candidate tag | From `ollama show` (Ollama 0.40.8): `qwen3:30b-a3b-instruct-2507-q4_K_M` 262144; `gpt-oss:20b` 131072; `qwen3-coder:30b` 262144; `qwen3:32b` 40960, **dropped** (below 64K, and dense). Kept candidates pinned in `versions.lock` (`model_candidates`, `model_native_context`). Not a candidate: `muse-glimmer:30b` 131072. `verify/checks/s6-model-context.ps1`. | 2026-10-22 |
 | S7 | What AgentMail exposes for forwards and spoofs | | |
@@ -949,6 +952,6 @@ Today the bots can't see their own setup: their tools run in Docker, which mount
 
 ## Appendix B: Sources
 
-- [docs/verification-notes.md](docs/verification-notes.md): every Hermes, Ollama, Plivo, AgentMail and Himalaya command and key in this plan comes from here, with source URLs and VERIFIED / INFERRED / NOT FOUND tags. "notes #N" means items 1–22; "F#" means follow-ups F1–F10; "AM#" means the AgentMail items AM1–AM14; "MU#" means the Muse reference-design items MU1–MU6, the source for the hardening in S16, P2.1b, P3.1 and P3.5.
+- [docs/verification-notes.md](docs/verification-notes.md): every Hermes, Ollama, Plivo, AgentMail and Himalaya command and key in this plan comes from here, with source URLs and VERIFIED / INFERRED / NOT FOUND tags. "notes #N" means items 1–22; "F#" means follow-ups F1–F10; "AM#" means the AgentMail items AM1–AM14; "MU#" means the Muse reference-design items MU1–MU6, the source for the hardening in §5, §7, §14, S16, P2.1b, P3.1 and P3.5.
 - [docs/original/hermes_hybrid_agent_plan.html](docs/original/hermes_hybrid_agent_plan.html): the original plan, unchanged, for the reasoning behind the design.
 - [bench/](bench/) and [templates/](templates/): the benchmark and the files that the tasks above install. [CLAUDE.md](CLAUDE.md): the rules for the Claude agent on the machine.

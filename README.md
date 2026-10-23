@@ -9,8 +9,8 @@ This repo holds the build plan, and the start of a distributable package, for a 
 - [docs/SETUP-GUIDE.md](docs/SETUP-GUIDE.md): the steps that can't be scripted.
 - [docs/status-notes.md](docs/status-notes.md): plain-language build facts appended to the agent's STATUS.md.
 - [docs/original/](docs/original/hermes_hybrid_agent_plan.html): the original Slack-shared plan, unchanged.
-- [templates/](templates/): the approval-policy plugin, call brief, inbox-triage prompt and email allowlist, until their tasks move them into `plugins/` or `config/templates/`.
-- [plugins/usage-log](plugins/usage-log): the per-call usage log. [config/templates/](config/templates/): the profile config templates.
+- [templates/](templates/): the call brief, inbox-triage prompt and email allowlist, until their tasks move them into `config/templates/`.
+- [plugins/](plugins/): `usage-log` (the per-call usage log) and `approval-policy` (the approval gate). [config/templates/](config/templates/): the profile config templates and the standing rules (`SOUL.md`).
 - [bench/](bench/README.md): the local-model benchmark, with tasks, synthetic fixtures, answer keys and a scoring sheet.
 
 Templates contain placeholders only (`<your name>`, `<your number>`). Never commit instance data or secrets (see `.gitignore`).

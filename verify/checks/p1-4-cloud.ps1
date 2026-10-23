@@ -8,8 +8,10 @@
 #   - local: no OPENROUTER entry in its .env, no non-local line in usage-local.
 # The Telegram half (the default bot answers from the cloud) is in docs/SETUP-GUIDE.md#openrouter.
 # Prints PASS/FAIL per check. Never prints .env values. Re-runnable.
-param([securestring]$Password)
+param([securestring]$Password, [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Record($name, $ok, $detail) {
   $results[$name] = $ok
@@ -74,3 +76,6 @@ Record 'local-no-openrouter' (-not (Select-String -Path $localEnv -Pattern 'OPEN
 Record 'local-all-local' (-not (Select-String -Path 'C:\agent\shared\logs\usage-local.jsonl' -Pattern '"local": false' -Quiet -ErrorAction SilentlyContinue)) ''
 
 "`n"; $results.GetEnumerator() | ForEach-Object { "{0,-30} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

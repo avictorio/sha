@@ -1,7 +1,10 @@
 # verify/checks/p0-4-ollama.ps1 -- PLAN.md P0.4 (Ollama as a Windows service) checks
 # Run in the `operator` account, in Windows PowerShell, after a reboot. Elevation not needed.
 # Prints PASS/FAIL per check. Re-runnable.
+param([string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 $results = [ordered]@{}
 function Step($m) { Write-Host "`n== $m" -ForegroundColor Cyan }
 function Record($name, $ok, $detail) {
@@ -59,3 +62,6 @@ Write-Host "  $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader
 
 Step "Summary"
 $results.GetEnumerator() | ForEach-Object { "{0,-50} {1}" -f $_.Key, $(if ($_.Value) {'PASS'} else {'FAIL'}) }
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
+}

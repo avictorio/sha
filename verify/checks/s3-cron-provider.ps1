@@ -6,8 +6,10 @@
 # Every hermes call runs with its own time cap and an empty stdin, so an unexpected prompt fails fast
 # (the first version stalled for 30 min with no output). Deliveries go to each profile's own bot ("pong").
 # -Profiles limits the run; -Step Create stops after creating the job (for diagnosis).
-param([securestring]$Password, [string[]]$Profiles = @('default', 'local'), [ValidateSet('All', 'Create')][string]$Step = 'All')
+param([securestring]$Password, [string[]]$Profiles = @('default', 'local'), [ValidateSet('All', 'Create')][string]$Step = 'All', [string]$LogPath)
 $ErrorActionPreference = 'Continue'
+if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
+try {
 if ($env:USERNAME -ne 'operator') { throw "Not running as 'operator' (got '$env:USERNAME')." }
 $repo = Split-Path (Split-Path $PSScriptRoot)
 $lock = ConvertFrom-StringData ((Get-Content (Join-Path $repo 'versions.lock') | Where-Object { $_ -notmatch '^\s*#' }) -join "`n")
@@ -79,4 +81,7 @@ foreach ($k in $Profiles) {
   $new | ForEach-Object { try { $_ | ConvertFrom-Json } catch { } } | ForEach-Object {
     Write-Host ("  {0} {1} platform={2} model={3} provider={4} local={5} base_url={6}" -f $_.ts, $_.event, $_.platform, $_.model, $_.provider, $_.local, $_.base_url)
   }
+}
+} finally {
+  if ($LogPath) { Stop-Transcript | Out-Null }
 }
