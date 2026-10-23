@@ -7,7 +7,7 @@
 - Telegram: two bots, both allow-listed to the owner. The default bot is cloud-first (P1.4, done): Meta Muse Wonder through OpenRouter, under a $50/month key cap, falling back to the local model if the cloud fails. The private bot (P1.3, done) is local-only: no cloud keys, no fallback, web, browser and image tools off. Tested: it refuses a cloud model, and with the local model stopped it replies with an error rather than going to the cloud.
 - Daily ping (P1.8, done): each bot sends a "pong" at 12:00 from the local model. Tested after an unattended restart: both bots came back by themselves and both pings arrived.
 - Phase 1 is complete (2026-10-22). Next: Phase 2 (the approval policy, email, calendar, morning brief), the daily-usable MVP.
-- Cost: about 5–9 cents per simple message to the default bot (13,000–22,000 tokens of context each). Spend shows at openrouter.ai/activity.
+- Cost: about 4–9 cents per simple message to the default bot (about 10,000 tokens of context for a fresh chat, more as a conversation grows; /new starts fresh). Token diet (P1.9, in progress): background tasks run on the local model, unused tools and 38 of 51 skills are off, and long or idle conversations are compacted sooner. Spend shows at openrouter.ai/activity.
 - Email (Phase 2): one inbox per bot, plus one for login codes.
 - Backups (P1.7, done): nightly at 03:30, encrypted with the owner's passphrase, to the laptop's second drive, 14 days kept. Offsite copy deferred until after the MVP.
 - Not set up yet: email (Phase 2), calendar (P2.5), browser (Phase 3), phone (Phase 4).

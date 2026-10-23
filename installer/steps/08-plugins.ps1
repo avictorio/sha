@@ -48,10 +48,15 @@ if (-not (Test-Path (Split-Path `$dest))) { 'NOPROFILE'; return }
 New-Item -ItemType Directory -Force `$dest | Out-Null
 Remove-Item -Recurse -Force "`$dest\usage-log" -ErrorAction SilentlyContinue
 Copy-Item -Recurse '$stage\usage-log' "`$dest\usage-log"
+`$py = Get-ChildItem (Join-Path `$env:LOCALAPPDATA 'hermes\installs') -Recurse -Filter python.exe -ErrorAction SilentlyContinue |
+  Where-Object FullName -match '\\venv\\Scripts\\python\.exe$' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+& `$py.FullName -m py_compile "`$dest\usage-log\__init__.py" 2>&1
+"PYCOMPILE=`$LASTEXITCODE"
 & `$h @p plugins enable usage-log 2>&1
 "ENABLED=`$((& `$h @p config get plugins.enabled 2>&1) -join ' ')"
 "@
   $r.Output | ForEach-Object { Write-Host "  $_" }
+  if (-not ($r.Output -contains 'PYCOMPILE=0')) { throw "plugins/usage-log/__init__.py doesn't compile under Hermes's Python; gateway not restarted." }
   if ($r.Output -contains 'NOPROFILE') { throw "Profile '$Profile' has no folder yet ($dest). For private, run P1.3 step 1 first." }
   if (-not ($r.Output | Where-Object { $_ -like 'ENABLED=*usage-log*' })) { throw "usage-log isn't in plugins.enabled; gateway not restarted." }
 

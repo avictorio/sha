@@ -110,3 +110,4 @@ Verify scripts went wrong several times because of this. On Windows 11 Home, une
 - **Owner confirmations are recorded as such.** When a Done-when item can only be seen by the owner (the Tailscale console, the recovery key, the router, the AgentMail console), the commit message says the owner confirmed it.
 - **Elevated runs:** launch with `Start-Process -Verb RunAs -Wait`, pass a `-LogPath` in the session scratchpad, and read the log afterwards. The owner clicks the admin prompt. Use a visible window when the script needs a hidden password prompt.
 - **The verify scripts repeat `Step`/`Record`.** **Next:** move them into a shared `verify/lib.ps1`.
+- **Check a PLAN.md edit's diff size before committing.** A sed append to PLAN.md (67b7736) wrote its line after every line, 1,371 times, and it reached main in PR #15 (repaired in 4405bd9). Make PLAN.md edits with the Edit tool, and check that `git diff --stat` shows the size you expect.

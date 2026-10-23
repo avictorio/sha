@@ -1,0 +1,78 @@
+# PLAN.md P1.9: token diet for the default (cloud) profile. installer/steps/11-token-diet.ps1
+# deep-merges this into the default config.yaml (lists replace, mappings merge).
+# Text-only side tasks run on the local model; an explicit base_url keeps them off the cloud
+# (a bare `custom` provider resolves to the main, cloud endpoint: S3, docs/LESSONS.md).
+# api_key "ollama" is a placeholder: Ollama ignores it.
+# Not routed: vision (needs a multimodal model), tts_audio_tags and voice_chat (cloud voice features).
+auxiliary:
+  background_review: &local
+    provider: ollama
+    model: qwen3-coder:30b
+    base_url: http://localhost:11434/v1
+    api_key: ollama
+  compression: *local
+  session_search: *local
+  web_extract: *local
+  approval: *local
+  review: *local
+  memory_query_rewrite: *local
+  skills_hub: *local
+  mcp: *local
+  curator: *local
+  triage_specifier: *local
+  kanban_decomposer: *local
+  profile_describer: *local
+  goal_judge: *local
+  title_generation:
+    model_upgrade_enabled: false   # keep the instant title; no model call
+    provider: ollama
+    model: qwen3-coder:30b
+    base_url: http://localhost:11434/v1
+    api_key: ollama
+
+compression:
+  threshold: 0.35                  # of the 64K window: compress at ~23K instead of ~33K
+  idle_compact_after_seconds: 1800 # compact a thread that resumes after 30 min idle
+
+# The skills index is sent with every request. Disabled skills stay installed; remove a name here
+# (and rerun 11-token-diet.ps1) to bring it back.
+skills:
+  disabled:
+    - claude-code
+    - codex
+    - computer-use
+    - opencode
+    - architecture-diagram
+    - ascii-video
+    - baoyu-infographic
+    - claude-design
+    - design-md
+    - humanizer
+    - manim-video
+    - p5js
+    - popular-web-designs
+    - songwriting-and-ai-music
+    - gif-search
+    - songsee
+    - youtube-content
+    - obsidian
+    - airtable
+    - box
+    - notion
+    - powerpoint
+    - product-price-monitor
+    - teams-meeting-pipeline
+    - arxiv
+    - competitor-news-monitor
+    - llm-wiki
+    - codebase-inspection
+    - dogfood
+    - github
+    - hermes-agent-skill-authoring
+    - inspecting-hermes-desktop-dom
+    - node-inspect-debugger
+    - requesting-code-review
+    - simplify-code
+    - spike
+    - systematic-debugging
+    - test-driven-development

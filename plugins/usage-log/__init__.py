@@ -91,7 +91,24 @@ def _tokens(usage):
         total = _pick(usage, "total_tokens")
         if total is None and isinstance(inp, (int, float)) and isinstance(out, (int, float)):
             total = inp + out
-        return {"input": inp, "output": out, "total": total}
+        # Prompt caching: "input" can exclude tokens served from the provider's cache (total = input +
+        # output + cached), so log the cache fields too. Names vary by provider and Hermes version.
+        details = _pick(usage, "prompt_tokens_details", "input_tokens_details")
+        cache_read = _pick(usage, "cache_read_tokens", "cache_read_input_tokens", "cached_tokens")
+        if cache_read is None and details is not None:
+            cache_read = _pick(details, "cached_tokens", "cache_read_tokens")
+        cache_write = _pick(usage, "cache_write_tokens", "cache_creation_input_tokens", "cache_creation_tokens")
+        result = {"input": inp, "output": out, "total": total, "cache_read": cache_read, "cache_write": cache_write}
+        if cache_read is None and isinstance(total, (int, float)) and isinstance(inp, (int, float)) and isinstance(out, (int, float)):
+            unaccounted = total - inp - out
+            if unaccounted > 0:
+                result["unaccounted"] = unaccounted   # likely cached tokens under a field name we don't know
+                try:
+                    keys = usage.keys() if isinstance(usage, dict) else vars(usage).keys()
+                    result["usage_keys"] = sorted(str(k) for k in keys)[:30]
+                except Exception:
+                    pass
+        return result
     except Exception:
         return None
 
