@@ -1,9 +1,10 @@
 # cron/ping.yaml -- PLAN.md P1.8: the daily "ping" job, one per profile. Read by installer/steps/10-cron.ps1
-# (flat key: value lines; {profile} is replaced per profile). Pinned to the local model in BOTH profiles with
-# --provider ollama (S3): a pinned job never falls back (F3), so the ping proves the local path, at no cost.
+# (flat key: value lines; {name} is replaced by the bot's display name; no quotes or apostrophes). Pinned to
+# the local model in BOTH profiles with --provider ollama (S3): a pinned job never falls back (F3), so the ping
+# proves the local path, at no cost.
 name: ping
 schedule: 0 12 * * *
-prompt: Reply with the words pong from {profile} and the current time.
+prompt: This is your daily check-in message to me. Reply with one short, warm sentence saying that {name} is up and ready to help. Plain text only: no times or dates, no technical details, no lists, no emoji.
 model: qwen3-coder:30b
 provider: ollama
 deliver: telegram

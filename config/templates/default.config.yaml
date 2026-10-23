@@ -42,3 +42,5 @@ approvals:
     - "*agentmail inboxes:messages forward*"
     - "*agentmail inboxes:drafts*"
     - "*agentmail agent *"                      # sign-up / attach-human send OTP mail
+cron:
+  wrap_response: false  # deliver the job's own text, without the "Cronjob Response" header and footer (P1.8)

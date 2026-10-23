@@ -1,6 +1,7 @@
 # installer/steps/10-cron.ps1 -- PLAN.md P1.8: the daily "ping" job in each profile (cron/ping.yaml).
 # Run from the `operator` account in an ELEVATED Windows PowerShell; the owner types the hermes password.
-# As hermes, per profile: make sure providers.ollama.base_url points at the local server (S3), remove any
+# As hermes, per profile: make sure providers.ollama.base_url points at the local server (S3), turn off the
+# "Cronjob Response" wrapper (cron.wrap_response false, so a job delivers only its own text), remove any
 # existing job with the same name, create the job (pinned: --model/--provider), and run it once now.
 # Then runs verify/checks/p1-8-ping.ps1. Every hermes call has its own time cap and an empty stdin.
 param([string]$LogPath, [securestring]$Password,
@@ -16,12 +17,12 @@ if (-not $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { 
 $job = @{}
 Get-Content (Join-Path $repo 'cron\ping.yaml') -Encoding UTF8 | Where-Object { $_ -match '^(\w+):\s*(.+)$' } | ForEach-Object { $job[$Matches[1]] = $Matches[2].Trim() }
 if ($job.model -ne $lock.model_default) { throw "cron/ping.yaml model ($($job.model)) isn't versions.lock model_default ($($lock.model_default))." }
-if ($job.prompt -match '"') { throw "cron/ping.yaml prompt must not contain double quotes." }
+if ($job.prompt -match "[`"']") { throw "cron/ping.yaml prompt must not contain quotes or apostrophes." }
 $runNow = '$true'
 if ($TestInMinutes -gt 0) {
   $at = (Get-Date).AddMinutes($TestInMinutes)
   $job.name = 'ping-reboot'; $job.schedule = '{0} {1} {2} {3} *' -f $at.Minute, $at.Hour, $at.Day, $at.Month
-  $job.prompt = 'Reply with the words pong after reboot from {profile} and the current time.'
+  $job.prompt = 'This is a check-in message to me after a restart. Reply with one short sentence saying that {name} is back up after the restart. Plain text only: no times or dates.'
   $runNow = '$false'
   Write-Host "One-time reboot-test ping at $($at.ToString('HH:mm')) ($($job.schedule)); restart now and don't sign in." -ForegroundColor Yellow
 }
@@ -42,6 +43,9 @@ foreach (`$prof in 'default', 'local') {
   "##### `${prof}: providers.ollama"
   Cap "`${p}config set providers.ollama.base_url http://localhost:11434/v1" 60 | Select-Object -Last 1
   Cap "`${p}config get providers" 60
+  "##### `${prof}: cron.wrap_response (deliver the job's text without the Cronjob Response header)"
+  Cap "`${p}config set cron.wrap_response false" 60 | Select-Object -Last 1
+  Cap "`${p}config get cron" 60
   # Remove existing jobs with this name (list format: "<id> [state]" then "Name: <name>").
   `$cur = `$null
   foreach (`$line in @(Cap "`${p}cron list" 60)) {
@@ -49,7 +53,7 @@ foreach (`$prof in 'default', 'local') {
     elseif (`$cur -and `$line -match '^\s*Name:\s+$($job.name)\s*$') { Cap "`${p}cron remove `$cur" 60 | Select-Object -Last 1; `$cur = `$null }
   }
   "##### `${prof}: create"
-  `$prompt = '$($job.prompt)' -replace '\{profile\}', `$prof
+  `$prompt = '$($job.prompt)' -replace '\{name\}', `$(if (`$prof -eq 'default') { 'Hermes Cloud' } else { 'Hermes Local' })
   `$c = @(Cap ("`${p}cron create ``"$($job.schedule)``" ``"`$prompt``" --name $($job.name) --model $($job.model) --provider $($job.provider) --deliver $($job.deliver)$(if ($TestInMinutes -gt 0) { ' --repeat 1' })") 120)
   `$c | Select-Object -Last 6
   `$id = `$null; foreach (`$line in `$c) { if (`$line -match 'Created job:\s*([0-9a-f]{6,})') { `$id = `$Matches[1] } }
