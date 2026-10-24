@@ -10,7 +10,7 @@ This plan is checked against the Hermes Agent source (`NousResearch/hermes-agent
 - "notes #N", "F#", "AM#" and "MU#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position.**
-- Phase 0 and Phase 1 are done. **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review the day of tool-call logging, then switch it off) is left. Then P2.1b (gate hardening), S8 and S16 (sandbox egress).
+- Phase 0 and Phase 1 are done. **Now: Phase 2.** P2.1 is done. Next: P2.1b (gate hardening), then S8 and S16 (sandbox egress).
 
 ## 1. Summary
 
@@ -234,8 +234,9 @@ A Claude agent runs on the Legion in its own `operator` account (§4), with thre
 
 Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7, P2.8.
 
-- [ ] **P2.1 Approval-policy plugin (both profiles)** [Claude + you] — Install, tune, and add standing rules.
-  - Progress: steps 1, 2 and 4 done (both profiles, via `08-plugins.ps1`; `SOULRULES=5`). Done-when passed: the Telegram approval came up and your deny stopped it (gateway log `choice=deny`); `p2-1-policy.ps1` passes in both profiles (AgentMail send blocked with a `block` line; force push refused by `approvals.deny`, which runs before plugins). Tool name `terminal`, key `command` (already configured). Left: step 3 on 2026-10-23, after a day of logging.
+- [x] **P2.1 Approval-policy plugin (both profiles)** [Claude + you] — Install, tune, and add standing rules.
+  - Done 2026-10-24 (both profiles, via `08-plugins.ps1`; `SOULRULES=5`). The Telegram approval came up and your deny stopped it (gateway log `choice=deny`); `p2-1-policy.ps1` passes in both profiles. The day of logging confirmed `terminal` (`command`), `execute_code` (`code`) and `browser_exec` (`code`); logging is off again.
+  - Tools seen in the day of logging (the start of P2.1b's known list): `terminal`, `execute_code`, `read_file`, `write_file`, `patch`, `search_files`, `web_search`, `web_extract`, `browser_exec`, `browser_vault`, `skill_view`, `skill_manage`, `skills_list`, `tool_search`, `tool_describe`, `manage_connections`, `session_search`, `clarify`, `memory`.
   - You: answer the test approval on your phone.
   1. (Done) The plugin lives in `plugins/approval-policy/`; `08-plugins.ps1` installs it in both profiles and restarts each gateway.
   2. Set `LOG_ALL_TOOL_CALLS = True` for one day.

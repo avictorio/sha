@@ -22,8 +22,8 @@ scripts/restart-gateway.ps1 (never `hermes gateway restart`; docs/LESSONS.md, He
 
 Self-test: ask the bot to run  echo approval-selftest  -> you should get an approval prompt.
 
-Names NOT confirmed by the verification notes (check them with LOG_ALL_TOOL_CALLS):
-  - the terminal tool's name and the argument key that holds the command
+Confirmed by a day of LOG_ALL_TOOL_CALLS (P2.1 step 3, 2026-10-24): terminal (command, timeout,
+workdir), execute_code (code), browser_exec (code). Names NOT confirmed yet:
   - make_call's argument names (Spike S12)
   - browser_vault's argument names other than `action`
   - the exact tool_name Hermes passes for MCP tools (both prefix forms are matched)
@@ -81,9 +81,9 @@ BRIEF_FIELDS = (
 )
 
 # --- BLOCK: terminal command patterns that never run -----------------------
-# Tool names and argument keys for shell-like tools. Not in the notes (verify):
-# notes #12 mentions "terminal and execute_code". Any tool whose args contain one
-# of COMMAND_ARG_KEYS is checked too.
+# Tool names and argument keys for shell-like tools, confirmed in P2.1 step 3 (cmd and
+# script were never seen; kept, since an extra key only widens the check). Any tool whose
+# args contain one of COMMAND_ARG_KEYS is checked too (browser_exec passes `code`).
 TERMINAL_TOOLS = {"terminal", "execute_code"}
 COMMAND_ARG_KEYS = ("command", "cmd", "code", "script")
 
@@ -142,7 +142,7 @@ SELFTEST_PATTERN = r"\bapproval-selftest\b"
 DENY_LOG = r"C:\agent\shared\logs\policy-{profile}.jsonl"
 # Set True for a day to log every tool call's name and arg keys. That's how
 # you confirm TERMINAL_TOOLS, COMMAND_ARG_KEYS and NUMBER_ARG_KEYS.
-LOG_ALL_TOOL_CALLS = True   # P2.1 step 2: on for one day, then back to False (step 3)
+LOG_ALL_TOOL_CALLS = False  # P2.1: was on for one day (steps 2-3)
 
 # Keep approval prompts readable on a phone.
 MAX_MESSAGE_CHARS = 1500
