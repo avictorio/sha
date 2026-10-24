@@ -10,7 +10,7 @@ This plan is checked against the Hermes Agent source (`NousResearch/hermes-agent
 - "notes #N", "F#", "AM#" and "MU#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position.**
-- Phase 0 and Phase 1 are done. **Now: Phase 2.** P2.1 is done. Next: P2.1b (gate hardening), then S8 and S16 (sandbox egress).
+- Phase 0 and Phase 1 are done. **Now: Phase 2.** P2.1 and P2.1b (gate hardening) are done. Next: S8 (AgentMail keys), then S16 (sandbox egress).
 
 ## 1. Summary
 
@@ -251,7 +251,8 @@ Order: P2.1, P2.1b, S8, S16, S2, P2.2, S10, P2.3, S7, P2.4, S9, P2.5, P2.6, P2.7
   - Needs: P1.3, P1.5, P1.10
   - Automate: `plugins/approval-policy/`; `config/templates/SOUL.md`; `installer/steps/08-plugins.ps1`; `verify/checks/p2-1-policy.ps1`
 
-- [ ] **P2.1b Gate hardening: deny-by-default and integrity** [Claude + you] — Prompt rules can be steered, and a block on terminal text can be routed around with another tool (docs/LESSONS.md, Hermes), so gate by tool name where possible and check that the gate hasn't changed. Adapted from Muse (notes MU1, MU5); the integrity check is ours.
+- [x] **P2.1b Gate hardening: deny-by-default and integrity** [Claude + you] — Prompt rules can be steered, and a block on terminal text can be routed around with another tool (docs/LESSONS.md, Hermes), so gate by tool name where possible and check that the gate hasn't changed. Adapted from Muse (notes MU1, MU5); the integrity check is ours.
+  - Done 2026-10-24: `KNOWN_TOOLS` in the plugin (the 19 names from P2.1); `todo_list` raised a Telegram approval and your `no` stopped it (gateway log `choice=deny`); `SOULRULES=6` in both profiles; `p2-1-policy.ps1` passed, failed `gate-integrity` after a test edit to the installed local copy, and passed again after `08-plugins.ps1`. The only cron job (ping) uses no tools.
   - You: answer one test approval on your phone.
   1. **Unknown tools ask first** (verify that the plugin can do this): the tool names seen in P2.1's day of logging become the plugin's known list; any other tool name (a new MCP write tool, a new toolset) gets `approve` until it's added to a list on purpose. Cron runs deny approvals (`cron_mode: deny`), so check that the cron jobs use only known tools.
   2. **A sixth standing rule** in `config/templates/SOUL.md`: "No outbound action by default: never send, post, book, buy, change or delete anything outside this machine unless a rule above or an approval in this chat covers it." `08-plugins.ps1` then expects 6 rules, counted only between the standing-rules markers (today it counts matching lines in the whole file).

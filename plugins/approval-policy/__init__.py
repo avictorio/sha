@@ -133,6 +133,18 @@ MAIL_SEND_MCP_TOOLS = {
 # messaging tool (tools/send_message_tool.py), which this plugin doesn't gate.
 BARE_NAME_EXCEPTIONS = {"send_message"}
 
+# --- APPROVE: unknown tools ask first (P2.1b) --------------------------------
+# The tool names seen in P2.1's day of logging (2026-10-22/23). Any other tool name (a new
+# toolset, an MCP tool, a tool not used that day) gets an approval prompt until it is added
+# here on purpose (P2.2/P2.5 add their mail and calendar tools). Cron runs deny every
+# approval, so a cron job must use only these.
+KNOWN_TOOLS = {
+    "terminal", "execute_code", "read_file", "write_file", "patch", "search_files",
+    "web_search", "web_extract", "browser_exec", "browser_vault",
+    "skill_view", "skill_manage", "skills_list", "tool_search", "tool_describe",
+    "manage_connections", "session_search", "clarify", "memory",
+}
+
 # Terminal commands matching this get an approval prompt (used by P2.1's test).
 SELFTEST_PATTERN = r"\bapproval-selftest\b"
 
@@ -382,6 +394,13 @@ def _decide(tool_name, args):
             if APPROVE_ALL_VAULT_FILLS or (APPROVE_CARD_FILLS and looks_like_card):
                 label = "Card fill" if looks_like_card else "Vault fill"
                 return _approve(tool_name, args, f"{label} - approve?\nArgs: {_render_args(args, 300)}")
+
+    # 5. Deny by default: a tool that isn't on the known list asks first.
+    if tool_name not in KNOWN_TOOLS:
+        return _approve(
+            tool_name, args,
+            f"{tool_name} isn't on the approval-policy known list - approve this call? Reply yes or no.\nArgs: {_render_args(args, 300)}",
+        )
 
     return None
 

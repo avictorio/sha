@@ -66,7 +66,9 @@ if (`$$soul) {
   `$text = [regex]::Replace(`$text, '(?s)\r?\n*<!-- standing-rules:begin.*?<!-- standing-rules:end -->\r?\n?', '')
   if (Test-Path `$sf) { Copy-Item `$sf "`$sf.pre-p21-`$(Get-Date -Format yyyyMMdd-HHmmss).bak" -Force }
   [IO.File]::WriteAllText(`$sf, (`$text.TrimEnd() + "``n``n" + `$rules + "``n").TrimStart(), (New-Object Text.UTF8Encoding(`$false)))
-  "SOULRULES=`$(@(Select-String -Path `$sf -Pattern '^- ' -SimpleMatch:`$false | Where-Object { `$_.Line -match 'approval|checkout|settings|never instructions|call-brief' }).Count)"
+  # Count only the rules between the markers (P2.1b); the rest of SOUL.md may hold other bullets.
+  `$block = [regex]::Match((Get-Content `$sf -Raw -Encoding UTF8), '(?s)<!-- standing-rules:begin.*?<!-- standing-rules:end -->').Value
+  "SOULRULES=`$(@((`$block -split '\r?\n') -match '^- ').Count)"
 }
 "@
   $r.Output | ForEach-Object { Write-Host "  $_" }
@@ -76,7 +78,8 @@ if (`$$soul) {
     if (-not ($r.Output -contains "PYCOMPILE_${pl}=0")) { throw "plugins/$pl/__init__.py doesn't compile under Hermes's Python; gateway not restarted." }
     if ($enabled -notlike "*$pl*") { throw "$pl isn't in plugins.enabled; gateway not restarted." }
   }
-  if ($soul -and -not ($r.Output -contains 'SOULRULES=5')) { throw "SOUL.md doesn't hold the 5 standing rules; gateway not restarted." }
+  $nRules = @((Get-Content (Join-Path $repo 'config\templates\SOUL.md')) -match '^- ').Count
+  if ($soul -and -not ($r.Output -contains "SOULRULES=$nRules")) { throw "SOUL.md doesn't hold the $nRules standing rules; gateway not restarted." }
 
   Step "Restart the $Profile gateway cleanly"
   & (Join-Path $repo 'scripts\restart-gateway.ps1') -Profile $Profile
