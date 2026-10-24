@@ -10,8 +10,8 @@ This plan is checked against the Hermes Agent source (`NousResearch/hermes-agent
 - "notes #N", "F#", "AM#" and "MU#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position.**
-- Phase 0 and Phase 1 are done except the two open items below. **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review a day of tool-call logging, then switch it off) is left, on 2026-10-23. Then P2.1b (gate hardening), S8 and S16 (sandbox egress).
-- Still open: **P1.9** (one check left: a side task seen running on the local model in real use) and **P0.0a** (owner: the desktop-app check; revisit when computer use or a browser is first needed).
+- Phase 0 and Phase 1 are done except the open item below. **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review a day of tool-call logging, then switch it off) is left, on 2026-10-23. Then P2.1b (gate hardening), S8 and S16 (sandbox egress).
+- Still open: **P0.0a** (owner: the desktop-app check; revisit when computer use or a browser is first needed).
 
 ## 1. Summary
 
@@ -214,13 +214,13 @@ A Claude agent runs on the Legion in its own `operator` account (§4), with thre
 
 - [x] **P1.8 Cron "ping" job per profile** [Claude] — `ping` daily at 12:00 in both profiles, `--provider ollama`, delivered to Telegram. Cron runs inside the gateway: no gateway, no cron. The two gateways' logon race is handled by a retry on exit 75 (`start-gateway.ps1`) and a 45 s logon delay on `Hermes_Gateway_local`. Files: `cron/ping.yaml`, `installer/steps/10-cron.ps1`, `verify/checks/p1-8-ping.ps1`.
 
-- [ ] **P1.9 Token diet for the default profile** [Claude] — Cloud calls carried 13–24K input tokens each; cut what every request carries and what runs in the background.
+- [x] **P1.9 Token diet for the default profile** [Claude] — Cloud calls carried 13–24K input tokens each; cut what every request carries and what runs in the background.
   1. Log `cache_read` and `cache_write` in usage-log.
   2. Route text-only side tasks local (`auxiliary.<task>` `provider`/`model`/`base_url`); vision stays `auto`; `auxiliary.title_generation.model_upgrade_enabled: false`.
   3. Toolsets off on cli and telegram (`hermes tools disable --platform <p> <toolsets>`): computer_use, image_gen, tts, code_execution, delegation. Browser stays on (owner).
   4. `skills.disabled`: 38 of 51.
   5. `compression.threshold` 0.35; `compression.idle_compact_after_seconds` 1800.
-  - Status: steps 1–5 applied; a fresh CLI chat sends 10,064 input tokens against a 13,034 baseline (23% fewer; target 20%). Remaining check: a side task seen running on the local model in real use.
+  - Status: done. A fresh CLI chat sends 10,064 input tokens against a 13,034 baseline (23% fewer; target 20%). In real Telegram use (2026-10-22 23:04 and 23:07) agent.log shows `Auxiliary compression: using ollama (qwen3-coder:30b)`. Vision stays on the cloud model by design; Hermes warns "PAID lane engaged" when it does.
   - Done when: the same fresh chat sends at least 20% fewer input tokens than the baseline; usage-log lines carry the cache fields; side tasks run on the local model (`"local": true` or the agent log); and both bots still answer on Telegram.
   - Needs: P1.4, P1.5
   - Automate: `installer/steps/11-token-diet.ps1`; `config/templates/default.token-diet.yaml`; `verify/checks/tokens-inventory.ps1`; `verify/checks/p1-5-usage-log.ps1`
