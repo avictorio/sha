@@ -10,8 +10,7 @@ This plan is checked against the Hermes Agent source (`NousResearch/hermes-agent
 - "notes #N", "F#", "AM#" and "MU#" are item numbers in [docs/verification-notes.md](docs/verification-notes.md). Why things are built the way they are: [docs/LESSONS.md](docs/LESSONS.md).
 
 **Current position.**
-- Phase 0 and Phase 1 are done except the open item below. **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review a day of tool-call logging, then switch it off) is left, on 2026-10-23. Then P2.1b (gate hardening), S8 and S16 (sandbox egress).
-- Still open: **P0.0a** (owner: the desktop-app check; revisit when computer use or a browser is first needed).
+- Phase 0 and Phase 1 are done. **Now: Phase 2.** P2.1 is installed and passing; only step 3 (review the day of tool-call logging, then switch it off) is left. Then P2.1b (gate hardening), S8 and S16 (sandbox egress).
 
 ## 1. Summary
 
@@ -160,9 +159,9 @@ A Claude agent runs on the Legion in its own `operator` account (§4), with thre
 
 ### Phase 0 — Decide & provision (Days 1–2)
 
-- [ ] **P0.0a Create `operator` and sign in to Claude** [You] — Claude can't create the account it runs in (D1). Steps: [docs/SETUP-GUIDE.md#operator-account](docs/SETUP-GUIDE.md#operator-account) (local admin `operator`; the Claude desktop app with computer use, Git for Windows, Claude Code, a browser tool; the [starter prompt](README.md#starter-prompt)).
+- [x] **P0.0a Create `operator` and sign in to Claude** [You] — Claude can't create the account it runs in (D1). Steps: [docs/SETUP-GUIDE.md#operator-account](docs/SETUP-GUIDE.md#operator-account) (local admin `operator`; the Claude desktop app with computer use, Git for Windows, Claude Code, a browser tool; the [starter prompt](README.md#starter-prompt)).
   - Nothing personal signed in there: no Microsoft account, OneDrive, personal browser profile, Telegram or password manager.
-  - Open: the desktop-app check (computer use, browser tool); revisit when either is first needed.
+  - Desktop-app check done 2026-10-24 (owner confirmed): Claude desktop app 3.1623.1 running in `operator`, computer use on, a screenshot taken and https://example.com opened in the built-in browser ("Example Domain").
   - Done when: the Claude desktop app is running in `operator` with computer use available; `git --version` and `claude --version` work in PowerShell there; and the browser tool can open a web page.
   - Needs: D1
   - Automate: `docs/SETUP-GUIDE.md#operator-account`
