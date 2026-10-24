@@ -4,6 +4,9 @@
 #   -Mode Prepare: online pre-checks (chat flags, sandbox python3, mtimes through the bind mount, and
 #                  whether `hermes config set model.default` changes the model Ollama actually loads).
 #   -Mode Run:     every candidate x task x run. Before each run: fixtures reset, memory restored.
+#   -Cloud:        every turn runs with the cli toolsets minus web and browser (-t), after a self-test that
+#                  the agent sees no web or browser tools; logs OpenRouter key spend and each run's usage-log
+#                  calls (meta.json: cloud_calls, local_calls, fallback, usd).
 # Prompts are copied verbatim from bench/README.md. ASCII only (PS 5.1 reads BOM-less scripts as ANSI).
 param(
   [Parameter(Mandatory)][ValidateSet('Prepare', 'Run')][string]$Mode,
@@ -13,7 +16,8 @@ param(
   [string[]]$Tasks = @('B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7'),
   [int]$Runs = 3,
   [string]$ResumeFlag = '',            # e.g. '--resume'; B4's follow-up questions need it
-  [int]$ChatTimeoutSec = 1200
+  [int]$ChatTimeoutSec = 1200,
+  [switch]$Cloud
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -58,7 +62,7 @@ function Reset-Fixtures {
 # One `hermes chat` turn with a hard timeout. Prompts contain no double quotes (PS 5.1 mangles them).
 function Invoke-Chat([string]$prompt, [string[]]$extra = @()) {
   $out = [IO.Path]::GetTempFileName(); $err = [IO.Path]::GetTempFileName()
-  $argline = (@('chat') + $extra + @('-Q', '-q', ('"' + $prompt + '"'))) -join ' '
+  $argline = (@('chat') + $script:ToolArgs + $extra + @('-Q', '-q', ('"' + $prompt + '"'))) -join ' '
   $sw = [Diagnostics.Stopwatch]::StartNew()
   $p = Start-Process -FilePath $h -ArgumentList $argline -NoNewWindow -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
   $timedOut = -not $p.WaitForExit($ChatTimeoutSec * 1000)
@@ -77,6 +81,20 @@ function Loaded {
 }
 function Sandbox { & $docker ps -q --filter name=^hermes- 2>$null | Select-Object -First 1 }
 function SetModel($tag) { & $h config set model.default $tag 2>&1 | Out-Null; ((& $h config get model.default 2>&1) -join '').Trim() }
+$script:ToolArgs = @()
+$usageLog = 'C:\agent\shared\logs\usage-default.jsonl'
+# The key's running spend in USD, read back from OpenRouter (the key itself is never written anywhere).
+function OrUsage {
+  try {
+    $k = (Get-Content (Join-Path $home_ '.env') -Encoding UTF8 | Where-Object { $_ -match '^\s*OPENROUTER_API_KEY\s*=' } | Select-Object -Last 1) -replace '^[^=]*=\s*', ''
+    [double](Invoke-RestMethod -Uri 'https://openrouter.ai/api/v1/key' -Headers @{ Authorization = "Bearer $($k.Trim())" } -TimeoutSec 30).data.usage
+  } catch { $null }
+}
+# The usage-log calls of `hermes chat` turns made at or after $since (one run at a time, so the window is the run).
+function RunCalls([datetime]$since) {
+  @(Get-Content $usageLog -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { try { $_ | ConvertFrom-Json } catch { } } |
+    Where-Object { $_.event -eq 'call' -and $_.platform -eq 'cli' -and [datetime]$_.ts -ge $since })
+}
 
 if ($Mode -eq 'Prepare') {
   Log "PREPARE start"
@@ -110,7 +128,21 @@ $memDir = Join-Path $home_ 'memories'; $memSnap = Join-Path $Results '_memories-
 Copy-Item -Recurse $memDir $memSnap -Force
 $skillsDir = Join-Path $home_ 'skills'
 $skillsBefore = @(Get-ChildItem $skillsDir -Recurse -Directory -ErrorAction SilentlyContinue | ForEach-Object FullName)
-Log "RUN start; model.default=$orig; candidates=$($Candidates -join ','); tasks=$($Tasks -join ','); runs=$Runs"
+Log "RUN start; model.default=$orig; candidates=$($Candidates -join ','); tasks=$($Tasks -join ','); runs=$Runs; cloud=$Cloud"
+if ($Cloud) {
+  # The cli toolsets enabled now, minus web and browser ("<mark> enabled  <name>  ..." lines of `hermes tools list`).
+  $sets = @(& $h tools list --platform cli 2>&1 | ForEach-Object { if ("$_" -match '^\s*\S+\s+enabled\s+([a-z_]+)\s') { $Matches[1] } } |
+    Where-Object { $_ -notin @('web', 'browser') })
+  if (-not ($sets -contains 'terminal' -and $sets -contains 'file')) { Log "ABORT: cli toolsets not readable: [$($sets -join ',')]"; return }
+  $script:ToolArgs = @('-t', ($sets -join ','))
+  Log "cloud toolsets: $($sets -join ',')"
+  $t = Invoke-Chat 'List the exact names of all the tools you can call, comma-separated, and nothing else.'
+  ($t.Text) | Set-Content (Join-Path $Results 'cloud-tools-selftest.txt') -Encoding UTF8
+  if ($t.Text -match '(?i)\b(web_\w+|browser_\w+)') { Log "ABORT: the agent still sees $($Matches[1])"; return }
+  $usd0 = OrUsage
+  Log "tool self-test ok (no web or browser tools); OpenRouter key usage before: $usd0"
+  Copy-Item "$memSnap\*" $memDir -Force -Recurse
+}
 if ($ResumeFlag) {   # B4's follow-ups depend on resuming by the printed session id; prove it once
   $t = Invoke-Chat 'Remember this code word for the rest of this conversation: OKAPI. Reply with exactly: NOTED'
   $u = Invoke-Chat 'What was the code word I gave you? Reply with just the word.' @($ResumeFlag, $t.Session)
@@ -127,6 +159,7 @@ try {
         $dir = Join-Path $Results "$safe\$task-r$run"; New-Item -ItemType Directory -Force $dir | Out-Null
         Reset-Fixtures
         Copy-Item "$memSnap\*" $memDir -Force -Recurse
+        $runStart = (Get-Date).AddSeconds(-1); $usdBefore = if ($Cloud) { OrUsage } else { $null }
         $c = Invoke-Chat $prompts[$task]
         $secs = $c.Seconds; $all = "### PROMPT`n$($prompts[$task])`n### ANSWER`n$($c.Text)"
         if ($task -eq 'B4' -and $c.Session -and $ResumeFlag) {
@@ -157,13 +190,22 @@ try {
         foreach ($s in ($newSkills | Sort-Object Length -Descending)) { Remove-Item -Recurse -Force $s -ErrorAction SilentlyContinue }
         $meta = [ordered]@{ model = $tag; task = $task; run = $run; wall_clock_s = $secs; timed_out = $c.TimedOut
                             session = $c.Session; loaded = (Loaded); new_skills_removed = $newSkills }
+        if ($Cloud) {
+          $calls = RunCalls $runStart
+          $loc = @($calls | Where-Object { $_.local -eq $true -or $_.model -ne $tag })
+          $usdAfter = OrUsage
+          $meta.cloud_calls = $calls.Count - $loc.Count; $meta.local_calls = $loc.Count; $meta.fallback = ($loc.Count -gt 0)
+          $meta.tokens_in = ($calls | ForEach-Object { $_.tokens.input + $_.tokens.cache_read } | Measure-Object -Sum).Sum
+          $meta.tokens_out = ($calls | ForEach-Object { $_.tokens.output } | Measure-Object -Sum).Sum
+          $meta.usd = if ($null -ne $usdBefore -and $null -ne $usdAfter) { [Math]::Round($usdAfter - $usdBefore, 4) } else { $null }
+        }
         $meta | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $dir 'meta.json') -Encoding UTF8
-        Log "$tag $task r$run secs=$secs timedOut=$($c.TimedOut) loaded=[$($meta.loaded)]"
+        Log "$tag $task r$run secs=$secs timedOut=$($c.TimedOut) loaded=[$($meta.loaded)]$(if ($Cloud) { " cloud=$($meta.cloud_calls) local=$($meta.local_calls) fallback=$($meta.fallback) usd=$($meta.usd)" })"
       }
     }
   }
 } finally {
   Copy-Item "$memSnap\*" $memDir -Force -Recurse
   $set = SetModel $orig
-  Log "RUN done; model.default restored to $set"
+  Log "RUN done; model.default restored to $set$(if ($Cloud) { "; OpenRouter key usage after: $(OrUsage) (before: $usd0)" })"
 }

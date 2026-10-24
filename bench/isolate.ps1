@@ -6,7 +6,8 @@
 #   2. The sandbox: TERMINAL_DOCKER_NETWORK=false in hermes's .env (= terminal.docker_network: false,
 #      --network=none), and the sandbox container removed so Hermes recreates it without a network.
 # While isolated, the Telegram gateway can't reach Telegram either; it resumes after -Off.
-param([switch]$On, [switch]$Off, [string]$LogPath)
+# -On -SandboxOnly: step 2 only, for the cloud run (run-bench.ps1 -Cloud), where Hermes must reach OpenRouter.
+param([switch]$On, [switch]$Off, [switch]$SandboxOnly, [string]$LogPath)
 
 $ErrorActionPreference = 'Stop'
 if ($LogPath) { Start-Transcript -Path $LogPath -Force | Out-Null }
@@ -29,7 +30,11 @@ function Remove-Sandbox {
   & $docker ps -a -q --filter name=^hermes- 2>$null | ForEach-Object { & $docker rm -f $_ 2>&1 | Out-Null; Write-Host "removed sandbox container $_" }
 }
 
-if ($On) {
+if ($On -and $SandboxOnly) {
+  Set-EnvKey 'TERMINAL_DOCKER_NETWORK' 'false'
+  Remove-Sandbox
+  Write-Host "SANDBOX ISOLATED: sandbox network off; Hermes itself can still reach the network." -ForegroundColor Yellow
+} elseif ($On) {
   $prof = Get-NetFirewallProfile | Where-Object { -not $_.Enabled }
   if ($prof) { throw "Windows Firewall is off for: $($prof.Name -join ', '). The block rules would do nothing." }
   # Filter by path first; GetOwner throws "Not found" for a process that exits in between.

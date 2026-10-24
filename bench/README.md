@@ -155,10 +155,22 @@ Full rows in `scores.csv`. B2 and B6 come from a re-run with LF fixtures (see `.
 | `gpt-oss:20b` | 3/7: B1, B3, B7 | 41.5 s | 137 s | No GO |
 | `qwen3-coder:30b` | 4/7: B1, B4, B6, B7 | 9 s | 25 s | No GO |
 | `muse-glimmer:30b` (extra run at the owner's request) | 5/7: B1, B2, B3, B6, B7 | 154.5 s | 1199 s | No GO (speed) |
+| `meta/muse-wonder` (cloud, D9; comparison at the owner's request, not a D2 candidate) | 7/7, every run (21/21) | 12.5 s | 41 s | Would be GO |
 
 - What failed: B5 (calendar) for all four, with the recurring standup and the UTC-stored call most often missed. B3's first line or file set for the qwen models. B2 for all but Glimmer. B6's "say which file you used" for most.
+- The cloud model passed every task in every run, including the traps that failed all local candidates (the recurring standup, the UTC-stored call, B3's file set, B6's file name). It confirms the no-GO branch above: quality work goes to the cloud agent until local hardware runs a stronger model.
 - B4: the three fast models read only the start of the document (their summaries cover the opening pages). Glimmer summarized the whole story but half-answered two-part questions.
 - D2: no candidate was GO, so D2's no-GO branch applies: the default profile runs cloud-first (P1.4). The owner chose `qwen3-coder:30b` as the local profile's model and the default's fallback for the proof of concept, to revisit with better hardware. Glimmer's quality is close to the bar; on a GPU that holds it entirely in VRAM it may pass.
+
+## Comparing the cloud model: `run-bench.ps1 -Run -Cloud`
+
+Runs the same seven tasks on the D9 cloud model, for comparison only. Hermes must reach OpenRouter, so the isolation is weaker than for local candidates:
+- only the sandbox is cut off (`isolate.ps1 -On -SandboxOnly`, `--network=none`);
+- every turn runs with the cli toolsets minus `web` and `browser` (`hermes chat -t`), after a self-test turn in which the agent must list no web or browser tool (`cloud-tools-selftest.txt`). The agent also gets the generic `tool_search` / `tool_call` helpers, so check the transcripts for web or browser calls before scoring;
+- each run's `meta.json` counts its usage-log calls: a run with any local call fell back to the local model and must be re-run, not scored;
+- the runner logs the OpenRouter key's spend before and after. Per-run figures lag on OpenRouter's side; use the totals.
+
+Cost on 2026-10-23: about $4.40 for the 21 runs, out of the D9 cap. Muse Wonder passed every run; the first round was slower (14–123 s per task) than the next two (6–43 s), likely because the local model was loaded at the same time.
 
 ## Screening a new model first: `speed-probe.ps1`
 
